@@ -1,0 +1,172 @@
+/**
+ * Container principal da UI.
+ * Ocupa o ecrã todo (width/height a 100%) e usa Flexbox
+ * para centrar o seu conteúdo (o .buttonsWrapper) na vertical e horizontal.
+ * O z-index garante que ele fica por cima do fundo animado.
+ */
+.uiContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  z-index: 10;
+}
+
+/**
+ * Um simples wrapper para os botões de autenticação.
+ * Usa Flexbox para os alinhar e a propriedade 'gap'
+ * para criar um espaçamento consistente entre eles.
+ */
+.buttonsWrapper {
+  display: flex;
+  gap: 20px;
+}
+
+/**
+ * Estilo base para os nossos botões com efeito de vidro (glassmorphism).
+ * O efeito de vidro é criado através de:
+ * - background semi-transparente com blur
+ * - backdrop-filter para criar o efeito de desfoque do fundo
+ * - bordas sutis e brilhantes
+ * - sombras para dar profundidade
+ * - transições suaves para interações
+ */
+.button {
+  /* Fundo semi-transparente */
+  background: rgba(255, 255, 255, 0.15);
+
+  /* Efeito de desfoque do fundo - cria o efeito de vidro */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* Safari */
+
+  /* Borda sutil com gradiente */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  /* Sombra para dar profundidade */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+  /* Estilo do texto */
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  /* Espaçamento e forma */
+  padding: 12px 24px;
+  border-radius: 12px;
+
+  /* Cursor e transições */
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  /* Remover outline padrão */
+  outline: none;
+
+  /* Posição relativa para elementos pseudo */
+  position: relative;
+  overflow: hidden;
+}
+
+/**
+ * Pseudo-elemento para criar um brilho sutil no topo do botão
+ */
+.button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  opacity: 0.8;
+}
+
+/**
+ * Pseudo-elemento para criar o efeito glare (brilho) no hover
+ */
+.button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+/**
+ * Estado hover - intensifica o efeito de vidro e ativa o glare
+ */
+.button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/**
+ * Ativa o efeito glare no hover
+ */
+.button:hover::after {
+  left: 100%;
+}
+
+/**
+ * Estado active (quando clicado) - simula pressão
+ */
+.button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/**
+ * Estado focus - para acessibilidade
+ */
+.button:focus {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+/**
+ * Variante específica para o botão "Registar" - tom mais quente
+ */
+.button.register {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.button.register:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/**
+ * Variante específica para o botão "Entrar" - tom mais frio
+ */
+.button.login {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.button.login:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.28);
+}
