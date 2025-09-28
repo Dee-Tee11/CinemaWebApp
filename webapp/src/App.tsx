@@ -10,6 +10,7 @@ import {
 import { useSupabase } from "./hooks/useSupabase"; // Hook personalizado para interagir com o cliente Supabase.
 import { useEffect, useState } from "react"; // Hooks do React para efeitos secundários e gestão de estado.
 import styles from "./App.module.css"; // Importa estilos CSS modularizados para este componente.
+import GridMotion from "./components/GridMotion";
 
 /**
  * Componente principal da aplicação.
@@ -120,6 +121,7 @@ function App() {
           {/* Renderiza estes elementos apenas se o utilizador ESTIVER autenticado. */}
           <SignedIn>
             {/* Botão de utilizador do Clerk, que permite gerir a conta ou fazer logout. */}
+            <GridMotion />
             <UserButton afterSignOutUrl="/" />{" "}
             {/* Redireciona para a raiz após o logout. */}
             {/* Anteriormente, havia um bloco aqui para exibir informações de depuração do utilizador. */}

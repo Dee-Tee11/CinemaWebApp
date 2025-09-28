@@ -21,57 +21,56 @@
  */
 .buttonsWrapper {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
 }
 
 /**
- * Estilo base para os nossos botões com efeito de vidro (glassmorphism).
- * O efeito de vidro é criado através de:
- * - background semi-transparente com blur
- * - backdrop-filter para criar o efeito de desfoque do fundo
- * - bordas sutis e brilhantes
- * - sombras para dar profundidade
- * - transições suaves para interações
+ * Estilo moderno glassmorphism - inspirado na segunda imagem
+ * Efeito de vidro suave com bordas arredondadas e transparência elegante
  */
 .button {
-  /* Fundo semi-transparente */
-  background: rgba(255, 255, 255, 0.15);
+  /* Fundo ultra-transparente com tom quente */
+  background: rgba(255, 255, 255, 0.08);
 
-  /* Efeito de desfoque do fundo - cria o efeito de vidro */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); /* Safari */
+  /* Efeito de desfoque mais suave */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 
-  /* Borda sutil com gradiente */
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* Borda muito sutil */
+  border: 1px solid rgba(255, 255, 255, 0.12);
 
-  /* Sombra para dar profundidade */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* Sombra muito suave para profundidade */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
-  /* Estilo do texto */
-  color: rgba(255, 255, 255, 0.9);
+  /* Texto elegante */
+  color: rgba(255, 255, 255, 0.95);
   font-size: 16px;
   font-weight: 500;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.3px;
 
-  /* Espaçamento e forma */
-  padding: 12px 24px;
-  border-radius: 12px;
+  /* Forma mais moderna */
+  padding: 16px 32px;
+  border-radius: 24px;
+  min-width: 140px;
 
-  /* Cursor e transições */
+  /* Transições suaves */
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Remover outline padrão */
+  /* Remover outline */
   outline: none;
 
-  /* Posição relativa para elementos pseudo */
+  /* Para efeitos de pseudo-elementos */
   position: relative;
   overflow: hidden;
 }
 
 /**
- * Pseudo-elemento para criar um brilho sutil no topo do botão
+ * Brilho superior sutil
  */
 .button::before {
   content: "";
@@ -79,94 +78,114 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
+  height: 50%;
   background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
+    180deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 100%
   );
-  opacity: 0.8;
-}
-
-/**
- * Pseudo-elemento para criar o efeito glare (brilho) no hover
- */
-.button::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.4),
-    transparent
-  );
-  transition: left 0.6s ease;
+  border-radius: 24px 24px 0 0;
   pointer-events: none;
 }
 
 /**
- * Estado hover - intensifica o efeito de vidro e ativa o glare
+ * Efeito shimmer moderno
+ */
+.button::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  transform: rotate(-45deg);
+  transition: all 0.6s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/**
+ * Estado hover - efeito mais suave e moderno
  */
 .button:hover {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px) scale(1.02);
 }
 
 /**
- * Ativa o efeito glare no hover
+ * Ativa o shimmer no hover
  */
 .button:hover::after {
-  left: 100%;
+  opacity: 1;
+  transform: rotate(-45deg) translate(50%, 50%);
 }
 
 /**
- * Estado active (quando clicado) - simula pressão
+ * Estado active (pressionado)
  */
 .button:active {
-  transform: translateY(0);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(0) scale(0.98);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /**
- * Estado focus - para acessibilidade
+ * Estado focus para acessibilidade
  */
 .button:focus {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 0 0 2px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
 /**
- * Variante específica para o botão "Registar" - tom mais quente
+ * Variante para botão primário (Registar)
  */
-.button.register {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.button.register:hover {
-  background: rgba(255, 255, 255, 0.28);
-  border-color: rgba(255, 255, 255, 0.35);
-}
-
-/**
- * Variante específica para o botão "Entrar" - tom mais frio
- */
-.button.login {
+.button.primary {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.18);
 }
 
-.button.login:hover {
-  background: rgba(255, 255, 255, 0.22);
-  border-color: rgba(255, 255, 255, 0.28);
+.button.primary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/**
+ * Variante para botão secundário (Entrar)
+ */
+.button.secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.button.secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/**
+ * Animação de entrada suave
+ */
+.buttonsWrapper {
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
