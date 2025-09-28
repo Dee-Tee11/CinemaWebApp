@@ -1,3 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Manter o fundo escuro e texto branco que tínhamos antes */
+  background-color: #111827;
+  color: white;
+}
+
+/* Garantir que a nossa app ocupa o ecrã todo */
+#root {
+  width: 100%;
+  height: 100%;
+}
