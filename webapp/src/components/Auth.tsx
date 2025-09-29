@@ -1,4 +1,3 @@
-import Silk from "./Silk";
 import {
   SignInButton,
   SignUpButton,
@@ -9,18 +8,20 @@ import {
 import styles from "./Auth.module.css";
 import GridMotion from "./GridMotion";
 
+const imageModules = import.meta.glob('/src/assets/GridMotionImages/**/*.{jpg,jpeg,png,gif}');
+const imageUrls = Object.keys(imageModules);
+
 const Auth = () => {
   return (
     <div
       style={{
         width: "50%",
         position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        height: "100vh",
+        overflow: "hidden",
       }}
     >
-      {/* Silk Background */}
+      {/* GridMotion Background */}
       <div
         style={{
           position: "absolute",
@@ -29,34 +30,33 @@ const Auth = () => {
           width: "100%",
           height: "100%",
           zIndex: 0,
+          backgroundColor: "#8b0000",
         }}
       >
-        <Silk color="#DC143C" />
+        <GridMotion items={imageUrls} gradientColor="transparent" />
       </div>
 
-      {/* Botões de Autenticação usando os estilos do CSS Module */}
-      <div
-        className={styles.buttonsWrapper}
-        style={{ position: "relative", zIndex: 10 }}
-      >
-        <SignedOut>
-          <SignUpButton mode="modal">
-            <button className={`${styles.button} ${styles.primary}`}>
-              Sign Up
-            </button>
-          </SignUpButton>
+      {/* Botões de Autenticação */}
+      <div className={styles.uiContainer}>
+        <div className={styles.buttonsWrapper}>
+          <SignedOut>
+            <SignUpButton mode="modal">
+              <button className={`${styles.button} ${styles.primary}`}>
+                Sign Up
+              </button>
+            </SignUpButton>
 
-          <SignInButton mode="modal">
-            <button className={`${styles.button} ${styles.secondary}`}>
-              Sign In
-            </button>
-          </SignInButton>
-        </SignedOut>
+            <SignInButton mode="modal">
+              <button className={`${styles.button} ${styles.secondary}`}>
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
 
-        <SignedIn>
-          <GridMotion />
-          <UserButton afterSignOutUrl="/" />
-        </SignedIn>
+          <SignedIn>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+        </div>
       </div>
     </div>
   );

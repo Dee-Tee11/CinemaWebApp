@@ -8,8 +8,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   position: relative;
   z-index: 10;
 }
@@ -24,42 +24,44 @@
   flex-direction: column;
   gap: 16px;
   align-items: center;
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /**
- * Estilo moderno glassmorphism - inspirado na segunda imagem
- * Efeito de vidro suave com bordas arredondadas e transparência elegante
+ * Estilo glassmorphism verdadeiro - efeito de vidro transparente
  */
 .button {
-  /* Fundo ultra-transparente com tom quente */
-  background: rgba(255, 255, 255, 0.08);
+  /* Fundo mais transparente para efeito de vidro real */
+  background: rgba(255, 255, 255, 0.18);
 
-  /* Efeito de desfoque mais suave */
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* Desfoque reduzido para mais clareza */
+  backdrop-filter: blur(6px) saturate(150%);
+  -webkit-backdrop-filter: blur(6px) saturate(150%);
 
-  /* Borda muito sutil */
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  /* Borda mais brilhante */
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
 
-  /* Sombra muito suave para profundidade */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  /* Sombras para brilho e profundidade */
+  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.1), 0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.1);
 
-  /* Texto elegante */
-  color: rgba(255, 255, 255, 0.95);
+  /* Texto elegante e legível */
+  color: rgba(255, 255, 255, 1);
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
-  /* Forma mais moderna */
-  padding: 16px 32px;
-  border-radius: 24px;
-  min-width: 140px;
+  /* Forma moderna e arredondada */
+  padding: 18px 48px;
+  border-radius: 50px;
+  min-width: 180px;
 
   /* Transições suaves */
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Remover outline */
   outline: none;
@@ -70,7 +72,7 @@
 }
 
 /**
- * Brilho superior sutil
+ * Brilho superior para simular reflexo de vidro
  */
 .button::before {
   content: "";
@@ -78,18 +80,19 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 50%;
+  height: 60%;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
     transparent 100%
   );
-  border-radius: 24px 24px 0 0;
+  border-radius: 16px 16px 0 0;
   pointer-events: none;
 }
 
 /**
- * Efeito shimmer moderno
+ * Efeito de brilho ao passar o mouse
  */
 .button::after {
   content: "";
@@ -101,7 +104,7 @@
   background: linear-gradient(
     45deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.2) 50%,
     transparent 70%
   );
   transform: rotate(-45deg);
@@ -111,18 +114,19 @@
 }
 
 /**
- * Estado hover - efeito mais suave e moderno
+ * Estado hover - vidro mais claro
  */
 .button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px) scale(1.02);
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.15),
+    0 6px 20px rgba(0, 0, 0, 0.1), inset 0 1px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 /**
- * Ativa o shimmer no hover
+ * Ativa o brilho no hover
  */
 .button:hover::after {
   opacity: 1;
@@ -134,51 +138,48 @@
  */
 .button:active {
   transform: translateY(0) scale(0.98);
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(31, 38, 135, 0.15),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /**
  * Estado focus para acessibilidade
  */
 .button:focus {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 2px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 0 0 3px rgba(255, 255, 255, 0.3);
 }
 
 /**
- * Variante para botão primário (Registar)
+ * Variante para botão primário (Sign Up)
  */
 .button.primary {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .button.primary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 /**
- * Variante para botão secundário (Entrar)
+ * Variante para botão secundário (Sign In)
  */
 .button.secondary {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .button.secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 /**
  * Animação de entrada suave
  */
-.buttonsWrapper {
-  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 @keyframes fadeInUp {
   from {
     opacity: 0;
