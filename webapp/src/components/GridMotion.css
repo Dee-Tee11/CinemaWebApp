@@ -57,7 +57,7 @@
   height: 100%;
   overflow: hidden;
   border-radius: 10px;
-  background-color: #111;
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;

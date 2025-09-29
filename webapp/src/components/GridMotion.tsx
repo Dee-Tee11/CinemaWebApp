@@ -74,7 +74,7 @@ const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }
                 return (
                   <div key={itemIndex} className="row__item">
                     <div className="row__item-inner" style={{ backgroundColor: '#111' }}>
-                      {typeof content === 'string' && content.startsWith('http') ? (
+                      {typeof content === 'string' && /\.(jpg|jpeg|png|gif)$/.test(content) ? (
                         <div
                           className="row__item-img"
                           style={{
