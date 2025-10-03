@@ -22,7 +22,7 @@ export default function Home() {
         position: 'relative',
         width: '100%',
         minHeight: '100vh',
-        background: '#ffffffff',
+        background: 'linear-gradient(135deg, #fffff0 0%, #fff8dc 100%)',
       }}
     >
       {/* Sidebar à esquerda */}
@@ -37,9 +37,9 @@ export default function Home() {
         logo="https://via.placeholder.com/50"
         items={navItems}
         activeHref="/"
-        pillTextColor="#ffffff"
-        pillColor="transparent"
-        hoveredPillTextColor="rgba(220, 20, 60, 0.3)"
+        pillTextColor="#dc143c"
+        pillColor="rgba(220, 20, 60, 0.1)"
+        hoveredPillTextColor="#8b0000"
         initialLoadAnimation={true}
         showLogo={false}
       />

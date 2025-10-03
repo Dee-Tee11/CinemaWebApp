@@ -74,23 +74,23 @@ export default function Sidebar({ logo, logoAlt = 'Logo', onSettingsClick }: Sid
           width: '48px',
           height: '48px',
           borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 1)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: 'rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
-          color: 'rgba(255, 255, 255, 0.66)'
+          color: 'rgba(255, 255, 255, 0.8)'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
           e.currentTarget.style.color = 'rgba(255, 255, 255, 1)';
           e.currentTarget.style.transform = 'scale(1.1) rotate(90deg)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
           e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
         }}
         aria-label="Settings"
