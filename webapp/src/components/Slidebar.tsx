@@ -1,13 +1,14 @@
 import React from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
+import { useClerk } from '@clerk/clerk-react';
 
 interface SidebarProps {
-  logo: string;
-  logoAlt?: string;
   onSettingsClick?: () => void;
 }
 
-export default function Sidebar({ logo, logoAlt = 'Logo', onSettingsClick }: SidebarProps) {
+export default function Sidebar({ onSettingsClick }: SidebarProps) {
+  const { signOut } = useClerk();
+
   return (
     <aside style={{
       position: 'fixed',
@@ -22,8 +23,7 @@ export default function Sidebar({ logo, logoAlt = 'Logo', onSettingsClick }: Sid
       justifyContent: 'space-between',
       gap: '2rem',
       padding: '1.5rem 0',
-      background: '#1a1a2eff',
-      backdropFilter: 'blur(20px) saturate(180%)',
+      background: '#991b1b',
       borderRadius: '35px',
       border: '1px solid rgba(255, 255, 255, 0.12)',
       boxShadow: `
@@ -33,39 +33,36 @@ export default function Sidebar({ logo, logoAlt = 'Logo', onSettingsClick }: Sid
       `,
       zIndex: 1000
     }}>
-      {/* Logo */}
-      <div style={{
-        width: '48px',
-        height: '48px',
-        borderRadius: '50%',
-        overflow: 'hidden',
-        background: 'rgba(251, 0, 0, 0)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'scale(1.1) rotate(5deg)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(255, 255, 255, 0.1)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
+      {/* Logout Button */}
+      <button
+        onClick={() => signOut()}
+        style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          color: 'rgba(255, 255, 255, 0.8)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 1)';
+          e.currentTarget.style.transform = 'scale(1.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+          e.currentTarget.style.transform = 'scale(1)';
+        }}
+        aria-label="Logout"
       >
-        <img 
-          src={logo} 
-          alt={logoAlt}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
-        />
-      </div>
+        <LogOut size={22} />
+      </button>
 
       {/* Settings Button */}
       <button

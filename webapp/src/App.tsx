@@ -1,10 +1,9 @@
 import { useUser } from "@clerk/clerk-react";
 import { useSupabase } from "./hooks/useSupabase";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Auth from "./components/Auth";
 import Info from "./components/Info";
-import Home from "./home";
+import AppRouter from "./router";
 
 function App() {
   const { user, isLoaded } = useUser();
@@ -66,18 +65,7 @@ function App() {
   }
 
   if (user) {
-    return (
-      <BrowserRouter>
-        <div style={{ background: '#0a0a0a', minHeight: '100vh' }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/Favoritos" element={<div style={{ padding: '100px 20px', color: '#fff' }}>Página de Filmes</div>} />
-            <Route path="/Sugestões" element={<div style={{ padding: '100px 20px', color: '#fff' }}>Página de Sessões</div>} />
-            <Route path="/sobre" element={<div style={{ padding: '100px 20px', color: '#fff' }}>Página Sobre</div>} />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    );
+    return <AppRouter />;
   }
 
   return (
