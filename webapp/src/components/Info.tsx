@@ -85,10 +85,8 @@ const Info = () => {
             </div>
           </div>
 
-          <h1 className={styles.title}>Cinema Match</h1>
-          <p className={styles.subtitle}>
-            Your perfect movie night starts here
-          </p>
+          <h1 className={styles.title}>Movie Night</h1>
+          <p className={styles.subtitle}>Your perfect night starts here</p>
         </div>
 
         {/* Scroll Stack Cards */}
