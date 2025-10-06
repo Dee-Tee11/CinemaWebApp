@@ -5,13 +5,29 @@ import {
   SignedOut,
   UserButton,
 } from "@clerk/clerk-react";
+import React, { useState, useEffect } from "react";
 import styles from "./Auth.module.css";
 import GridMotion from "./GridMotion";
 
-const imageModules = import.meta.glob('/src/assets/GridMotionImages/**/*.{jpg,jpeg,png,gif}');
+const imageModules = import.meta.glob("/src/assets/**/*.{jpg,jpeg,png,gif}");
 const imageUrls = Object.keys(imageModules);
 
+// Fisher-Yates shuffle algorithm
+const shuffleArray = (array: string[]) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
+
 const Auth = () => {
+  const [shuffledImageUrls, setShuffledImageUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    setShuffledImageUrls(shuffleArray([...imageUrls]));
+  }, []);
+
   return (
     <div
       style={{
@@ -33,7 +49,7 @@ const Auth = () => {
           backgroundColor: "#8b0000",
         }}
       >
-        <GridMotion items={imageUrls} gradientColor="transparent" />
+        <GridMotion items={shuffledImageUrls} gradientColor="transparent" />
       </div>
 
       {/* Botões de Autenticação */}

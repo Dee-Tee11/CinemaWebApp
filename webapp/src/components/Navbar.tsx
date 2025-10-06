@@ -3,16 +3,10 @@ import React, { useState } from "react";
 import Logo from "./Logo";
 
 interface NavbarProps {
-  onHomeClick?: () => void;
-  onDocsClick?: () => void;
   onSearch?: (query: string) => void;
 }
 
-export default function Navbar({
-  onHomeClick,
-  onDocsClick,
-  onSearch,
-}: NavbarProps) {
+export default function Navbar({ onSearch }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -34,50 +28,29 @@ export default function Navbar({
         alignItems: "center",
         gap: "1rem",
         padding: "0.75rem 1.5rem",
-        // Glassmorphism effect
-        background: "rgba(255, 255, 255, 0.15)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        border: "1px solid rgba(255, 255, 255, 0.3)",
+        background: "#991b1b",
         borderRadius: "50px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+        border: "1px solid rgba(255, 255, 255, 0.12)",
+        boxShadow: `
+          0 8px 32px rgba(0, 0, 0, 0.3),
+          0 2px 8px rgba(0, 0, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1)
+        `,
       }}
     >
-            <div style={{
-        backgroundColor: '#991b1b',
-        borderRadius: '50%',
-        padding: '0.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+      <div
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.1)",
+          borderRadius: "50%",
+          padding: "0.5rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+        }}
+      >
         <Logo width={32} height={32} className="text-white" />
       </div>
-      <button
-        onClick={onHomeClick}
-        style={{
-          fontSize: "1rem",
-          fontWeight: "500",
-          color: "#1a1a1a",
-          background: "transparent",
-          border: "none",
-          padding: "0.5rem 1.5rem",
-          borderRadius: "50px",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-          whiteSpace: "nowrap",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(255, 255, 255, 0.4)";
-          e.currentTarget.style.color = "#dc2626";
-          e.currentTarget.style.transform = "scale(1.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#1a1a1a";
-          e.currentTarget.style.transform = "scale(1)";
-        }}
-      ></button>
 
       {/* Barra de Pesquisa */}
       <form
@@ -95,9 +68,9 @@ export default function Navbar({
           onChange={(e) => setSearchQuery(e.target.value)}
           style={{
             fontSize: "0.95rem",
-            color: "#1a1a1a",
-            background: "rgba(255, 255, 255, 0.2)",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
+            color: "#ffffff",
+            background: "rgba(255, 255, 255, 0.1)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
             padding: "0.5rem 1.25rem",
             borderRadius: "50px",
             width: "300px",
@@ -105,61 +78,21 @@ export default function Navbar({
             transition: "all 0.3s ease",
           }}
           onFocus={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.35)";
-            e.currentTarget.style.borderColor = "rgba(220, 38, 38, 0.4)";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.4)";
           }}
           onBlur={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.3)";
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.2)";
           }}
         />
-        <button
-          type="submit"
-          style={{
-            fontSize: "1.2rem",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            padding: "0.25rem",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "transform 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "scale(1.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-        ></button>
       </form>
 
-      <button
-        onClick={onDocsClick}
-        style={{
-          fontSize: "1rem",
-          fontWeight: "500",
-          color: "#1a1a1a",
-          background: "transparent",
-          border: "none",
-          padding: "0.5rem 1.5rem",
-          borderRadius: "50px",
-          cursor: "pointer",
-          transition: "all 0.3s ease",
-          whiteSpace: "nowrap",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(255, 255, 255, 0.4)";
-          e.currentTarget.style.color = "#dc2626";
-          e.currentTarget.style.transform = "scale(1.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#1a1a1a";
-          e.currentTarget.style.transform = "scale(1)";
-        }}
-      ></button>
+      <style>{`
+        input::placeholder {
+          color: rgba(255, 255, 255, 0.6);
+        }
+      `}</style>
     </nav>
   );
 }

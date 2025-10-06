@@ -1,20 +1,27 @@
-import React, { useEffect, useRef, FC } from 'react';
-import { gsap } from 'gsap';
-import './GridMotion.css';
+import React, { useEffect, useRef, FC } from "react";
+import { gsap } from "gsap";
+import "./GridMotion.css";
 
 interface GridMotionProps {
   items?: string[];
   gradientColor?: string;
 }
 
-const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }) => {
+const GridMotion: FC<GridMotionProps> = ({
+  items = [],
+  gradientColor = "white",
+}) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const mouseXRef = useRef<number>(window.innerWidth / 2);
 
   const totalItems = 28;
-  const defaultItems = Array.from({ length: totalItems }, (_, index) => `Item ${index + 1}`);
-  const combinedItems = items.length > 0 ? items.slice(0, totalItems) : defaultItems;
+  const defaultItems = Array.from(
+    { length: totalItems },
+    (_, index) => `Item ${index + 1}`
+  );
+  const combinedItems =
+    items.length > 0 ? items.slice(0, totalItems) : defaultItems;
 
   useEffect(() => {
     gsap.ticker.lagSmoothing(0);
@@ -31,23 +38,27 @@ const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }
       rowRefs.current.forEach((row, index) => {
         if (row) {
           const direction = index % 2 === 0 ? 1 : -1;
-          const moveAmount = ((mouseXRef.current / window.innerWidth) * maxMoveAmount - maxMoveAmount / 2) * direction;
+          const moveAmount =
+            ((mouseXRef.current / window.innerWidth) * maxMoveAmount -
+              maxMoveAmount / 2) *
+            direction;
 
           gsap.to(row, {
             x: moveAmount,
-            duration: baseDuration + inertiaFactors[index % inertiaFactors.length],
-            ease: 'power3.out',
-            overwrite: 'auto'
+            duration:
+              baseDuration + inertiaFactors[index % inertiaFactors.length],
+            ease: "power3.out",
+            overwrite: "auto",
           });
         }
       });
     };
 
     const removeAnimationLoop = gsap.ticker.add(updateMotion);
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener("mousemove", handleMouseMove);
       removeAnimationLoop();
     };
   }, []);
@@ -57,7 +68,7 @@ const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }
       <section
         className="intro"
         style={{
-          background: `radial-gradient(circle, ${gradientColor} 0%, transparent 100%)`
+          background: `radial-gradient(circle, ${gradientColor} 0%, transparent 100%)`,
         }}
       >
         <div className="gridMotion-container">
@@ -65,7 +76,7 @@ const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }
             <div
               key={rowIndex}
               className="row"
-              ref={el => {
+              ref={(el) => {
                 rowRefs.current[rowIndex] = el;
               }}
             >
@@ -73,12 +84,16 @@ const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }
                 const content = combinedItems[rowIndex * 7 + itemIndex];
                 return (
                   <div key={itemIndex} className="row__item">
-                    <div className="row__item-inner" style={{ backgroundColor: '#111' }}>
-                      {typeof content === 'string' && /\.(jpg|jpeg|png|gif)$/.test(content) ? (
+                    <div
+                      className="row__item-inner"
+                      style={{ backgroundColor: "#111" }}
+                    >
+                      {typeof content === "string" &&
+                      /\.(jpg|jpeg|png|gif)$/.test(content) ? (
                         <div
                           className="row__item-img"
                           style={{
-                            backgroundImage: `url(${content})`
+                            backgroundImage: `url(${content})`,
                           }}
                         ></div>
                       ) : (
