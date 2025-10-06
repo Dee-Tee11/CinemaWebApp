@@ -12,6 +12,7 @@ interface Movie {
 
 export default function Home() {
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const supabase = useSupabase();
 
   useEffect(() => {
@@ -27,7 +28,11 @@ export default function Home() {
     fetchMovies();
   }, [supabase]);
 
-  const galleryItems = movies.map((movie) => ({
+  const filteredMovies = movies.filter((movie) =>
+    movie.series_title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const galleryItems = filteredMovies.map((movie) => ({
     image: movie.poster_url,
     text: movie.series_title,
   }));
@@ -40,6 +45,10 @@ export default function Home() {
   const handleLogoClick = () => {
     console.log("Logo clicked!");
     // Adiciona aqui a lógica para quando clicarem no logo
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
   return (
@@ -84,7 +93,7 @@ export default function Home() {
           zIndex: 100,
         }}
       >
-        <Navbar />
+        <Navbar onSearch={handleSearch} />
       </div>
 
       {/* Sidebar à esquerda (por cima) */}

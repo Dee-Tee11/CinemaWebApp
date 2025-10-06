@@ -9,10 +9,11 @@ interface NavbarProps {
 export default function Navbar({ onSearch }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onSearch && searchQuery.trim()) {
-      onSearch(searchQuery);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (onSearch) {
+      onSearch(query);
     }
   };
 
@@ -54,7 +55,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
 
       {/* Barra de Pesquisa */}
       <form
-        onSubmit={handleSearch}
+        onSubmit={(e) => e.preventDefault()}
         style={{
           display: "flex",
           alignItems: "center",
@@ -65,7 +66,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
           type="text"
           placeholder="Search movies..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={handleSearchChange}
           style={{
             fontSize: "0.95rem",
             color: "#ffffff",
