@@ -1,64 +1,37 @@
-// pages/Home.tsx
+import { useEffect, useState } from "react";
 import Sidebar from "./components/Slidebar";
 import Navbar from "./components/Navbar";
-import CircularGallery from "./components/CircularGallery"; // Importa a galeria circular
+import CircularGallery from "./components/CircularGallery";
+import { useSupabase } from "./hooks/useSupabase";
 
-// Importar as imagens locais (adiciona isto no topo do ficheiro)
-import image1 from "./assets/imagem1.jpg";
-import image2 from "./assets/imagem2.jpg";
-import image3 from "./assets/imagem3.jpg";
-import image4 from "./assets/imagem4.jpg";
-import image5 from "./assets/imagem5.jpg";
-import image6 from "./assets/imagem6.jpg";
-import image7 from "./assets/imagem8.jpg";
-import image8 from "./assets/imagem9.jpg";
-import image9 from "./assets/imagem10.jpg";
-import image10 from "./assets/imagem11.jpg";
-// Converter filmes para o formato que CircularGallery espera
-const galleryItems = [
-  {
-    image: image1,
-    text: "Wolf of Wall Street",
-  },
-  {
-    image: image2,
-    text: "Fantastic 4",
-  },
-  {
-    image: image3,
-    text: "Demon Slayer Infinity Castle ",
-  },
-  {
-    image: image4,
-    text: "Aztec Batman : Clash of Empires",
-  },
-  {
-    image: image5,
-    text: "Superman",
-  },
-  {
-    image: image6,
-    text: "F1 the movie",
-  },
-  {
-    image: image7,
-    text: "CHAINSAW MAN : Reze Arc ",
-  },
-  {
-    image: image8,
-    text: "Lilo & Stitch",
-  },
-  {
-    image: image9,
-    text: "Interstellar",
-  },
-  {
-    image: image10,
-    text: "The Conjuring",
-  },
-];
+interface Movie {
+  id: number;
+  series_title: string;
+  poster_url: string;
+}
 
 export default function Home() {
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const supabase = useSupabase();
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      const { data, error } = await supabase.from("movies").select("*");
+      if (error) {
+        console.error("Error fetching movies:", error);
+      } else {
+        setMovies(data);
+      }
+    };
+
+    fetchMovies();
+  }, [supabase]);
+
+  const galleryItems = movies.map((movie) => ({
+    image: movie.poster_url,
+    text: movie.series_title,
+  }));
+
   const handleSettingsClick = () => {
     console.log("Settings clicked!");
     // Adiciona aqui a lógica para abrir configurações
