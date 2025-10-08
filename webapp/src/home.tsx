@@ -76,12 +76,10 @@ export default function Home() {
 
   const handleSettingsClick = () => {
     console.log("Settings clicked!");
-    // Adiciona aqui a lógica para abrir configurações
   };
 
   const handleLogoClick = () => {
     console.log("Logo clicked!");
-    // Adiciona aqui a lógica para quando clicarem no logo
   };
 
   const handleSearch = (query: string) => {
@@ -96,8 +94,9 @@ export default function Home() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          height: "100vh",
+          minHeight: "100vh",
           background: "linear-gradient(135deg, #f5f5dc 0%, #faf0e6 100%)",
+          padding: "2rem",
         }}
       >
         <Carousel items={instructionItems} />
@@ -130,7 +129,6 @@ export default function Home() {
         minHeight: "100vh",
       }}
     >
-      {/* Conteúdo principal - FULLSCREEN (por baixo de tudo) */}
       <main
         style={{
           position: "fixed",
@@ -143,7 +141,6 @@ export default function Home() {
           zIndex: 1,
         }}
       >
-        {/* Galeria Circular */}
         <CircularGallery
           items={galleryItems}
           bend={3}
@@ -154,7 +151,6 @@ export default function Home() {
         />
       </main>
 
-      {/* Navbar transparente no topo (por cima) */}
       <div
         style={{
           position: "fixed",
@@ -167,7 +163,6 @@ export default function Home() {
         <Navbar onSearch={handleSearch} />
       </div>
 
-      {/* Sidebar à esquerda (por cima) */}
       <div
         style={{
           position: "fixed",

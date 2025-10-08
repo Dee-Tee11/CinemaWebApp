@@ -6,10 +6,16 @@
   padding: 16px;
   --outer-r: 24px;
   --p-distance: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .carousel-track {
   display: flex;
+  transform-style: preserve-3d;
+  position: relative;
+  overflow: visible;
 }
 
 .carousel-item {
@@ -24,6 +30,8 @@
   background-color: #991b1b;
   overflow: hidden;
   cursor: grab;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .carousel-item:active {
