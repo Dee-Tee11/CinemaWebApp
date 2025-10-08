@@ -20,30 +20,28 @@ interface Movie {
 const instructionItems: CarouselItem[] = [
   {
     id: 1,
-    title: "Bem-vindo ao CinemaApp!",
-    description:
-      "Esta é uma breve introdução sobre como usar a nossa aplicação.",
+    title: "Welcome to CinemaApp!",
+    description: "This is a brief introduction on how to use our application.",
     icon: <FiCheckCircle className="carousel-icon" />,
   },
   {
     id: 2,
-    title: "Navegue pelos filmes",
+    title: "Browse through the movies",
     description:
-      "Use o scroll do rato ou o toque para navegar pela galeria de filmes.",
+      "Use the mouse scroll or touch to navigate through the movie gallery.",
     icon: <FiMousePointer className="carousel-icon" />,
   },
   {
     id: 3,
-    title: "Pesquise por filmes",
-    description:
-      "Use a barra de pesquisa no topo para encontrar filmes específicos.",
+    title: "Search for movies",
+    description: "Use the search bar at the top to find specific movies.",
     icon: <FiSearch className="carousel-icon" />,
   },
   {
     id: 4,
-    title: "Aceda às definições",
+    title: "Access settings",
     description:
-      "Clique no ícone de definições na barra lateral para aceder às suas definições.",
+      "Click on the settings icon in the sidebar to access your settings.",
     icon: <FiSettings className="carousel-icon" />,
   },
 ];
@@ -107,16 +105,18 @@ export default function Home() {
           onClick={() => setShowInstructions(false)}
           style={{
             marginTop: "2rem",
-            padding: "1rem 2rem",
-            fontSize: "1.2rem",
+            padding: "18px 48px",
+            fontSize: "16px",
+            fontWeight: "600",
             cursor: "pointer",
-            border: "none",
-            borderRadius: "5px",
-            background: "#333",
+            border: "1.5px solid rgba(255, 255, 255, 0.4)",
+            borderRadius: "50px",
+            background: "#991b1b",
             color: "white",
+            transition: "all 0.3s ease",
           }}
         >
-          Começar a usar
+          Get Started
         </button>
       </div>
     );
