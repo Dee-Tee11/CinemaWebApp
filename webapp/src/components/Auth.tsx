@@ -8,9 +8,7 @@ import {
 import React, { useState, useEffect } from "react";
 import styles from "./Auth.module.css";
 import GridMotion from "./GridMotion";
-
-const imageModules = import.meta.glob("/src/assets/**/*.{jpg,jpeg,png,gif}");
-const imageUrls = Object.keys(imageModules);
+import { useSupabase } from "../hooks/useSupabase";
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = (array: string[]) => {
@@ -22,11 +20,22 @@ const shuffleArray = (array: string[]) => {
 };
 
 const Auth = () => {
-  const [shuffledImageUrls, setShuffledImageUrls] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const supabase = useSupabase();
 
   useEffect(() => {
-    setShuffledImageUrls(shuffleArray([...imageUrls]));
-  }, []);
+    const fetchMovies = async () => {
+      const { data, error } = await supabase.from("movies").select("poster_url");
+      if (error) {
+        console.error("Error fetching movies:", error);
+      } else {
+        const posters = data.map((movie) => movie.poster_url);
+        setImageUrls(shuffleArray(posters));
+      }
+    };
+
+    fetchMovies();
+  }, [supabase]);
 
   return (
     <div
@@ -49,7 +58,7 @@ const Auth = () => {
           backgroundColor: "#8b0000",
         }}
       >
-        <GridMotion items={shuffledImageUrls} gradientColor="transparent" />
+        <GridMotion items={imageUrls} gradientColor="transparent" />
       </div>
 
       {/* Botões de Autenticação */}
