@@ -50,29 +50,67 @@ export default function Home() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showInstructions, setShowInstructions] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
   const supabase = useSupabase();
 
-  useEffect(() => {
-    const fetchMovies = async () => {
-      const { data, error } = await supabase.from("movies").select("*");
-      if (error) {
-        console.error("Error fetching movies:", error);
-      } else {
-        setMovies(data);
-      }
-    };
+  const MOVIES_PER_PAGE = 20;
 
-    fetchMovies();
-  }, [supabase]);
+  const fetchMovies = async (pageToFetch: number) => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+    const from = pageToFetch * MOVIES_PER_PAGE;
+    const to = from + MOVIES_PER_PAGE - 1;
+
+    const { data, error } = await supabase
+      .from("movies")
+      .select("*")
+      .range(from, to);
+
+    if (error) {
+      console.error("Error fetching movies:", error);
+    } else if (data) {
+      setMovies((prev) => [...prev, ...data]);
+      if (data.length < MOVIES_PER_PAGE) {
+        setHasMore(false);
+      }
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (supabase) {
+      fetchMovies(page);
+    }
+  }, [page, supabase]);
+
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  };
 
   const filteredMovies = movies.filter((movie) =>
     movie.series_title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Adiciona o card de "Load More" ao final se houver mais filmes
   const galleryItems = filteredMovies.map((movie) => ({
     image: movie.poster_url,
     text: movie.series_title,
+    isLoadMore: false,
   }));
+
+  // Adiciona o card especial de carregar mais apenas se não houver busca ativa e houver mais filmes
+  if (!searchQuery && hasMore) {
+    galleryItems.push({
+      image: "load-more-placeholder",
+      text: loading ? "Loading..." : "Load More",
+      isLoadMore: true,
+    });
+  }
 
   const handleSettingsClick = () => {
     console.log("Settings clicked!");
@@ -148,6 +186,8 @@ export default function Home() {
           borderRadius={0.05}
           scrollSpeed={2}
           scrollEase={0.05}
+          onLoadMore={handleLoadMore}
+          isLoading={loading}
         />
       </main>
 
