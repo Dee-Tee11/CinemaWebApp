@@ -51,44 +51,63 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showInstructions, setShowInstructions] = useState(true);
   const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [totalMovies, setTotalMovies] = useState(0);
+  const [loading, setLoading] = useState(true);
   const supabase = useSupabase();
 
   const MOVIES_PER_PAGE = 20;
 
-  const fetchMovies = async (pageToFetch: number) => {
-    if (loading || !hasMore) return;
+  useEffect(() => {
+    const getTotalCount = async () => {
+      if (!supabase) return;
+      const { count, error } = await supabase
+        .from('movies')
+        .select('*', { count: 'exact', head: true });
 
-    setLoading(true);
-    const from = pageToFetch * MOVIES_PER_PAGE;
-    const to = from + MOVIES_PER_PAGE - 1;
-
-    const { data, error } = await supabase
-      .from("movies")
-      .select("*")
-      .range(from, to);
-
-    if (error) {
-      console.error("Error fetching movies:", error);
-    } else if (data) {
-      setMovies((prev) => [...prev, ...data]);
-      if (data.length < MOVIES_PER_PAGE) {
-        setHasMore(false);
+      if (error) {
+        console.error('Error fetching movie count:', error);
+      } else {
+        setTotalMovies(count || 0);
       }
-    }
-    setLoading(false);
-  };
+    };
+    getTotalCount();
+  }, [supabase]);
 
   useEffect(() => {
-    if (supabase) {
+    const fetchMovies = async (pageToFetch: number) => {
+      if (!supabase) return;
+      setLoading(true);
+      const from = pageToFetch * MOVIES_PER_PAGE;
+      const to = from + MOVIES_PER_PAGE - 1;
+
+      const { data, error } = await supabase
+        .from("movies")
+        .select("*")
+        .range(from, to);
+
+      if (error) {
+        console.error("Error fetching movies:", error);
+      } else if (data) {
+        setMovies(data);
+      }
+      setLoading(false);
+    };
+
+    if (totalMovies > 0) {
       fetchMovies(page);
     }
-  }, [page, supabase]);
+  }, [page, supabase, totalMovies]);
 
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
+  const handleNextPage = () => {
+    const lastPage = Math.ceil(totalMovies / MOVIES_PER_PAGE) - 1;
+    if (!loading && page < lastPage) {
       setPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (!loading && page > 0) {
+      setPage((prev) => prev - 1);
     }
   };
 
@@ -96,19 +115,39 @@ export default function Home() {
     movie.series_title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Adiciona o card de "Load More" ao final se houver mais filmes
-  const galleryItems = filteredMovies.map((movie) => ({
-    image: movie.poster_url,
-    text: movie.series_title,
-    isLoadMore: false,
-  }));
+  const galleryItems = [];
 
-  // Adiciona o card especial de carregar mais apenas se não houver busca ativa e houver mais filmes
-  if (!searchQuery && hasMore) {
-    galleryItems.push({
-      image: "load-more-placeholder",
-      text: loading ? "Loading..." : "Load More",
-      isLoadMore: true,
+  if (!searchQuery) {
+    if (page > 0) {
+      galleryItems.push({
+        image: "prev-placeholder",
+        text: "Previous",
+        cardType: 'prev' as const,
+      });
+    }
+
+    filteredMovies.forEach(movie => {
+      galleryItems.push({
+        image: movie.poster_url,
+        text: movie.series_title,
+      });
+    });
+
+    const lastPage = Math.ceil(totalMovies / MOVIES_PER_PAGE) - 1;
+    if (page < lastPage) {
+      galleryItems.push({
+        image: "next-placeholder",
+        text: "Next",
+        cardType: 'next' as const,
+      });
+    }
+  } else {
+    // When searching, just show the filtered movies without pagination cards
+    filteredMovies.forEach(movie => {
+      galleryItems.push({
+        image: movie.poster_url,
+        text: movie.series_title,
+      });
     });
   }
 
@@ -186,7 +225,8 @@ export default function Home() {
           borderRadius={0.05}
           scrollSpeed={2}
           scrollEase={0.05}
-          onLoadMore={handleLoadMore}
+          onNext={handleNextPage}
+          onPrev={handlePrevPage}
           isLoading={loading}
         />
       </main>

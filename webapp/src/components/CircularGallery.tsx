@@ -70,8 +70,9 @@ function createTextTexture(
   return { texture, width: canvas.width, height: canvas.height };
 }
 
-function createLoadMoreTexture(
+function createSpecialCardTexture(
   gl: GL,
+  type: 'loadMore' | 'next' | 'prev',
   isLoading: boolean
 ): { texture: Texture; width: number; height: number } {
   const canvas = document.createElement("canvas");
@@ -103,6 +104,22 @@ function createLoadMoreTexture(
     context.beginPath();
     context.arc(centerX, centerY, radius, 0, Math.PI * 1.5);
     context.stroke();
+  } else if (type === 'next') {
+    // Seta para a direita
+    const size = 50;
+    context.beginPath();
+    context.moveTo(centerX - size / 2, centerY - size);
+    context.lineTo(centerX + size / 2, centerY);
+    context.lineTo(centerX - size / 2, centerY + size);
+    context.stroke();
+  } else if (type === 'prev') {
+    // Seta para a esquerda
+    const size = 50;
+    context.beginPath();
+    context.moveTo(centerX + size / 2, centerY - size);
+    context.lineTo(centerX - size / 2, centerY);
+    context.lineTo(centerX + size / 2, centerY + size);
+    context.stroke();
   } else {
     // Símbolo de "+"
     const size = 60;
@@ -121,8 +138,12 @@ function createLoadMoreTexture(
   context.font = "bold 32px sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
+  let text = "Load More";
+  if (type === 'next') text = "Next";
+  if (type === 'prev') text = "Previous";
+
   context.fillText(
-    isLoading ? "Loading..." : "Load More",
+    isLoading ? "Loading..." : text,
     centerX,
     centerY + 100
   );
@@ -237,8 +258,10 @@ interface MediaProps {
   textColor: string;
   borderRadius?: number;
   font?: string;
-  isLoadMore?: boolean;
+  cardType?: 'loadMore' | 'next' | 'prev';
   onLoadMoreClick?: () => void;
+  onNextClick?: () => void;
+  onPrevClick?: () => void;
   isLoading?: boolean;
 }
 
@@ -258,8 +281,10 @@ class Media {
   textColor: string;
   borderRadius: number;
   font?: string;
-  isLoadMore: boolean;
+  cardType?: 'loadMore' | 'next' | 'prev';
   onLoadMoreClick?: () => void;
+  onNextClick?: () => void;
+  onPrevClick?: () => void;
   isLoading: boolean;
   program!: Program;
   plane!: Mesh;
@@ -288,8 +313,10 @@ class Media {
     textColor,
     borderRadius = 0,
     font,
-    isLoadMore = false,
+    cardType,
     onLoadMoreClick,
+    onNextClick,
+    onPrevClick,
     isLoading = false,
   }: MediaProps) {
     this.geometry = geometry;
@@ -306,12 +333,14 @@ class Media {
     this.textColor = textColor;
     this.borderRadius = borderRadius;
     this.font = font;
-    this.isLoadMore = isLoadMore;
+    this.cardType = cardType;
     this.onLoadMoreClick = onLoadMoreClick;
+    this.onNextClick = onNextClick;
+    this.onPrevClick = onPrevClick;
     this.isLoading = isLoading;
     this.createShader();
     this.createMesh();
-    if (!isLoadMore) {
+    if (!cardType) {
       this.createTitle();
     }
     this.onResize();
@@ -384,12 +413,13 @@ class Media {
       transparent: true,
     });
 
-    if (this.isLoadMore) {
-      const { texture: loadMoreTexture } = createLoadMoreTexture(
+    if (this.cardType) {
+      const { texture: specialCardTexture } = createSpecialCardTexture(
         this.gl,
+        this.cardType,
         this.isLoading
       );
-      texture.image = loadMoreTexture.image;
+      texture.image = specialCardTexture.image;
       this.program.uniforms.uImageSizes.value = [400, 600];
     } else {
       const img = new Image();
@@ -424,10 +454,10 @@ class Media {
     });
   }
 
-  updateLoadMoreTexture(isLoading: boolean) {
-    if (!this.isLoadMore) return;
+  updateSpecialCardTexture(isLoading: boolean) {
+    if (!this.cardType) return;
     this.isLoading = isLoading;
-    const { texture } = createLoadMoreTexture(this.gl, isLoading);
+    const { texture } = createSpecialCardTexture(this.gl, this.cardType, isLoading);
     this.program.uniforms.tMap.value.image = texture.image;
   }
 
@@ -436,7 +466,7 @@ class Media {
     clientY: number,
     canvas: HTMLCanvasElement
   ): boolean {
-    if (!this.isLoadMore) return false;
+    if (!this.cardType) return false;
 
     const rect = canvas.getBoundingClientRect();
     const x = ((clientX - rect.left) / rect.width) * 2 - 1;
@@ -457,9 +487,19 @@ class Media {
       worldY >= planeY - halfHeight &&
       worldY <= planeY + halfHeight;
 
-    if (isInside && this.onLoadMoreClick) {
-      this.onLoadMoreClick();
-      return true;
+    if (isInside) {
+      if (this.cardType === 'loadMore' && this.onLoadMoreClick) {
+        this.onLoadMoreClick();
+        return true;
+      }
+      if (this.cardType === 'next' && this.onNextClick) {
+        this.onNextClick();
+        return true;
+      }
+      if (this.cardType === 'prev' && this.onPrevClick) {
+        this.onPrevClick();
+        return true;
+      }
     }
 
     return false;
@@ -541,7 +581,7 @@ class Media {
 }
 
 interface AppConfig {
-  items?: { image: string; text: string; isLoadMore?: boolean }[];
+  items?: { image: string; text: string; cardType?: 'loadMore' | 'next' | 'prev' }[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;
@@ -549,6 +589,8 @@ interface AppConfig {
   scrollSpeed?: number;
   scrollEase?: number;
   onLoadMore?: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
   isLoading?: boolean;
 }
 
@@ -569,11 +611,13 @@ class App {
   scene!: Transform;
   planeGeometry!: Plane;
   medias: Media[] = [];
-  mediasImages: { image: string; text: string; isLoadMore?: boolean }[] = [];
+  mediasImages: { image: string; text: string; cardType?: 'loadMore' | 'next' | 'prev' }[] = [];
   screen!: { width: number; height: number };
   viewport!: { width: number; height: number };
   raf: number = 0;
   onLoadMore?: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
   isLoading: boolean = false;
 
   boundOnResize!: () => void;
@@ -597,6 +641,8 @@ class App {
       scrollSpeed = 2,
       scrollEase = 0.05,
       onLoadMore,
+      onNext,
+      onPrev,
       isLoading = false,
     }: AppConfig
   ) {
@@ -606,6 +652,8 @@ class App {
     this.scroll = { ease: scrollEase, current: 0, target: 0, last: 0 };
     this.onCheckDebounce = debounce(this.onCheck.bind(this), 200);
     this.onLoadMore = onLoadMore;
+    this.onNext = onNext;
+    this.onPrev = onPrev;
     this.isLoading = isLoading;
     this.createRenderer();
     this.createCamera();
@@ -646,7 +694,7 @@ class App {
   }
 
   createMedias(
-    items: { image: string; text: string; isLoadMore?: boolean }[] | undefined,
+    items: { image: string; text: string; cardType?: 'loadMore' | 'next' | 'prev' }[] | undefined,
     bend: number = 1,
     textColor: string,
     borderRadius: number,
@@ -680,8 +728,10 @@ class App {
         textColor,
         borderRadius,
         font,
-        isLoadMore: data.isLoadMore,
+        cardType: data.cardType,
         onLoadMoreClick: this.onLoadMore,
+        onNextClick: this.onNext,
+        onPrevClick: this.onPrev,
         isLoading: this.isLoading,
       });
     });
@@ -690,8 +740,8 @@ class App {
   updateLoadingState(isLoading: boolean) {
     this.isLoading = isLoading;
     this.medias.forEach((media) => {
-      if (media.isLoadMore) {
-        media.updateLoadMoreTexture(isLoading);
+      if (media.cardType) {
+        media.updateSpecialCardTexture(isLoading);
       }
     });
   }
@@ -820,7 +870,7 @@ class App {
 }
 
 interface CircularGalleryProps {
-  items?: { image: string; text: string; isLoadMore?: boolean }[];
+  items?: { image: string; text: string; cardType?: 'loadMore' | 'next' | 'prev' }[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;
@@ -828,6 +878,8 @@ interface CircularGalleryProps {
   scrollSpeed?: number;
   scrollEase?: number;
   onLoadMore?: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
   isLoading?: boolean;
 }
 
@@ -840,6 +892,8 @@ export default function CircularGallery({
   scrollSpeed = 2,
   scrollEase = 0.05,
   onLoadMore,
+  onNext,
+  onPrev,
   isLoading = false,
 }: CircularGalleryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -856,6 +910,8 @@ export default function CircularGallery({
       scrollSpeed,
       scrollEase,
       onLoadMore,
+      onNext,
+      onPrev,
       isLoading,
     });
     appRef.current = app;
@@ -872,6 +928,8 @@ export default function CircularGallery({
     scrollSpeed,
     scrollEase,
     onLoadMore,
+    onNext,
+    onPrev,
   ]);
 
   useEffect(() => {
