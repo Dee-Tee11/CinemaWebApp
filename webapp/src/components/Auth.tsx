@@ -36,7 +36,7 @@ const Auth = () => {
         <GridMotion items={imageUrls} gradientColor="transparent" />
       </div>
 
-      {/* Botões de Autenticação */}
+      {/* Authentication Buttons */}
       <div className={styles.uiContainer}>
         <div className={styles.buttonsWrapper}>
           <SignedOut>

@@ -1,8 +1,8 @@
 /**
- * Container principal da UI.
- * Ocupa o ecrã todo (width/height a 100%) e usa Flexbox
- * para centrar o seu conteúdo (o .buttonsWrapper) na vertical e horizontal.
- * O z-index garante que ele fica por cima do fundo animado.
+ * Main UI container.
+ * Occupies the entire screen (100% width/height) and uses Flexbox
+ * to center its content (the .buttonsWrapper) vertically and horizontally.
+ * The z-index ensures it stays on top of the animated background.
  */
 .uiContainer {
   display: flex;
@@ -15,9 +15,9 @@
 }
 
 /**
- * Um simples wrapper para os botões de autenticação.
- * Usa Flexbox para os alinhar e a propriedade 'gap'
- * para criar um espaçamento consistente entre eles.
+ * A simple wrapper for the authentication buttons.
+ * Uses Flexbox to align them and the 'gap' property
+ * to create consistent spacing between them.
  */
 .buttonsWrapper {
   display: flex;
@@ -28,25 +28,25 @@
 }
 
 /**
- * Estilo glassmorphism verdadeiro - efeito de vidro transparente
+ * True glassmorphism style - transparent glass effect
  */
 .button {
-  /* Fundo mais transparente para efeito de vidro real */
+  /* More transparent background for a real glass effect */
   background: rgba(255, 255, 255, 0.18);
 
-  /* Desfoque reduzido para mais clareza */
+  /* Reduced blur for more clarity */
   backdrop-filter: blur(6px) saturate(150%);
   -webkit-backdrop-filter: blur(6px) saturate(150%);
 
-  /* Borda mais brilhante */
+  /* Brighter border */
   border: 1.5px solid rgba(255, 255, 255, 0.4);
 
-  /* Sombras para brilho e profundidade */
+  /* Shadows for brightness and depth */
   box-shadow: 0 8px 32px rgba(255, 255, 255, 0.1), 0 4px 16px rgba(0, 0, 0, 0.1),
     inset 0 1px 2px rgba(255, 255, 255, 0.5),
     inset 0 -1px 2px rgba(0, 0, 0, 0.1);
 
-  /* Texto elegante e legível */
+  /* Elegant and readable text */
   color: rgba(255, 255, 255, 1);
   font-size: 16px;
   font-weight: 600;
@@ -54,25 +54,25 @@
   letter-spacing: 0.5px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 
-  /* Forma moderna e arredondada */
+  /* Modern and rounded shape */
   padding: 18px 48px;
   border-radius: 50px;
   min-width: 180px;
 
-  /* Transições suaves */
+  /* Smooth transitions */
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Remover outline */
+  /* Remove outline */
   outline: none;
 
-  /* Para efeitos de pseudo-elementos */
+  /* For pseudo-element effects */
   position: relative;
   overflow: hidden;
 }
 
 /**
- * Brilho superior para simular reflexo de vidro
+ * Top glow to simulate glass reflection
  */
 .button::before {
   content: "";
@@ -92,7 +92,7 @@
 }
 
 /**
- * Efeito de brilho ao passar o mouse
+ * Glow effect on hover
  */
 .button::after {
   content: "";
@@ -114,7 +114,7 @@
 }
 
 /**
- * Estado hover - vidro mais claro
+ * Hover state - lighter glass
  */
 .button:hover {
   background: rgba(255, 255, 255, 0.28);
@@ -126,7 +126,7 @@
 }
 
 /**
- * Ativa o brilho no hover
+ * Activates the glow on hover
  */
 .button:hover::after {
   opacity: 1;
@@ -134,7 +134,7 @@
 }
 
 /**
- * Estado active (pressionado)
+ * Active state (pressed)
  */
 .button:active {
   transform: translateY(0) scale(0.98);
@@ -144,7 +144,7 @@
 }
 
 /**
- * Estado focus para acessibilidade
+ * Focus state for accessibility
  */
 .button:focus {
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15),
@@ -152,7 +152,7 @@
 }
 
 /**
- * Variante para botão primário (Sign Up)
+ * Variant for primary button (Sign Up)
  */
 .button.primary {
   background: rgba(255, 255, 255, 0.22);
@@ -165,7 +165,7 @@
 }
 
 /**
- * Variante para botão secundário (Sign In)
+ * Variant for secondary button (Sign In)
  */
 .button.secondary {
   background: rgba(255, 255, 255, 0.15);
@@ -178,7 +178,7 @@
 }
 
 /**
- * Animação de entrada suave
+ * Smooth entrance animation
  */
 @keyframes fadeInUp {
   from {

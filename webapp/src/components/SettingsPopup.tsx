@@ -61,7 +61,7 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({ isOpen, onClose }) => {
             fontWeight: '700',
             margin: 0
           }}>
-            Configurações
+            Settings
           </h2>
           <button
             onClick={onClose}

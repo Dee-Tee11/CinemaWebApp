@@ -39,15 +39,15 @@ export default function ProfileModal({
 
   if (!isOpen) return null;
 
-  const userName = user?.fullName || user?.username || 'Usuário';
+  const userName = user?.fullName || user?.username || 'User';
   const userEmail = user?.primaryEmailAddress?.emailAddress || '';
 
   const handleAcceptFriend = (id: number) => {
-    console.log(`Aceitou pedido de amizade do ID ${id}`);
+    console.log(`Accepted friend request from ID ${id}`);
   };
 
   const handleRejectFriend = (id: number) => {
-    console.log(`Recusou pedido de amizade do ID ${id}`);
+    console.log(`Rejected friend request from ID ${id}`);
   };
 
   return (
@@ -68,13 +68,13 @@ export default function ProfileModal({
             </button>
           )}
           <h2 className={`header-title ${showFriends || showFriendRequests ? 'centered' : ''}`}>
-            {showFriendRequests ? 'Pedidos de Amizade' : showFriends ? 'Meus Amigos' : 'Meu Perfil'}
+            {showFriendRequests ? 'Friend Requests' : showFriends ? 'My Friends' : 'My Profile'}
           </h2>
           <div className="header-buttons">
             {/* Friend Requests Icon with Badge */}
             <button
               className="icon-button friend-requests"
-              aria-label="Ver pedidos de amizade"
+              aria-label="View friend requests"
               onClick={() => {
                 setShowFriends(false);
                 setShowFriendRequests(!showFriendRequests);
@@ -114,7 +114,7 @@ export default function ProfileModal({
               }}
             >
               <User size={18} color="#991b1b" />
-              Amigos: {friendCount}
+              Friends: {friendCount}
             </button>
           </div>
 
@@ -145,7 +145,7 @@ export default function ProfileModal({
                   ))}
                 </ul>
               ) : (
-                <p className="no-items">Nenhum pedido de amizade pendente.</p>
+                <p className="no-items">No pending friend requests.</p>
               )}
             </div>
           ) : showFriends ? (
@@ -160,7 +160,7 @@ export default function ProfileModal({
                   ))}
                 </ul>
               ) : (
-                <p className="no-items">Nenhum amigo ainda.</p>
+                <p className="no-items">No friends yet.</p>
               )}
             </div>
           ) : (
@@ -172,7 +172,7 @@ export default function ProfileModal({
                   <Heart size={20} color="#ef4444" fill="#ef4444" />
                 </div>
                 <div className="stat-value">{likedMovies}</div>
-                <div className="stat-label">Gostei</div>
+                <div className="stat-label">Liked</div>
               </div>
               {/* Favorite Movies */}
               <div className="stat-item favorite">
@@ -180,7 +180,7 @@ export default function ProfileModal({
                   <Star size={20} color="#eab308" fill="#eab308" />
                 </div>
                 <div className="stat-value">{favoriteMovies}</div>
-                <div className="stat-label">Favoritos</div>
+                <div className="stat-label">Favorites</div>
               </div>
               {/* Watched Movies */}
               <div className="stat-item watched">
@@ -188,7 +188,7 @@ export default function ProfileModal({
                   <Eye size={20} color="#3b82f6" />
                 </div>
                 <div className="stat-value">{watchedMovies}</div>
-                <div className="stat-label">Vistos</div>
+                <div className="stat-label">Watched</div>
               </div>
             </div>
           )}

@@ -17,7 +17,7 @@ const movies: Movie[] = [
     year: "2010",
     rating: 8.8,
     image: "https://image.tmdb.org/t/p/w500/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg",
-    genre: "Ficção Científica",
+    genre: "Sci-Fi",
   },
   {
     id: 2,
@@ -25,7 +25,7 @@ const movies: Movie[] = [
     year: "2008",
     rating: 9.0,
     image: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
-    genre: "Ação",
+    genre: "Action",
   },
   {
     id: 3,
@@ -33,7 +33,7 @@ const movies: Movie[] = [
     year: "2014",
     rating: 8.6,
     image: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-    genre: "Ficção Científica",
+    genre: "Sci-Fi",
   },
   {
     id: 4,
@@ -49,7 +49,7 @@ const movies: Movie[] = [
     year: "1999",
     rating: 8.7,
     image: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-    genre: "Ficção Científica",
+    genre: "Sci-Fi",
   },
   {
     id: 6,
