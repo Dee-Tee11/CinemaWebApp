@@ -10,56 +10,7 @@ interface Movie {
   genre: string;
 }
 
-const movies: Movie[] = [
-  {
-    id: 1,
-    title: "Inception",
-    year: "2010",
-    rating: 8.8,
-    image: "https://image.tmdb.org/t/p/w500/ljsZTbVsrQSqZgWeep2B1QiDKuh.jpg",
-    genre: "Sci-Fi",
-  },
-  {
-    id: 2,
-    title: "The Dark Knight",
-    year: "2008",
-    rating: 9.0,
-    image: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
-    genre: "Action",
-  },
-  {
-    id: 3,
-    title: "Interstellar",
-    year: "2014",
-    rating: 8.6,
-    image: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-    genre: "Sci-Fi",
-  },
-  {
-    id: 4,
-    title: "Pulp Fiction",
-    year: "1994",
-    rating: 8.9,
-    image: "https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg",
-    genre: "Crime",
-  },
-  {
-    id: 5,
-    title: "The Matrix",
-    year: "1999",
-    rating: 8.7,
-    image: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-    genre: "Sci-Fi",
-  },
-  {
-    id: 6,
-    title: "Goodfellas",
-    year: "1990",
-    rating: 8.7,
-    image: "https://image.tmdb.org/t/p/w500/aKuFiU82s5ISJpGZp7YkIr3kCUd.jpg",
-    genre: "Crime",
-  },
-];
+const movies: Movie[] = [];
 
 function lerp(p1: number, p2: number, t: number): number {
   return p1 + (p2 - p1) * t;
