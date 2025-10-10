@@ -1,0 +1,228 @@
+/* Navbar Styles */
+.navbar {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar.default {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.navbar.scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.navbar.expanded {
+  width: 500px;
+}
+
+/* Tabs Container */
+.tabsContainer {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+.tabsContainer.hidden {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+  width: 0px;
+}
+
+.tabsContainer.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  width: auto;
+}
+
+/* Tab Buttons */
+.tabButton {
+  font-size: 1rem;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  position: relative;
+  background: transparent;
+}
+
+.tabButton.active.scrolled {
+  font-weight: 600;
+  color: #991b1b;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.tabButton.active.default {
+  font-weight: 600;
+  color: #1a1a1a;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tabButton.inactive.scrolled {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.tabButton.inactive.default {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.tabButton.inactive.scrolled:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tabButton.inactive.default:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Tab Indicator */
+.tabIndicator {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 3px;
+  background-color: #991b1b;
+  border-radius: 2px;
+}
+
+/* Search Container */
+.searchContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.searchContainer.expanded {
+  flex: 1;
+  opacity: 1;
+  width: auto;
+}
+
+.searchContainer.collapsed {
+  flex: 0;
+  opacity: 0;
+  width: 0px;
+}
+
+/* Search Input */
+.searchInput {
+  font-size: 0.95rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  flex: 1;
+  outline: none;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.searchInput.animate {
+  animation: fadeInInput 0.3s ease forwards 0.15s;
+}
+
+.searchInput.scrolled {
+  color: #1a1a1a;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.searchInput.default {
+  color: #991b1b;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Close Button */
+.closeButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a1a;
+  opacity: 0;
+}
+
+.closeButton.animate {
+  animation: fadeInInput 0.3s ease forwards 0.15s;
+}
+
+.closeButton:hover {
+  color: #dc2626;
+}
+
+/* Search Icon Button */
+.searchIconButton {
+  border-radius: 50%;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.searchIconButton.scrolled {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+}
+
+.searchIconButton.default {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #991b1b;
+}
+
+.searchIconButton.scrolled:hover {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+.searchIconButton.default:hover {
+  background: rgba(255, 255, 255, 0.35);
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+/* Animations */
+@keyframes fadeInInput {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
