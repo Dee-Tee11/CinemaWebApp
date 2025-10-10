@@ -5,22 +5,9 @@ interface CategoryFiltersProps {
   setSelectedCategory: (category: string | undefined) => void;
 }
 
-const categories = ['Todas', 'Action', 'Sci-Fi', 'Adventure', 'Crime', 'Drama', 'Comedy', 'Thriller'];
+const categories = ['All', 'Action', 'Sci-Fi', 'Adventure', 'Crime', 'Drama', 'Comedy', 'Thriller'];
 
-const categoryTranslations: Record<string, string> = {
-  'todas': 'Todas',
-  'action': 'Ação',
-  'adventure': 'Aventura',
-  'comedy': 'Comédia',
-  'sci-fi': 'Ficção Científica',
-  'drama': 'Drama',
-  'thriller': 'Suspense',
-  'crime': 'Crime'
-};
 
-const translateCategory = (category: string): string => {
-  return categoryTranslations[category.toLowerCase()] || category;
-};
 
 export default function CategoryFilters({ selectedCategory, setSelectedCategory }: CategoryFiltersProps) {
   return (
@@ -32,12 +19,12 @@ export default function CategoryFilters({ selectedCategory, setSelectedCategory 
       alignItems: 'center'
     }}>
       {categories.map((category) => {
-        const isSelected = selectedCategory === category || (category === 'Todas' && !selectedCategory);
+        const isSelected = selectedCategory === category || (category === 'All' && !selectedCategory);
         
         return (
           <button
             key={category}
-            onClick={() => setSelectedCategory(category === 'Todas' ? undefined : category)}
+            onClick={() => setSelectedCategory(category === 'All' ? undefined : category)}
             style={{
               padding: '0.5rem 1rem',
               borderRadius: '20px',
@@ -64,7 +51,7 @@ export default function CategoryFilters({ selectedCategory, setSelectedCategory 
               }
             }}
           >
-            {translateCategory(category)}
+            {category}
           </button>
         );
       })}
