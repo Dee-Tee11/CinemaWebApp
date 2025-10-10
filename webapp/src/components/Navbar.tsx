@@ -1,42 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
-
-// Logo Component
-function Logo({ width = 32, height = 32, className = "" }) {
-  return (
-    <svg
-      width={width}
-      height={height}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <path
-        d="M12 2L2 7L12 12L22 7L12 2Z"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2 17L12 22L22 17"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2 12L12 17L22 12"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+import Logo from "./Logo";
 
 // Navbar Component
 interface NavbarProps {
@@ -45,7 +9,11 @@ interface NavbarProps {
   onSearch?: (query: string) => void;
 }
 
-export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: NavbarProps) {
+export default function Navbar({
+  onHomeClick,
+  onFriendsClick,
+  onSearch,
+}: NavbarProps) {
   const [activeTab, setActiveTab] = useState("forYou");
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,8 +24,8 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
       setIsScrolled(window.scrollY > 50);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleTabClick = (tab) => {
@@ -84,7 +52,7 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSearchSubmit();
     }
   };
@@ -101,37 +69,26 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
         alignItems: "center",
         gap: "1rem",
         padding: "0.75rem 1.5rem",
-        background: isScrolled 
-          ? "rgba(255, 255, 255, 0.95)" 
+        background: isScrolled
+          ? "rgba(255, 255, 255, 0.95)"
           : "rgba(255, 255, 255, 0.15)",
         backdropFilter: "blur(20px) saturate(180%)",
         WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        border: isScrolled 
-          ? "1px solid rgba(0, 0, 0, 0.1)" 
+        border: isScrolled
+          ? "1px solid rgba(0, 0, 0, 0.1)"
           : "1px solid rgba(255, 255, 255, 0.3)",
         borderRadius: "50px",
-        boxShadow: isScrolled 
-          ? "0 8px 32px rgba(0, 0, 0, 0.15)" 
+        boxShadow: isScrolled
+          ? "0 8px 32px rgba(0, 0, 0, 0.15)"
           : "0 8px 32px rgba(0, 0, 0, 0.1)",
         transition: "all 0.3s ease",
         minWidth: searchExpanded ? "500px" : "auto",
       }}
     >
       {/* Logo */}
-      <div
-        style={{
-          backgroundColor: "#991b1b",
-          borderRadius: "50%",
-          padding: "0.5rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Logo width={28} height={28} className="text-white" />
-      </div>
+      <Logo width={28} height={28} color="white" />
 
-      {/* Tabs - só aparecem quando search não está expandida */}
+      {/* Tabs - only visible when search is not expanded */}
       {!searchExpanded && (
         <>
           <button
@@ -139,12 +96,18 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
             style={{
               fontSize: "1rem",
               fontWeight: activeTab === "forYou" ? "600" : "500",
-              color: isScrolled 
-                ? (activeTab === "forYou" ? "#991b1b" : "#1a1a1a")
-                : (activeTab === "forYou" ? "#1a1a1a" : "#1a1a1a"),
+              color: isScrolled
+                ? activeTab === "forYou"
+                  ? "#991b1b"
+                  : "#1a1a1a"
+                : activeTab === "forYou"
+                ? "#1a1a1a"
+                : "#1a1a1a",
               background:
                 activeTab === "forYou"
-                  ? (isScrolled ? "rgba(220, 38, 38, 0.1)" : "rgba(255, 255, 255, 0.2)")
+                  ? isScrolled
+                    ? "rgba(220, 38, 38, 0.1)"
+                    : "rgba(255, 255, 255, 0.2)"
                   : "transparent",
               border: "none",
               padding: "0.5rem 1.5rem",
@@ -156,8 +119,8 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
             }}
             onMouseEnter={(e) => {
               if (activeTab !== "forYou") {
-                e.currentTarget.style.background = isScrolled 
-                  ? "rgba(255, 255, 255, 0.3)" 
+                e.currentTarget.style.background = isScrolled
+                  ? "rgba(255, 255, 255, 0.3)"
                   : "rgba(255, 255, 255, 0.2)";
               }
             }}
@@ -189,12 +152,18 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
             style={{
               fontSize: "1rem",
               fontWeight: activeTab === "friends" ? "600" : "500",
-              color: isScrolled 
-                ? (activeTab === "friends" ? "#991b1b" : "#1a1a1a")
-                : (activeTab === "friends" ? "#1a1a1a" : "#1a1a1a"),
+              color: isScrolled
+                ? activeTab === "friends"
+                  ? "#991b1b"
+                  : "#1a1a1a"
+                : activeTab === "friends"
+                ? "#1a1a1a"
+                : "#1a1a1a",
               background:
                 activeTab === "friends"
-                  ? (isScrolled ? "rgba(220, 38, 38, 0.1)" : "rgba(255, 255, 255, 0.2)")
+                  ? isScrolled
+                    ? "rgba(220, 38, 38, 0.1)"
+                    : "rgba(255, 255, 255, 0.2)"
                   : "transparent",
               border: "none",
               padding: "0.5rem 1.5rem",
@@ -206,8 +175,8 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
             }}
             onMouseEnter={(e) => {
               if (activeTab !== "friends") {
-                e.currentTarget.style.background = isScrolled 
-                  ? "rgba(255, 255, 255, 0.3)" 
+                e.currentTarget.style.background = isScrolled
+                  ? "rgba(255, 255, 255, 0.3)"
                   : "rgba(255, 255, 255, 0.2)";
               }
             }}
@@ -217,7 +186,7 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
               }
             }}
           >
-            Sugestões de Amigos
+            Friends
             {activeTab === "friends" && (
               <div
                 style={{
@@ -236,7 +205,7 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
         </>
       )}
 
-      {/* Barra de Pesquisa */}
+      {/* Search Bar */}
       {searchExpanded ? (
         <div
           style={{
@@ -248,7 +217,7 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
         >
           <input
             type="text"
-            placeholder="Pesquisar filmes..."
+            placeholder="Search movies..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -256,11 +225,11 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
             style={{
               fontSize: "0.95rem",
               color: isScrolled ? "#1a1a1a" : "#991b1b",
-              background: isScrolled 
-                ? "rgba(0, 0, 0, 0.05)" 
+              background: isScrolled
+                ? "rgba(0, 0, 0, 0.05)"
                 : "rgba(255, 255, 255, 0.2)",
-              border: isScrolled 
-                ? "1px solid rgba(0, 0, 0, 0.1)" 
+              border: isScrolled
+                ? "1px solid rgba(0, 0, 0, 0.1)"
                 : "1px solid rgba(255, 255, 255, 0.3)",
               padding: "0.5rem 1.25rem",
               borderRadius: "50px",
@@ -296,11 +265,11 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
         <button
           onClick={handleSearchIconClick}
           style={{
-            background: isScrolled 
-              ? "rgba(0, 0, 0, 0.05)" 
+            background: isScrolled
+              ? "rgba(0, 0, 0, 0.05)"
               : "rgba(255, 255, 255, 0.2)",
-            border: isScrolled 
-              ? "1px solid rgba(0, 0, 0, 0.1)" 
+            border: isScrolled
+              ? "1px solid rgba(0, 0, 0, 0.1)"
               : "1px solid rgba(255, 255, 255, 0.3)",
             borderRadius: "50%",
             padding: "0.5rem",
@@ -312,15 +281,15 @@ export default function Navbar({ onHomeClick, onFriendsClick, onSearch }: Navbar
             transition: "all 0.3s ease",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = isScrolled 
-              ? "rgba(220, 38, 38, 0.1)" 
+            e.currentTarget.style.background = isScrolled
+              ? "rgba(220, 38, 38, 0.1)"
               : "rgba(255, 255, 255, 0.35)";
             e.currentTarget.style.color = "#dc2626";
             e.currentTarget.style.transform = "scale(1.1)";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = isScrolled 
-              ? "rgba(0, 0, 0, 0.05)" 
+            e.currentTarget.style.background = isScrolled
+              ? "rgba(0, 0, 0, 0.05)"
               : "rgba(255, 255, 255, 0.2)";
             e.currentTarget.style.color = isScrolled ? "#1a1a1a" : "#ffffff";
             e.currentTarget.style.transform = "scale(1)";
