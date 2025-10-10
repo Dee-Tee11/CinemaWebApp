@@ -174,7 +174,7 @@ const styles = {
     position: 'absolute' as const,
     right: '3px',
     top: '50%',
-    transform: 'translateY(-50%)', // Corrigido para centralizar verticalmente
+    transform: 'translateY(-50%)', // Corrected to center vertically
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '5px'
@@ -398,7 +398,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              Adicionar Favorito
+              Add to Favorites
             </button>
             <button
               onClick={(e) => {
@@ -513,7 +513,7 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(({
 
         <div style={styles.cardInfoSection}>
           <div style={styles.cardCategory}>
-            {item.category || 'Uncategorized'} {/* Garante fallback */}
+            {item.category || 'Uncategorized'} {/* Ensures fallback */}
           </div>
           <div style={styles.cardTitle}>
             {item.title}
@@ -565,7 +565,7 @@ const Masonry: React.FC<MasonryProps> = ({
 
   const toggleWatched = useCallback(async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const userId = 'currentUserId'; // Substitua por um valor dinâmico (ex.: do estado do usuário logado)
+    const userId = 'currentUserId'; // Replace with a dynamic value (e.g., from the logged-in user's state)
     const movieId = id;
 
     setWatchedMovies(prev => {
@@ -573,12 +573,12 @@ const Masonry: React.FC<MasonryProps> = ({
       const newStatus = newSet.has(id) ? 'not_watched' : 'watched';
       newSet.has(id) ? newSet.delete(id) : newSet.add(id);
 
-      // Atualizar o backend
+      // Update the backend
       fetch('/api/user-movies/update-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, movieId, status: newStatus }),
-      }).catch(error => console.error('Erro ao atualizar status:', error));
+      }).catch(error => console.error('Error updating status:', error));
 
       return newSet;
     });
