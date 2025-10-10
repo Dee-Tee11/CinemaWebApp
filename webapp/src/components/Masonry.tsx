@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { Eye, EyeOff, Star, ThumbsUp, ThumbsDown, Heart, X } from 'lucide-react';
+import { useSupabase } from '../hooks/useSupabase';
 
 // ==================== TYPES ====================
 interface Item {
@@ -11,6 +12,7 @@ interface Item {
   title?: string;
   category?: string;
   year?: string;
+  time?: string;
   rating?: number;
   synopsis?: string;
 }
@@ -21,6 +23,53 @@ interface GridItem extends Item {
   w: number;
   h: number;
 }
+
+const translateCategory = (category?: string): string => {
+  if (!category) return 'Categoria não encontrada';
+
+  const normalizedCategories = category
+    .trim()
+    .toLowerCase()
+    .split(',')
+    .map(cat => cat.trim());
+
+  const translations: Record<string, string> = {
+    'action': 'Ação',
+    'adventure': 'Aventura',
+    'animation': 'Animação',
+    'comedy': 'Comédia',
+    'crime': 'Crime',
+    'documentary': 'Documentário',
+    'drama': 'Drama',
+    'family': 'Família',
+    'fantasy': 'Fantasia',
+    'history': 'História',
+    'horror': 'Terror',
+    'music': 'Musical',
+    'mystery': 'Mistério',
+    'romance': 'Romance',
+    'biography': 'Biografia',
+    'sci-fi': 'Ficção Científica',
+  };
+
+  const translatedCategories = normalizedCategories.map(cat =>
+    translations[cat] || cat
+  );
+
+  return translatedCategories.join(' | ');
+};
+
+const formatRuntime = (minutes?: number | string): string => {
+  if (!minutes) return '-';
+  const mins = typeof minutes === 'string' ? parseInt(minutes) : minutes;
+  if (isNaN(mins)) return '-';
+  
+  const hours = Math.floor(mins / 60);
+  const remainingMins = mins % 60;
+  
+  if (hours === 0) return `${remainingMins}min`;
+  return remainingMins > 0 ? `${hours}h ${remainingMins}min` : `${hours}h`;
+};
 
 // ==================== HOOKS ====================
 const useMedia = (queries: string[], values: number[], defaultValue: number): number => {
@@ -124,8 +173,8 @@ const styles = {
   },
   cardImageSection: {
     width: '100%',
-    height: '70%',
-    backgroundSize: 'cover',
+    height: '75%',
+    backgroundSize: 'contain',
     backgroundPosition: 'center',
     position: 'relative' as const
   },
@@ -156,18 +205,18 @@ const styles = {
   },
   actionButtons: {
     position: 'absolute' as const,
-    right: '12px',
+    right: '3px',
     top: '50%',
-    transform: 'translateY(-50%)',
+    transform: 'translateY(-50%)', // Corrigido para centralizar verticalmente
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: '12px'
+    gap: '5px'
   },
   actionButton: {
-    width: '36px',
-    height: '36px',
+    width: '40px',
+    height: '40px',
     borderRadius: '50%',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'white',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -177,8 +226,8 @@ const styles = {
   },
   cardInfoSection: {
     height: '30%',
-    backgroundColor: 'rgb(153, 27, 27)',
-    padding: '16px',
+    backgroundColor: '#991b1bff',
+    padding: '8px',
     display: 'flex',
     flexDirection: 'column' as const,
     justifyContent: 'center'
@@ -187,17 +236,18 @@ const styles = {
     color: 'white',
     fontSize: '11px',
     fontWeight: '600',
+    marginBottom: '5px',
     textTransform: 'uppercase' as const,
     letterSpacing: '1px',
-    marginBottom: '6px',
+    marginTop: '-30px',
     opacity: 0.9
   },
   cardTitle: {
     color: 'white',
     fontSize: '16px',
     fontWeight: 'bold',
-    marginBottom: '6px',
-    lineHeight: '1.3',
+    marginBottom: '5px',
+    lineHeight: '1.2',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     display: '-webkit-box',
@@ -223,17 +273,17 @@ const ActionButton: React.FC<ActionButtonProps> = ({ Icon, onClick }) => {
       style={styles.actionButton}
       onClick={onClick}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+        e.currentTarget.style.backgroundColor = '#991b1b';
         const icon = e.currentTarget.querySelector('svg');
-        if (icon) icon.style.color = '#000';
+        if (icon) icon.style.color = 'white';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+        e.currentTarget.style.backgroundColor = 'white';
         const icon = e.currentTarget.querySelector('svg');
-        if (icon) icon.style.color = '#fff';
+        if (icon) icon.style.color = 'black';
       }}
     >
-      <Icon size={18} color="white" />
+      <Icon size={18} color="black" />
     </div>
   );
 };
@@ -311,7 +361,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
                 letterSpacing: '1.5px'
               }}
             >
-              {movie.category}
+              {translateCategory(movie.category)}
             </span>
             {movie.rating && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255, 215, 0, 0.15)', padding: '8px 12px', borderRadius: '8px' }}>
@@ -337,11 +387,11 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
           </h2>
 
           <p style={{ color: 'rgba(0, 0, 0, 1)', fontSize: '18px', margin: 0, fontWeight: '500' }}>
-            {movie.year}
+            {movie.time && `| ${formatRuntime(movie.time)}`}
           </p>
 
           <div>
-            <h3 style={{ color: 'black', fontSize: '22px', marginBottom: '16px', fontWeight: '700', }}>
+            <h3 style={{ color: 'black', fontSize: '22px', marginBottom: '16px', fontWeight: '700' }}>
               Sinopse
             </h3>
             <p
@@ -486,7 +536,7 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(({
               </span>
             </div>
           )}
-
+      
           <div style={styles.actionButtons}>
             <ActionButton Icon={ThumbsUp} onClick={(e) => e.stopPropagation()} />
             <ActionButton Icon={ThumbsDown} onClick={(e) => e.stopPropagation()} />
@@ -496,13 +546,13 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(({
 
         <div style={styles.cardInfoSection}>
           <div style={styles.cardCategory}>
-            {item.category || 'Ação'}
+            {translateCategory(item.category) || 'Categoria não especificada'} {/* Garante fallback */}
           </div>
           <div style={styles.cardTitle}>
-            {item.title || 'Título do Filme'}
+            {item.title}
           </div>
           <div style={styles.cardYear}>
-            {item.year || '2024'}
+         {item.time && ` ${formatRuntime(item.time)}`}
           </div>
         </div>
       </div>
@@ -546,26 +596,26 @@ const Masonry: React.FC<MasonryProps> = ({
   const [selectedMovie, setSelectedMovie] = useState<GridItem | null>(null);
   const hasMounted = useRef(false);
 
-const toggleWatched = useCallback(async (id: string, e: React.MouseEvent) => {
-  e.stopPropagation();
-  const userId = 'currentUserId'; // Substitua por um valor dinâmico (ex.: do estado do usuário logado)
-  const movieId = id;
+  const toggleWatched = useCallback(async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const userId = 'currentUserId'; // Substitua por um valor dinâmico (ex.: do estado do usuário logado)
+    const movieId = id;
 
-  setWatchedMovies(prev => {
-    const newSet = new Set(prev);
-    const newStatus = newSet.has(id) ? 'not_watched' : 'watched';
-    newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+    setWatchedMovies(prev => {
+      const newSet = new Set(prev);
+      const newStatus = newSet.has(id) ? 'not_watched' : 'watched';
+      newSet.has(id) ? newSet.delete(id) : newSet.add(id);
 
-    // Atualizar o backend
-    fetch('/api/user-movies/update-status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, movieId, status: newStatus }),
-    }).catch(error => console.error('Erro ao atualizar status:', error));
+      // Atualizar o backend
+      fetch('/api/user-movies/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, movieId, status: newStatus }),
+      }).catch(error => console.error('Erro ao atualizar status:', error));
 
-    return newSet;
-  });
-}, []);
+      return newSet;
+    });
+  }, []);
 
   const getInitialPosition = useCallback((item: GridItem) => {
     const containerRect = containerRef.current?.getBoundingClientRect();

@@ -18,7 +18,7 @@
 }
 
 .infoContainer::-webkit-scrollbar-thumb {
-  background: rgba(220, 20, 60, 0.3);
+  background: hsla(348, 83%, 47%, 0.3);
   border-radius: 4px;
 }
 

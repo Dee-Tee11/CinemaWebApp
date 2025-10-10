@@ -1,0 +1,219 @@
+/* Backdrop */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 600px;
+  background: linear-gradient(135deg, #fff9f0 0%, #ffe8cc 100%);
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+  border: 3px solid rgba(153, 27, 27, 0.2);
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+  color: #000;
+}
+
+/* Header */
+.header {
+  background: #991b1b;
+  padding: 2rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 5px solid white;
+  position: relative;
+  box-shadow: inset 0 -4px 15px rgba(0, 0, 0, 0.3), 0 5px 15px rgba(0, 0, 0, 0.2);
+  background-blend-mode: overlay;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+}
+
+.header-title {
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 900;
+  margin: 0;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 2px;
+  font-family: Arial, sans-serif;
+}
+
+.header-badge {
+  background: white;
+  color: #991b1b;
+  padding: 0.5rem 1.2rem;
+  border-radius: 18px;
+  font-size: 0.59rem;
+  font-weight: 700;
+  margin-left: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.close-button {
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: rotate(90deg) scale(1.2);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+/* Content */
+.content {
+  padding: 2.5rem;
+}
+
+/* Search Bar */
+.search-container {
+  margin-bottom: 2.5rem;
+  position: relative;
+  max-width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 1.5rem 2rem;
+  border-radius: 25px;
+  border: 2px solid rgba(153, 27, 27, 0.6);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  color: #1a1a1a;
+  font-size: 1.2rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.4s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), inset 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  text-indent: 2.5rem;
+}
+
+.search-input:focus {
+  border-color: #991b1b;
+  box-shadow: 0 8px 25px rgba(153, 27, 27, 0.4), inset 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: scale(1.02);
+}
+
+.search-icon {
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(153, 27, 27, 0.8);
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+/* Suggested Friends List */
+.friends-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.friend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: rgba(153, 27, 27, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(153, 27, 27, 0.2);
+  transition: all 0.2s ease;
+}
+
+.friend-item:hover {
+  background: rgba(153, 27, 27, 0.1);
+  transform: translateY(-2px);
+}
+
+.friend-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.add-button {
+  padding: 0.5rem 1rem;
+  background: #991b1b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.add-button:hover {
+  background: white;
+  color: #991b1b;
+  transform: scale(1.05);
+}
+
+.add-button svg {
+  margin-right: 0.5rem;
+}
+
+.no-results {
+  color: #666;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal {
+    width: 85%;
+  }
+}

@@ -1,0 +1,369 @@
+/* Backdrop */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(153, 27, 27, 0.2);
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+}
+
+/* Header */
+.header {
+  background: #991b1b;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: white;
+  padding: 0 0.5rem 0 0;
+  transition: transform 0.2s ease;
+}
+
+.back-button:hover {
+  transform: translateX(-2px);
+}
+
+.header-title {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.header-title.centered {
+  text-align: center;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: background 0.2s ease;
+}
+
+.icon-button.close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.icon-button.friend-requests {
+  position: relative;
+}
+
+.icon-button.friend-requests:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Content */
+.content {
+  padding: 2rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.avatar-container {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 20px rgba(153, 27, 27, 0.3);
+  border: 3px solid white;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0 0 0.5rem 0;
+}
+
+.user-email {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+.friends-toggle {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #991b1b;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.friends-toggle:hover {
+  color: #dc2626;
+}
+
+.friends-toggle.underline {
+  text-decoration: underline;
+}
+
+.friends-toggle svg {
+  margin-right: 0.5rem;
+}
+
+/* Lists */
+.list-container {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.list-item {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(153, 27, 27, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.list-item:hover {
+  transform: translateY(-2px);
+}
+
+.list-item span {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #991b1b;
+}
+
+.request-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(153, 27, 27, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.request-item:hover {
+  transform: translateY(-2px);
+}
+
+.request-item span {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #991b1b;
+}
+
+.request-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.request-button {
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.request-button.accept {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.request-button.accept:hover {
+  background: rgba(34, 197, 94, 0.3);
+  transform: scale(1.1);
+}
+
+.request-button.reject {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.request-button.reject:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: scale(1.1);
+}
+
+.no-items {
+  color: #666;
+  text-align: center;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+  background: white;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(153, 27, 27, 0.1);
+}
+
+.stat-item {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  flex: 1;
+  transition: transform 0.2s ease;
+}
+
+.stat-item:hover {
+  transform: scale(1.05);
+}
+
+.stat-item.liked {
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.stat-item.favorite {
+  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.2);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.stat-item.watched {
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.5rem;
+}
+
+.stat-icon.liked {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.stat-icon.favorite {
+  background: rgba(234, 179, 8, 0.2);
+}
+
+.stat-icon.watched {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #991b1b;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #991b1b;
+  font-weight: 500;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-grid {
+    flex-direction: column !important;
+  }
+}
