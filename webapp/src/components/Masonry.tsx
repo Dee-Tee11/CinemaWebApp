@@ -24,40 +24,7 @@ interface GridItem extends Item {
   h: number;
 }
 
-const translateCategory = (category?: string): string => {
-  if (!category) return 'Categoria não encontrada';
 
-  const normalizedCategories = category
-    .trim()
-    .toLowerCase()
-    .split(',')
-    .map(cat => cat.trim());
-
-  const translations: Record<string, string> = {
-    'action': 'Ação',
-    'adventure': 'Aventura',
-    'animation': 'Animação',
-    'comedy': 'Comédia',
-    'crime': 'Crime',
-    'documentary': 'Documentário',
-    'drama': 'Drama',
-    'family': 'Família',
-    'fantasy': 'Fantasia',
-    'history': 'História',
-    'horror': 'Terror',
-    'music': 'Musical',
-    'mystery': 'Mistério',
-    'romance': 'Romance',
-    'biography': 'Biografia',
-    'sci-fi': 'Ficção Científica',
-  };
-
-  const translatedCategories = normalizedCategories.map(cat =>
-    translations[cat] || cat
-  );
-
-  return translatedCategories.join(' | ');
-};
 
 const formatRuntime = (minutes?: number | string): string => {
   if (!minutes) return '-';
@@ -361,7 +328,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
                 letterSpacing: '1.5px'
               }}
             >
-              {translateCategory(movie.category)}
+              {movie.category || 'Uncategorized'}
             </span>
             {movie.rating && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255, 215, 0, 0.15)', padding: '8px 12px', borderRadius: '8px' }}>
@@ -392,18 +359,18 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
 
           <div>
             <h3 style={{ color: 'black', fontSize: '22px', marginBottom: '16px', fontWeight: '700' }}>
-              Sinopse
-            </h3>
-            <p
-              style={{
-                color: 'rgba(0, 0, 0, 0.85)',
-                fontSize: '16px',
-                lineHeight: '1.8',
-                margin: 0
-              }}
-            >
-              {movie.synopsis || 'Uma história envolvente que cativa audiências de todo o mundo. Este filme apresenta uma narrativa complexa e personagens memoráveis que exploram temas profundos da condição humana, deixando uma marca duradoura na história do cinema.'}
-            </p>
+                Synopsis
+              </h3>
+              <p
+                style={{
+                  color: 'rgba(0, 0, 0, 0.85)',
+                  fontSize: '16px',
+                  lineHeight: '1.8',
+                  margin: 0
+                }}
+              >
+                {movie.synopsis || 'An engaging story that captivates audiences around the world. This film features a complex narrative and memorable characters that explore deep themes of the human condition, leaving a lasting mark on the history of cinema.'}
+              </p>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '20px' }}>
@@ -464,11 +431,11 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
             >
               {isWatched ? (
                 <>
-                  <Eye size={20} /> Visto
+                  <Eye size={20} /> Watched
                 </>
               ) : (
                 <>
-                  <EyeOff size={20} /> Marcar como visto
+                  <EyeOff size={20} /> Mark as Watched
                 </>
               )}
             </button>
@@ -546,7 +513,7 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(({
 
         <div style={styles.cardInfoSection}>
           <div style={styles.cardCategory}>
-            {translateCategory(item.category) || 'Categoria não especificada'} {/* Garante fallback */}
+            {item.category || 'Uncategorized'} {/* Garante fallback */}
           </div>
           <div style={styles.cardTitle}>
             {item.title}

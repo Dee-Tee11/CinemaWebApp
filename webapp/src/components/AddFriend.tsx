@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, UserPlus as AddFriendIcon } from 'lucide-react';
-import { useSupabase } from '../hooks/useSupabase'; // Ajuste o caminho conforme necessário
+import { useSupabase } from '../hooks/useSupabase'; // Adjust the path as needed
 import './AddFriend.css';
 
 interface AddFriendPopupProps {
@@ -14,34 +14,34 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const [suggestedFriends, setSuggestedFriends] = useState<{ id: string; name: string }[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Carrega o ID do usuário autenticado
+  // Loads the authenticated user ID
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) setCurrentUserId(user.id);
-      else console.log('Usuário não autenticado');
+      else console.log('User not authenticated');
     };
     getUser();
   }, [supabase]);
 
-  // Busca usuários com base no searchQuery
+  // Search for users based on searchQuery
   useEffect(() => {
     const fetchUsers = async () => {
       if (!searchQuery.trim()) {
         setSuggestedFriends([]);
         return;
       }
-      console.log('Buscando usuários para:', searchQuery);
+      console.log('Searching for users:', searchQuery);
       const { data, error } = await supabase
         .from('User')
         .select('id, name')
         .ilike('name', `%${searchQuery.trim().toLowerCase()}%`)
-        .neq('id', currentUserId) // Exclui o usuário logado dos resultados
+        .neq('id', currentUserId) // Excludes the logged in user from the results
         .limit(5);
       if (error) {
-        console.error('Erro ao buscar usuários:', error.message);
+        console.error('Error fetching users:', error.message);
       } else {
-        console.log('Resultados da busca:', data);
+        console.log('Search results:', data);
         setSuggestedFriends(data || []);
       }
     };
@@ -50,17 +50,17 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
 
   const handleAddFriend = async (friendId: string) => {
     if (!currentUserId) {
-      console.error('Usuário não autenticado');
+      console.error('User not authenticated');
       return;
     }
-    console.log(`Adicionando amigo com ID: ${friendId}`);
+    console.log(`Adding friend with ID: ${friendId}`);
     const { error } = await supabase.from('FriendRequests').insert({
       user_id: currentUserId,
       friend_id: friendId,
       status: 'pending',
     });
-    if (error) console.error('Erro ao enviar pedido de amizade:', error);
-    else console.log('Pedido de amizade enviado!');
+    if (error) console.error('Error sending friend request:', error);
+    else console.log('Friend request sent!');
   };
 
   if (!isOpen) return null;
@@ -75,8 +75,8 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
         {/* Premium Header */}
         <div className="header">
           <div className="header-content">
-            <h2 className="header-title">Adiciona um amigo</h2>
-            <span className="header-badge">e partilha momentos</span>
+            <h2 className="header-title">Add a friend</h2>
+            <span className="header-badge">and share moments</span>
           </div>
           <button className="close-button" onClick={onClose}>
             <X size={26} />
@@ -91,7 +91,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Pesquisar amigos..."
+              placeholder="Search friends..."
               className="search-input"
             />
             <AddFriendIcon size={20} className="search-icon" />
@@ -104,12 +104,12 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
                 <div key={friend.id} className="friend-item">
                   <span className="friend-name">{friend.name}</span>
                   <button className="add-button" onClick={() => handleAddFriend(friend.id)}>
-                    <AddFriendIcon size={16} /> Adicionar
+                    <AddFriendIcon size={16} /> Add
                   </button>
                 </div>
               ))
             ) : (
-              searchQuery && <p className="no-results">Nenhum usuário encontrado.</p>
+              searchQuery && <p className="no-results">No user found.</p>
             )}
           </div>
         </div>

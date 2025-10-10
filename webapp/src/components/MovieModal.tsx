@@ -56,9 +56,9 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
           </p>
 
           <div>
-            <h3 className="text-white text-xl font-bold mb-4">Sinopse</h3>
+            <h3 className="text-white text-xl font-bold mb-4">Synopsis</h3>
             <p className="text-white/85 text-base leading-relaxed m-0">
-              {movie.synopsis || 'Uma história envolvente que cativa audiências de todo o mundo. Este filme apresenta uma narrativa complexa e personagens memoráveis que exploram temas profundos da condição humana, deixando uma marca duradoura na história do cinema.'}
+              {movie.synopsis || 'An engaging story that captivates audiences around the world. This film features a complex narrative and memorable characters that explore deep themes of the human condition, leaving a lasting mark on the history of cinema.'}
             </p>
           </div>
 
@@ -66,7 +66,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
             <button
               className="bg-red-700 text-white border-none rounded-lg px-7 py-3.5 text-base font-bold cursor-pointer hover:bg-red-800 hover:-translate-y-0.5 hover:shadow-lg transition-all flex-1"
             >
-              Assistir Agora
+              Watch Now
             </button>
             <button
               onClick={(e) => {
@@ -77,11 +77,11 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
             >
               {isWatched ? (
                 <>
-                  <Eye size={20} /> Visto
+                  <Eye size={20} /> Watched
                 </>
               ) : (
                 <>
-                  <EyeOff size={20} /> Marcar como visto
+                  <EyeOff size={20} /> Mark as Watched
                 </>
               )}
             </button>
