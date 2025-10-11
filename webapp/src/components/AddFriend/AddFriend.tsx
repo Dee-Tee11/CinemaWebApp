@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { X, UserPlus as AddFriendIcon } from 'lucide-react';
-import { useSupabase } from '../hooks/useSupabase'; // Adjust the path as needed
-import './AddFriend.css';
+import React, { useState, useEffect } from "react";
+import { X, UserPlus as AddFriendIcon } from "lucide-react";
+import { useSupabase } from "@/hooks/useSupabase"; // Adjust the path as needed
+import "./AddFriend.css";
 
 interface AddFriendPopupProps {
   isOpen: boolean;
@@ -10,16 +10,20 @@ interface AddFriendPopupProps {
 
 const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const supabase = useSupabase();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestedFriends, setSuggestedFriends] = useState<{ id: string; name: string }[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestedFriends, setSuggestedFriends] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Loads the authenticated user ID
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) setCurrentUserId(user.id);
-      else console.log('User not authenticated');
+      else console.log("User not authenticated");
     };
     getUser();
   }, [supabase]);
@@ -31,17 +35,17 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
         setSuggestedFriends([]);
         return;
       }
-      console.log('Searching for users:', searchQuery);
+      console.log("Searching for users:", searchQuery);
       const { data, error } = await supabase
-        .from('User')
-        .select('id, name')
-        .ilike('name', `%${searchQuery.trim().toLowerCase()}%`)
-        .neq('id', currentUserId) // Excludes the logged in user from the results
+        .from("User")
+        .select("id, name")
+        .ilike("name", `%${searchQuery.trim().toLowerCase()}%`)
+        .neq("id", currentUserId) // Excludes the logged in user from the results
         .limit(5);
       if (error) {
-        console.error('Error fetching users:', error.message);
+        console.error("Error fetching users:", error.message);
       } else {
-        console.log('Search results:', data);
+        console.log("Search results:", data);
         setSuggestedFriends(data || []);
       }
     };
@@ -50,17 +54,17 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
 
   const handleAddFriend = async (friendId: string) => {
     if (!currentUserId) {
-      console.error('User not authenticated');
+      console.error("User not authenticated");
       return;
     }
     console.log(`Adding friend with ID: ${friendId}`);
-    const { error } = await supabase.from('FriendRequests').insert({
+    const { error } = await supabase.from("FriendRequests").insert({
       user_id: currentUserId,
       friend_id: friendId,
-      status: 'pending',
+      status: "pending",
     });
-    if (error) console.error('Error sending friend request:', error);
-    else console.log('Friend request sent!');
+    if (error) console.error("Error sending friend request:", error);
+    else console.log("Friend request sent!");
   };
 
   if (!isOpen) return null;
@@ -99,18 +103,19 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
 
           {/* Suggested Friends List */}
           <div className="friends-list">
-            {suggestedFriends.length > 0 ? (
-              suggestedFriends.map(friend => (
-                <div key={friend.id} className="friend-item">
-                  <span className="friend-name">{friend.name}</span>
-                  <button className="add-button" onClick={() => handleAddFriend(friend.id)}>
-                    <AddFriendIcon size={16} /> Add
-                  </button>
-                </div>
-              ))
-            ) : (
-              searchQuery && <p className="no-results">No user found.</p>
-            )}
+            {suggestedFriends.length > 0
+              ? suggestedFriends.map((friend) => (
+                  <div key={friend.id} className="friend-item">
+                    <span className="friend-name">{friend.name}</span>
+                    <button
+                      className="add-button"
+                      onClick={() => handleAddFriend(friend.id)}
+                    >
+                      <AddFriendIcon size={16} /> Add
+                    </button>
+                  </div>
+                ))
+              : searchQuery && <p className="no-results">No user found.</p>}
           </div>
         </div>
       </div>

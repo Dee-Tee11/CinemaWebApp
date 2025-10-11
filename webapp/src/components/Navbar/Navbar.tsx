@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
-import Logo from "./Logo";
+import Logo from "../Logo";
 import styles from "./Navbar.module.css";
 
 interface NavbarProps {

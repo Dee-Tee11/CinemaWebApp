@@ -1,7 +1,21 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { gsap } from 'gsap';
-import { Eye, EyeOff, Star, ThumbsUp, ThumbsDown, Heart, X } from 'lucide-react';
-import { useSupabase } from '../hooks/useSupabase';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { gsap } from "gsap";
+import {
+  Eye,
+  EyeOff,
+  Star,
+  ThumbsUp,
+  ThumbsDown,
+  Heart,
+  X,
+} from "lucide-react";
 
 // ==================== TYPES ====================
 interface Item {
@@ -24,33 +38,39 @@ interface GridItem extends Item {
   h: number;
 }
 
-
-
 const formatRuntime = (minutes?: number | string): string => {
-  if (!minutes) return '-';
-  const mins = typeof minutes === 'string' ? parseInt(minutes) : minutes;
-  if (isNaN(mins)) return '-';
-  
+  if (!minutes) return "-";
+  const mins = typeof minutes === "string" ? parseInt(minutes) : minutes;
+  if (isNaN(mins)) return "-";
+
   const hours = Math.floor(mins / 60);
   const remainingMins = mins % 60;
-  
+
   if (hours === 0) return `${remainingMins}min`;
   return remainingMins > 0 ? `${hours}h ${remainingMins}min` : `${hours}h`;
 };
 
 // ==================== HOOKS ====================
-const useMedia = (queries: string[], values: number[], defaultValue: number): number => {
-  const get = useCallback(() => 
-    values[queries.findIndex(q => matchMedia(q).matches)] ?? defaultValue,
+const useMedia = (
+  queries: string[],
+  values: number[],
+  defaultValue: number
+): number => {
+  const get = useCallback(
+    () =>
+      values[queries.findIndex((q) => matchMedia(q).matches)] ?? defaultValue,
     [queries, values, defaultValue]
   );
-  
+
   const [value, setValue] = useState<number>(get);
 
   useEffect(() => {
     const handler = () => setValue(get);
-    queries.forEach(q => matchMedia(q).addEventListener('change', handler));
-    return () => queries.forEach(q => matchMedia(q).removeEventListener('change', handler));
+    queries.forEach((q) => matchMedia(q).addEventListener("change", handler));
+    return () =>
+      queries.forEach((q) =>
+        matchMedia(q).removeEventListener("change", handler)
+      );
   }, [queries, get]);
 
   return value;
@@ -76,157 +96,18 @@ const useMeasure = <T extends HTMLElement>() => {
 // ==================== UTILITIES ====================
 const preloadImages = async (urls: string[]): Promise<void> => {
   await Promise.all(
-    urls.map(src => new Promise<void>(resolve => {
-      const img = new Image();
-      img.src = src;
-      img.onload = img.onerror = () => resolve();
-    }))
+    urls.map(
+      (src) =>
+        new Promise<void>((resolve) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = img.onerror = () => resolve();
+        })
+    )
   );
 };
 
-// ==================== STYLES ====================
-const styles = {
-  modalOverlay: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.92)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-    padding: '40px',
-    backdropFilter: 'blur(8px)'
-  },
-  modalContent: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: '20px',
-    overflow: 'hidden',
-    maxWidth: '1100px',
-    width: '100%',
-    maxHeight: '85vh',
-    display: 'flex',
-    flexDirection: 'row' as const,
-    boxShadow: '0 25px 80px rgba(0, 0, 0, 0.9)',
-    position: 'relative' as const
-  },
-  closeButton: {
-    position: 'absolute' as const,
-    top: '20px',
-    right: '20px',
-    background: 'rgba(0, 0, 0, 0.7)',
-    border: 'none',
-    borderRadius: '50%',
-    width: '44px',
-    height: '44px',
-    cursor: 'pointer',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.3s',
-    zIndex: 10
-  },
-  movieCard: {
-    position: 'relative' as const,
-    width: '100%',
-    height: '100%',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0px 10px 40px -10px rgba(0, 0, 0, 0.4)',
-    backgroundColor: '#1a1a1a'
-  },
-  cardImageSection: {
-    width: '100%',
-    height: '75%',
-    backgroundSize: 'contain',
-    backgroundPosition: 'center',
-    position: 'relative' as const
-  },
-  watchButton: {
-    position: 'absolute' as const,
-    top: '12px',
-    left: '12px',
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    zIndex: 2
-  },
-  ratingBadge: {
-    position: 'absolute' as const,
-    top: '12px',
-    right: '12px',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    borderRadius: '8px',
-    padding: '4px 8px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px'
-  },
-  actionButtons: {
-    position: 'absolute' as const,
-    right: '3px',
-    top: '50%',
-    transform: 'translateY(-50%)', // Corrected to center vertically
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '5px'
-  },
-  actionButton: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    backgroundColor: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    border: 'none'
-  },
-  cardInfoSection: {
-    height: '30%',
-    backgroundColor: '#991b1bff',
-    padding: '8px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    justifyContent: 'center'
-  },
-  cardCategory: {
-    color: 'white',
-    fontSize: '11px',
-    fontWeight: '600',
-    marginBottom: '5px',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '1px',
-    marginTop: '-30px',
-    opacity: 0.9
-  },
-  cardTitle: {
-    color: 'white',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    marginBottom: '5px',
-    lineHeight: '1.2',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical' as const
-  },
-  cardYear: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: '13px',
-    fontWeight: '500'
-  }
-};
+import "./Masonry.css";
 
 // ==================== ACTION BUTTON COMPONENT ====================
 interface ActionButtonProps {
@@ -237,18 +118,8 @@ interface ActionButtonProps {
 const ActionButton: React.FC<ActionButtonProps> = ({ Icon, onClick }) => {
   return (
     <div
-      style={styles.actionButton}
+      className="action-button"
       onClick={onClick}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#991b1b';
-        const icon = e.currentTarget.querySelector('svg');
-        if (icon) icon.style.color = 'white';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'white';
-        const icon = e.currentTarget.querySelector('svg');
-        if (icon) icon.style.color = 'black';
-      }}
     >
       <Icon size={18} color="black" />
     </div>
@@ -277,127 +148,49 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
   }, [onClose]);
 
   return (
-    <div style={styles.modalOverlay} onClick={onClose}>
-      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <button
           onClick={onClose}
-          style={styles.closeButton}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-            e.currentTarget.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(199, 31, 31, 0.7)';
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
+          className="close-button"
         >
           <X size={24} />
         </button>
 
         <div
-          style={{
-            flex: '0 0 45%',
-            backgroundImage: `url(${movie.img})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            minHeight: '600px'
-          }}
+          className="modal-image"
+          style={{ backgroundImage: `url(${movie.img})` }}
         />
 
-        <div
-          style={{
-            flex: '1',
-            padding: '50px 40px',
-            overflowY: 'auto',
-            background: 'linear-gradient(135deg, #fffff0 0%, #fff8dc 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '24px'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                backgroundColor: '#991b1bff',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px'
-              }}
-            >
+        <div className="modal-info">
+          <div className="modal-header">
+            <span className="modal-category">
               {movie.category || 'Uncategorized'}
             </span>
             {movie.rating && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(255, 215, 0, 0.15)', padding: '8px 12px', borderRadius: '8px' }}>
+              <div className="modal-rating">
                 <Star size={18} color="#FFD700" fill="#FFD700" />
-                <span style={{ color: '#FFD700', fontWeight: 'bold', fontSize: '16px' }}>
-                  {movie.rating}
-                </span>
+                <span className="rating-text">{movie.rating}</span>
               </div>
             )}
           </div>
 
-          <h2
-            style={{
-              color: 'black',
-              fontSize: '42px',
-              fontWeight: '800',
-              margin: 0,
-              lineHeight: '1.1',
-              letterSpacing: '-0.5px'
-            }}
-          >
-            {movie.title}
-          </h2>
+          <h2 className="modal-title">{movie.title}</h2>
 
-          <p style={{ color: 'rgba(0, 0, 0, 1)', fontSize: '18px', margin: 0, fontWeight: '500' }}>
+          <p className="modal-runtime">
             {movie.time && `| ${formatRuntime(movie.time)}`}
           </p>
 
           <div>
-            <h3 style={{ color: 'black', fontSize: '22px', marginBottom: '16px', fontWeight: '700' }}>
-                Synopsis
-              </h3>
-              <p
-                style={{
-                  color: 'rgba(0, 0, 0, 0.85)',
-                  fontSize: '16px',
-                  lineHeight: '1.8',
-                  margin: 0
-                }}
-              >
-                {movie.synopsis || 'An engaging story that captivates audiences around the world. This film features a complex narrative and memorable characters that explore deep themes of the human condition, leaving a lasting mark on the history of cinema.'}
-              </p>
+            <h3 className="synopsis-title">Synopsis</h3>
+            <p className="synopsis-text">
+              {movie.synopsis ||
+                'An engaging story that captivates audiences around the world. This film features a complex narrative and memorable characters that explore deep themes of the human condition, leaving a lasting mark on the history of cinema.'}
+            </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '20px' }}>
-            <button
-              style={{
-                backgroundColor: 'rgb(153, 27, 27)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '14px 28px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-                flex: '1'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgb(153, 27, 27)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 8px 20px rgb(153, 27, 27)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgb(153, 27, 27)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
+          <div className="modal-actions">
+            <button className="add-to-favorites-button">
               Add to Favorites
             </button>
             <button
@@ -405,30 +198,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
                 e.stopPropagation();
                 onToggleWatched(movie.id, e);
               }}
-              style={{
-                backgroundColor: isWatched ? 'rgba(0, 0, 0, 1)' : 'rgba(0, 0, 0, 1)',
-                color: isWatched ? 'white' : 'white',
-                border: '4px solid',
-                borderColor: isWatched ? 'rgba(34, 197, 94, 0.8)' : 'rgba(0, 0, 0, 0.3)',
-                borderRadius: '10px',
-                padding: '14px 28px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.3s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = isWatched ? 'rgba(34, 197, 94, 1)' : 'rgba(0, 0, 0, 1)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = isWatched ? 'rgba(34, 197, 94, 0.8)' : 'rgba(0, 0, 0, 1)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
+              className={`watched-button ${isWatched ? 'watched' : ''}`}>
               {isWatched ? (
                 <>
                   <Eye size={20} /> Watched
@@ -456,78 +226,75 @@ interface MovieCardProps {
   onClick: (item: GridItem) => void;
 }
 
-const MovieCard: React.FC<MovieCardProps> = React.memo(({
-  item,
-  isWatched,
-  onToggleWatched,
-  onMouseEnter,
-  onMouseLeave,
-  onClick
-}) => {
-  return (
-    <div
-      data-key={item.id}
-      style={{ position: 'absolute', cursor: 'pointer' }}
-      onMouseEnter={() => onMouseEnter(item)}
-      onMouseLeave={() => onMouseLeave(item)}
-      onClick={() => onClick(item)}
-    >
-      <div style={styles.movieCard}>
-        <div
-          style={{
-            ...styles.cardImageSection,
-            backgroundImage: `url(${item.img})`
-          }}
-        >
+const MovieCard: React.FC<MovieCardProps> = React.memo(
+  ({
+    item,
+    isWatched,
+    onToggleWatched,
+    onMouseEnter,
+    onMouseLeave,
+    onClick,
+  }) => {
+    return (
+      <div
+        data-key={item.id}
+        className="item-wrapper"
+        onMouseEnter={() => onMouseEnter(item)}
+        onMouseLeave={() => onMouseLeave(item)}
+        onClick={() => onClick(item)}
+      >
+        <div className="movie-card">
           <div
-            style={{
-              ...styles.watchButton,
-              backgroundColor: isWatched ? 'rgba(34, 197, 94, 0.9)' : 'rgba(0, 0, 0, 0.7)'
-            }}
-            onClick={(e) => onToggleWatched(item.id, e)}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
+            className="card-image-section"
+            style={{ backgroundImage: `url(${item.img})` }}
           >
-            {isWatched ? <Eye size={16} color="white" /> : <EyeOff size={16} color="white" />}
-          </div>
-
-          {item.rating && (
-            <div style={styles.ratingBadge}>
-              <Star size={14} color="#FFD700" fill="#FFD700" />
-              <span style={{ color: 'white', fontSize: '13px', fontWeight: 'bold' }}>
-                {item.rating}
-              </span>
+            <div
+              className={`watch-button ${isWatched ? 'watched' : ''}`}
+              onClick={(e) => onToggleWatched(item.id, e)}
+            >
+              {isWatched ? (
+                <Eye size={16} color="white" />
+              ) : (
+                <EyeOff size={16} color="white" />
+              )}
             </div>
-          )}
-      
-          <div style={styles.actionButtons}>
-            <ActionButton Icon={ThumbsUp} onClick={(e) => e.stopPropagation()} />
-            <ActionButton Icon={ThumbsDown} onClick={(e) => e.stopPropagation()} />
-            <ActionButton Icon={Heart} onClick={(e) => e.stopPropagation()} />
-          </div>
-        </div>
 
-        <div style={styles.cardInfoSection}>
-          <div style={styles.cardCategory}>
-            {item.category || 'Uncategorized'} {/* Ensures fallback */}
+            {item.rating && (
+              <div className="rating-badge">
+                <Star size={14} color="#FFD700" fill="#FFD700" />
+                <span className="rating-text">{item.rating}</span>
+              </div>
+            )}
+
+            <div className="action-buttons">
+              <ActionButton
+                Icon={ThumbsUp}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <ActionButton
+                Icon={ThumbsDown}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <ActionButton Icon={Heart} onClick={(e) => e.stopPropagation()} />
+            </div>
           </div>
-          <div style={styles.cardTitle}>
-            {item.title}
-          </div>
-          <div style={styles.cardYear}>
-         {item.time && ` ${formatRuntime(item.time)}`}
+
+          <div className="card-info-section">
+            <div className="card-category">
+              {item.category || "Uncategorized"}
+            </div>
+            <div className="card-title">{item.title}</div>
+            <div className="card-year">
+              {item.time && ` ${formatRuntime(item.time)}`}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
-MovieCard.displayName = 'MovieCard';
+MovieCard.displayName = "MovieCard";
 
 // ==================== MASONRY COMPONENT ====================
 interface MasonryProps {
@@ -535,7 +302,7 @@ interface MasonryProps {
   ease?: string;
   duration?: number;
   stagger?: number;
-  animateFrom?: 'bottom' | 'top' | 'left' | 'right' | 'center' | 'random';
+  animateFrom?: "bottom" | "top" | "left" | "right" | "center" | "random";
   scaleOnHover?: boolean;
   hoverScale?: number;
   blurToFocus?: boolean;
@@ -543,16 +310,21 @@ interface MasonryProps {
 
 const Masonry: React.FC<MasonryProps> = ({
   items,
-  ease = 'power3.out',
+  ease = "power3.out",
   duration = 0.6,
   stagger = 0.05,
-  animateFrom = 'bottom',
+  animateFrom = "bottom",
   scaleOnHover = true,
   hoverScale = 1.05,
-  blurToFocus = true
+  blurToFocus = true,
 }) => {
   const columns = useMedia(
-    ['(min-width:1500px)', '(min-width:1000px)', '(min-width:600px)', '(min-width:400px)'],
+    [
+      "(min-width:1500px)",
+      "(min-width:1000px)",
+      "(min-width:600px)",
+      "(min-width:400px)",
+    ],
     [5, 4, 3, 2],
     1
   );
@@ -565,51 +337,61 @@ const Masonry: React.FC<MasonryProps> = ({
 
   const toggleWatched = useCallback(async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const userId = 'currentUserId'; // Replace with a dynamic value (e.g., from the logged-in user's state)
+    const userId = "currentUserId";
     const movieId = id;
 
-    setWatchedMovies(prev => {
+    setWatchedMovies((prev) => {
       const newSet = new Set(prev);
-      const newStatus = newSet.has(id) ? 'not_watched' : 'watched';
+      const newStatus = newSet.has(id) ? "not_watched" : "watched";
       newSet.has(id) ? newSet.delete(id) : newSet.add(id);
 
-      // Update the backend
-      fetch('/api/user-movies/update-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      fetch("/api/user-movies/update-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, movieId, status: newStatus }),
-      }).catch(error => console.error('Error updating status:', error));
+      }).catch((error) => console.error("Error updating status:", error));
 
       return newSet;
     });
   }, []);
 
-  const getInitialPosition = useCallback((item: GridItem) => {
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    if (!containerRect) return { x: item.x, y: item.y };
+  const getInitialPosition = useCallback(
+    (item: GridItem) => {
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      if (!containerRect) return { x: item.x, y: item.y };
 
-    let direction = animateFrom;
+      let direction = animateFrom;
 
-    if (animateFrom === 'random') {
-      const directions = ['top', 'bottom', 'left', 'right'];
-      direction = directions[Math.floor(Math.random() * directions.length)] as typeof animateFrom;
-    }
+      if (animateFrom === "random") {
+        const directions = ["top", "bottom", "left", "right"];
+        direction = directions[
+          Math.floor(Math.random() * directions.length)
+        ] as typeof animateFrom;
+      }
 
-    switch (direction) {
-      case 'top': return { x: item.x, y: -200 };
-      case 'bottom': return { x: item.x, y: window.innerHeight + 200 };
-      case 'left': return { x: -200, y: item.y };
-      case 'right': return { x: window.innerWidth + 200, y: item.y };
-      case 'center': return {
-        x: containerRect.width / 2 - item.w / 2,
-        y: containerRect.height / 2 - item.h / 2
-      };
-      default: return { x: item.x, y: item.y + 100 };
-    }
-  }, [animateFrom, containerRef]);
+      switch (direction) {
+        case "top":
+          return { x: item.x, y: -200 };
+        case "bottom":
+          return { x: item.x, y: window.innerHeight + 200 };
+        case "left":
+          return { x: -200, y: item.y };
+        case "right":
+          return { x: window.innerWidth + 200, y: item.y };
+        case "center":
+          return {
+            x: containerRect.width / 2 - item.w / 2,
+            y: containerRect.height / 2 - item.h / 2,
+          };
+        default:
+          return { x: item.x, y: item.y + 100 };
+      }
+    },
+    [animateFrom, containerRef]
+  );
 
   useEffect(() => {
-    preloadImages(items.map(i => i.img)).then(() => setImagesReady(true));
+    preloadImages(items.map((i) => i.img)).then(() => setImagesReady(true));
   }, [items]);
 
   const grid = useMemo<GridItem[]>(() => {
@@ -619,10 +401,14 @@ const Masonry: React.FC<MasonryProps> = ({
     const colHeights = new Array(columns).fill(0);
     const columnWidth = (width - gap * (columns - 1)) / columns;
 
-    return items.map(child => {
+    return items.map((child) => {
+      // Add more variation to heights for a more random look
+      const heightVariation = 0.8 + Math.random() * 0.6; // Random between 0.8x and 1.4x
+      const height = (child.height / 2) * heightVariation;
+
+      // Place in shortest column for better balance
       const col = colHeights.indexOf(Math.min(...colHeights));
       const x = (columnWidth + gap) * col;
-      const height = child.height / 2;
       const y = colHeights[col];
 
       colHeights[col] += height + gap;
@@ -640,7 +426,7 @@ const Masonry: React.FC<MasonryProps> = ({
         x: item.x,
         y: item.y,
         width: item.w,
-        height: item.h
+        height: item.h,
       };
 
       if (!hasMounted.current) {
@@ -651,54 +437,71 @@ const Masonry: React.FC<MasonryProps> = ({
           y: initialPos.y,
           width: item.w,
           height: item.h,
-          ...(blurToFocus && { filter: 'blur(10px)' })
+          ...(blurToFocus && { filter: "blur(10px)" }),
         };
 
         gsap.fromTo(selector, initialState, {
           opacity: 1,
           ...animationProps,
-          ...(blurToFocus && { filter: 'blur(0px)' }),
+          ...(blurToFocus && { filter: "blur(0px)" }),
           duration: 0.8,
-          ease: 'power3.out',
-          delay: index * stagger
+          ease: "power3.out",
+          delay: index * stagger,
         });
       } else {
         gsap.to(selector, {
           ...animationProps,
           duration: duration,
           ease: ease,
-          overwrite: 'auto'
+          overwrite: "auto",
         });
       }
     });
 
     hasMounted.current = true;
-  }, [grid, imagesReady, stagger, blurToFocus, duration, ease, getInitialPosition]);
+  }, [
+    grid,
+    imagesReady,
+    stagger,
+    blurToFocus,
+    duration,
+    ease,
+    getInitialPosition,
+  ]);
 
-  const handleMouseEnter = useCallback((item: GridItem) => {
-    if (!scaleOnHover) return;
-    gsap.to(`[data-key="${item.id}"]`, {
-      scale: hoverScale,
-      duration: 0.3,
-      ease: 'power2.out',
-      zIndex: 10
-    });
-  }, [scaleOnHover, hoverScale]);
+  const handleMouseEnter = useCallback(
+    (item: GridItem) => {
+      if (!scaleOnHover) return;
+      gsap.to(`[data-key="${item.id}"]`, {
+        scale: hoverScale,
+        duration: 0.3,
+        ease: "power2.out",
+        zIndex: 10,
+      });
+    },
+    [scaleOnHover, hoverScale]
+  );
 
-  const handleMouseLeave = useCallback((item: GridItem) => {
-    if (!scaleOnHover) return;
-    gsap.to(`[data-key="${item.id}"]`, {
-      scale: 1,
-      duration: 0.3,
-      ease: 'power2.out',
-      zIndex: 1
-    });
-  }, [scaleOnHover]);
+  const handleMouseLeave = useCallback(
+    (item: GridItem) => {
+      if (!scaleOnHover) return;
+      gsap.to(`[data-key="${item.id}"]`, {
+        scale: 1,
+        duration: 0.3,
+        ease: "power2.out",
+        zIndex: 1,
+      });
+    },
+    [scaleOnHover]
+  );
 
   return (
     <>
-      <div ref={containerRef} style={{ position: 'relative', width: '100%', margin: '0 auto' }}>
-        {grid.map(item => (
+      <div
+        ref={containerRef}
+        style={{ position: "relative", width: "100%", margin: "0 auto" }}
+      >
+        {grid.map((item) => (
           <MovieCard
             key={item.id}
             item={item}
