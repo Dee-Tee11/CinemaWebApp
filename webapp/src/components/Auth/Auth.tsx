@@ -6,7 +6,7 @@ import {
   UserButton,
 } from "@clerk/clerk-react";
 import styles from "./Auth.module.css";
-import GridMotion from "./GridMotion";
+import GridMotion from "../GridMotion/GridMotion";
 
 const imageModules = import.meta.glob('/src/assets/GridMotionImages/**/*.{jpg,jpeg,png,gif}');
 const imageUrls = Object.keys(imageModules);
