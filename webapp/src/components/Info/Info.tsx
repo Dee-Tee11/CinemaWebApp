@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styles from "./Info.module.css";
-import Logo from "./Logo";
+import Logo from "../Logo";
 
 const Info = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
