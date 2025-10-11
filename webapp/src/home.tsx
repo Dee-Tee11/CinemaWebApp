@@ -7,6 +7,7 @@ import CategoryFilters from "./components/CategoryFilters";
 import { useSupabase } from "./hooks/useSupabase";
 import SettingsPopup from "./components/SettingsPopup";
 import AddFriendPopup from "./components/AddFriend/AddFriend";
+import "./home.css";
 
 interface Item {
   id: string;
@@ -175,15 +176,7 @@ export default function Home() {
   const itemsToDisplay = items;
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #fffff0 0%, #fff8dc 100%)",
-        color: "#000",
-      }}
-    >
+    <div className="home-container">
       <Navbar
         onHomeClick={handleForYouClick}
         onFriendsClick={handleFriendsClick}
@@ -214,28 +207,10 @@ export default function Home() {
         onClose={() => setIsAddFriendOpen(false)}
       />
 
-      <main
-        style={{
-          marginLeft: "80px",
-          paddingTop: "100px",
-          paddingLeft: "3rem",
-          paddingRight: "3rem",
-          paddingBottom: "3rem",
-          minHeight: "100vh",
-          backgroundColor: "transparent",
-          color: "#000",
-        }}
-      >
-        <div style={{ maxWidth: "100%", margin: "0 auto", maxHeight: "100%" }}>
-          <div style={{ marginBottom: "2rem", paddingLeft: "1rem" }}>
-            <h2
-              style={{
-                fontSize: "1.5rem",
-                fontWeight: "600",
-                color: "#000000b4",
-                margin: 0,
-              }}
-            >
+      <main className="main-content">
+        <div className="content-wrapper">
+          <div className="header-section">
+            <h2 className="page-title">
               {searchQuery
                 ? `Results for "${searchQuery}"`
                 : activeView === "forYou"
@@ -244,13 +219,7 @@ export default function Home() {
                 ? "Friend's Suggestions"
                 : "Explore"}
             </h2>
-            <p
-              style={{
-                fontSize: "0.95rem",
-                color: "#666",
-                margin: "0.5rem 0 0 0",
-              }}
-            >
+            <p className="page-subtitle">
               {searchQuery
                 ? `${items.length} ${
                     items.length === 1 ? "movie found" : "movies found"
@@ -272,26 +241,7 @@ export default function Home() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                style={{
-                  marginTop: "1rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: "transparent",
-                  color: "rgb(153, 27, 27)",
-                  border: "2px solid rgb(153, 27, 27)",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontSize: "0.9rem",
-                  fontWeight: "600",
-                  transition: "all 0.2s",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgb(153, 27, 27)";
-                  e.currentTarget.style.color = "white";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = "rgb(153, 27, 27)";
-                }}
+                className="clear-search-button"
               >
                 ✕ Clear search
               </button>
@@ -301,14 +251,7 @@ export default function Home() {
           <Masonry items={itemsToDisplay} />
 
           {items.length === 0 && !isLoading && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "4rem",
-                color: "#666",
-                fontSize: "1.1rem",
-              }}
-            >
+            <div className="no-movies-container">
               {searchQuery
                 ? `No movies found for "${searchQuery}" 🔍`
                 : "No movies found for this category 🎬"}
@@ -318,17 +261,7 @@ export default function Home() {
                   setSelectedCategory(undefined);
                   setSearchQuery("");
                 }}
-                style={{
-                  marginTop: "1rem",
-                  padding: "0.75rem 1.5rem",
-                  backgroundColor: "rgb(153, 27, 27)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                }}
+                className="see-all-movies-button"
               >
                 See all movies
               </button>
@@ -336,27 +269,13 @@ export default function Home() {
           )}
 
           {isLoading && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "2rem",
-                color: "#666",
-                fontSize: "1rem",
-              }}
-            >
+            <div className="loading-container">
               Loading more movies...
             </div>
           )}
 
           {!hasMore && items.length > 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "2rem",
-                color: "#999",
-                fontSize: "0.95rem",
-              }}
-            >
+            <div className="end-of-results-container">
               You have reached the end! 🎬
             </div>
           )}
