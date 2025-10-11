@@ -1,19 +1,21 @@
 import React, { useEffect, useRef, FC } from 'react';
 import { gsap } from 'gsap';
 import './GridMotion.css';
+import { useMovies } from '../../hooks/useMovies';
 
 interface GridMotionProps {
-  items?: string[];
   gradientColor?: string;
 }
 
-const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }) => {
+const GridMotion: FC<GridMotionProps> = ({ gradientColor = 'black' }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const mouseXRef = useRef<number>(window.innerWidth / 2);
 
+  const { items } = useMovies('explore');
+
   const totalItems = 28;
-  const defaultItems = Array.from({ length: totalItems }, (_, index) => `Item ${index + 1}`);
+  const defaultItems = Array.from({ length: totalItems }, (_, index) => ({ img: `Item ${index + 1}` }));
   const combinedItems = items.length > 0 ? items.slice(0, totalItems) : defaultItems;
 
   useEffect(() => {
@@ -74,15 +76,15 @@ const GridMotion: FC<GridMotionProps> = ({ items = [], gradientColor = 'black' }
                 return (
                   <div key={itemIndex} className="row__item">
                     <div className="row__item-inner" style={{ backgroundColor: '#111' }}>
-                      {typeof content === 'string' && /\.(jpg|jpeg|png|gif)$/.test(content) ? (
+                      {content && typeof content.img === 'string' && /\.(jpg|jpeg|png|gif)$/.test(content.img) ? (
                         <div
                           className="row__item-img"
                           style={{
-                            backgroundImage: `url(${content})`
+                            backgroundImage: `url(${content.img})`
                           }}
                         ></div>
                       ) : (
-                        <div className="row__item-content">{content}</div>
+                        <div className="row__item-content">{content?.img}</div>
                       )}
                     </div>
                   </div>

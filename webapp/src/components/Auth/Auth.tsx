@@ -8,8 +8,7 @@ import {
 import styles from "./Auth.module.css";
 import GridMotion from "../GridMotion/GridMotion";
 
-const imageModules = import.meta.glob('/src/assets/GridMotionImages/**/*.{jpg,jpeg,png,gif}');
-const imageUrls = Object.keys(imageModules);
+
 
 const Auth = () => {
   return (
@@ -33,7 +32,7 @@ const Auth = () => {
           backgroundColor: "#8b0000",
         }}
       >
-        <GridMotion items={imageUrls} gradientColor="transparent" />
+        <GridMotion gradientColor="transparent" />
       </div>
 
       {/* Authentication Buttons */}
