@@ -1,8 +1,8 @@
 import { useUser } from "@clerk/clerk-react";
 import { useSupabase } from "./hooks/useSupabase";
 import { useEffect, useState } from "react";
-import Auth from "./components/Auth";
-import Info from "./components/Info";
+import Auth from "./components/Auth/Auth";
+import Info from "./components/Info/Info";
 import AppRouter from "./router";
 
 function App() {

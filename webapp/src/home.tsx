@@ -1,12 +1,12 @@
 import { useMemo, useState, useEffect } from "react";
 import Sidebar from "./components/Slidebar";
-import Navbar from "./components/Navbar";
-import Masonry from "./components/Masonry";
-import ProfileModal from "./components/ProfileModal";
+import Navbar from "./components/Navbar/Navbar";
+import Masonry from "./components/Masonry/Masonry";
+import ProfileModal from "./components/ProfileModal/ProfileModal";
 import CategoryFilters from "./components/CategoryFilters";
 import { useSupabase } from "./hooks/useSupabase";
 import SettingsPopup from "./components/SettingsPopup";
-import AddFriendPopup from "./components/AddFriend";
+import AddFriendPopup from "./components/AddFriend/AddFriend";
 
 interface Item {
   id: string;
