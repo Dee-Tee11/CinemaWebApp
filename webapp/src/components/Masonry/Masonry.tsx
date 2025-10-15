@@ -11,32 +11,9 @@ import {
   Eye,
   EyeOff,
   Star,
-  ThumbsUp,
-  ThumbsDown,
-  Heart,
   X,
 } from "lucide-react";
-
-// ==================== TYPES ====================
-interface Item {
-  id: string;
-  img: string;
-  url: string;
-  height: number;
-  title?: string;
-  category?: string;
-  year?: string;
-  time?: string;
-  rating?: number;
-  synopsis?: string;
-}
-
-interface GridItem extends Item {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
+import MovieCard, { type GridItem, type Item } from "../MovieCard/MovieCard";
 
 const formatRuntime = (minutes?: number | string): string => {
   if (!minutes) return "-";
@@ -108,23 +85,6 @@ const preloadImages = async (urls: string[]): Promise<void> => {
 };
 
 import "./Masonry.css";
-
-// ==================== ACTION BUTTON COMPONENT ====================
-interface ActionButtonProps {
-  Icon: React.ElementType;
-  onClick: (e: React.MouseEvent) => void;
-}
-
-const ActionButton: React.FC<ActionButtonProps> = ({ Icon, onClick }) => {
-  return (
-    <div
-      className="action-button"
-      onClick={onClick}
-    >
-      <Icon size={18} color="black" />
-    </div>
-  );
-};
 
 // ==================== MOVIE MODAL COMPONENT ====================
 interface MovieModalProps {
@@ -215,86 +175,6 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
     </div>
   );
 };
-
-// ==================== MOVIE CARD COMPONENT ====================
-interface MovieCardProps {
-  item: GridItem;
-  isWatched: boolean;
-  onToggleWatched: (id: string, e: React.MouseEvent) => void;
-  onMouseEnter: (item: GridItem) => void;
-  onMouseLeave: (item: GridItem) => void;
-  onClick: (item: GridItem) => void;
-}
-
-const MovieCard: React.FC<MovieCardProps> = React.memo(
-  ({
-    item,
-    isWatched,
-    onToggleWatched,
-    onMouseEnter,
-    onMouseLeave,
-    onClick,
-  }) => {
-    return (
-      <div
-        data-key={item.id}
-        className="item-wrapper"
-        onMouseEnter={() => onMouseEnter(item)}
-        onMouseLeave={() => onMouseLeave(item)}
-        onClick={() => onClick(item)}
-      >
-        <div className="movie-card">
-          <div
-            className="card-image-section"
-            style={{ backgroundImage: `url(${item.img})` }}
-          >
-            <div
-              className={`watch-button ${isWatched ? 'watched' : ''}`}
-              onClick={(e) => onToggleWatched(item.id, e)}
-            >
-              {isWatched ? (
-                <Eye size={16} color="white" />
-              ) : (
-                <EyeOff size={16} color="white" />
-              )}
-            </div>
-
-            {item.rating && (
-              <div className="rating-badge">
-                <Star size={14} color="#FFD700" fill="#FFD700" />
-                <span className="rating-text">{item.rating}</span>
-              </div>
-            )}
-
-            <div className="action-buttons">
-              <ActionButton
-                Icon={ThumbsUp}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <ActionButton
-                Icon={ThumbsDown}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <ActionButton Icon={Heart} onClick={(e) => e.stopPropagation()} />
-            </div>
-          </div>
-
-          <div className="card-info-section">
-            <div className="card-category">
-              {item.category || "Uncategorized"}
-            </div>
-            <div className="card-title">{item.title}</div>
-            <div className="card-year">
-              {item.time && ` ${formatRuntime(item.time)}`}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-);
-
-MovieCard.displayName = "MovieCard";
 
 // ==================== MASONRY COMPONENT ====================
 interface MasonryProps {
