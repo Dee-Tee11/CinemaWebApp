@@ -11,9 +11,9 @@ import MovieCard, {
   type GridItem,
   type Item,
   type MovieStatus,
-  type UserMovie,
 } from "../MovieCard/MovieCard";
 import MovieModal from "../MovieModal/MovieModal";
+import { useUserMovies } from "../../hooks/useUserMovies";
 
 // ==================== HOOKS ====================
 const useMedia = (
@@ -109,89 +109,15 @@ const Masonry: React.FC<MasonryProps> = ({
 
   const [containerRef, { width }] = useMeasure<HTMLDivElement>();
   const [imagesReady, setImagesReady] = useState(false);
-
-  // Agora usamos um Record para guardar o estado completo de cada filme
-  const [userMovies, setUserMovies] = useState<Record<string, UserMovie>>({});
-
   const [selectedMovie, setSelectedMovie] = useState<GridItem | null>(null);
   const hasMounted = useRef(false);
 
-  // Nova função para lidar com mudanças de status
-  const handleStatusChange = useCallback(
-    async (id: string, status: MovieStatus, rating?: number) => {
-      const userId = "currentUserId"; // Substituir pelo ID real do utilizador
-      const movieId = id;
-
-      setUserMovies((prev) => {
-        // Se o status for null, remove o filme
-        if (status === null) {
-          const newState = { ...prev };
-          delete newState[id];
-
-          // API call para remover
-          fetch("/api/user-movies/remove", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, movieId }),
-          }).catch((error) => console.error("Error removing movie:", error));
-
-          return newState;
-        }
-
-        // Atualiza o estado
-        const newState = {
-          ...prev,
-          [id]: {
-            status,
-            rating:
-              status === "seen" ? rating || prev[id]?.rating || null : null,
-          },
-        };
-
-        // API call para atualizar
-        fetch("/api/user-movies/update", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId,
-            movieId,
-            status,
-            rating: newState[id].rating,
-          }),
-        }).catch((error) => console.error("Error updating movie:", error));
-
-        return newState;
-      });
-    },
-    []
-  );
-
-  // Função para carregar os dados iniciais dos filmes do utilizador
-  useEffect(() => {
-    const loadUserMovies = async () => {
-      const userId = "currentUserId"; // Substituir pelo ID real
-
-      try {
-        const response = await fetch(`/api/user-movies/${userId}`);
-        const data = await response.json();
-
-        // Converte o array para um Record
-        const moviesMap: Record<string, UserMovie> = {};
-        data.forEach((movie: any) => {
-          moviesMap[movie.movie_id] = {
-            status: movie.status,
-            rating: movie.rating,
-          };
-        });
-
-        setUserMovies(moviesMap);
-      } catch (error) {
-        console.error("Error loading user movies:", error);
-      }
-    };
-
-    loadUserMovies();
-  }, []);
+  // Hook para gerir os filmes do utilizador
+  const {
+    userMovies,
+    updateMovieStatus,
+    isLoading: loadingUserMovies,
+  } = useUserMovies();
 
   const getInitialPosition = useCallback(
     (item: GridItem) => {
@@ -344,7 +270,7 @@ const Masonry: React.FC<MasonryProps> = ({
             key={item.id}
             item={item}
             userMovie={userMovies[item.id] || null}
-            onStatusChange={handleStatusChange}
+            onStatusChange={updateMovieStatus}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             onClick={setSelectedMovie}
@@ -357,7 +283,7 @@ const Masonry: React.FC<MasonryProps> = ({
           movie={selectedMovie}
           userMovie={userMovies[selectedMovie.id] || null}
           onClose={() => setSelectedMovie(null)}
-          onStatusChange={handleStatusChange}
+          onStatusChange={updateMovieStatus}
         />
       )}
     </>
