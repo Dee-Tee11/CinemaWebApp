@@ -12,7 +12,14 @@
   z-index: 1000;
   padding: 20px;
 }
+.add-to-favorites-button.saved {
+  background: #166534; /* Verde escuro */
+  opacity: 0.8;
+}
 
+.add-to-favorites-button.saved:hover {
+  opacity: 1;
+}
 .modal-content {
   background-color: #1a1a1a;
   border-radius: 16px;

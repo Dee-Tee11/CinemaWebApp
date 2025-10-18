@@ -1,18 +1,28 @@
 import React, { useEffect } from 'react';
-import { Eye, EyeOff, Star, X } from 'lucide-react';
-import { type GridItem } from '../MovieCard/MovieCard';
+import { Eye, EyeOff, Star, X, Clock } from 'lucide-react';
+import { type GridItem, type MovieStatus } from '../MovieCard/MovieCard';
 import { formatRuntime } from '../../lib/utils';
 import './MovieModal.css';
 
 // ==================== MOVIE MODAL COMPONENT ====================
-interface MovieModalProps {
-  movie: GridItem;
-  isWatched: boolean;
-  onClose: () => void;
-  onToggleWatched: (id: string, e: React.MouseEvent) => void;
+interface UserMovie {
+  status: MovieStatus;
+  rating?: number;
 }
 
-const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onToggleWatched }) => {
+interface MovieModalProps {
+  movie: GridItem;
+  userMovie: UserMovie | null;
+  onClose: () => void;
+  onStatusChange: (movieId: string, status: MovieStatus) => Promise<void>;
+}
+
+const MovieModal: React.FC<MovieModalProps> = ({ 
+  movie, 
+  userMovie,
+  onClose, 
+  onStatusChange
+}) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -24,6 +34,21 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
       window.removeEventListener('keydown', handleEscape);
     };
   }, [onClose]);
+
+  const isWatched = userMovie?.status === 'seen';
+  const isWatchLater = userMovie?.status === 'saved';
+
+  const handleToggleWatched = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStatus = isWatched ? null : 'seen';
+    await onStatusChange(movie.id, newStatus as MovieStatus);
+  };
+
+  const handleToggleWatchLater = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStatus = isWatchLater ? null : 'Watch Later';
+    await onStatusChange(movie.id, newStatus as MovieStatus);
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -68,14 +93,15 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
           </div>
 
           <div className="modal-actions">
-            <button className="add-to-favorites-button">
-              Add to Favorites
-            </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleWatched(movie.id, e);
-              }}
+              onClick={handleToggleWatchLater}
+              className={`add-to-favorites-button ${isWatchLater ? 'saved' : ''}`}
+            >
+              {isWatchLater ? 'Saved to Watch Later' : 'Save to Watch Later'}
+            </button>
+            
+            <button
+              onClick={handleToggleWatched}
               className={`watched-button ${isWatched ? 'watched' : ''}`}>
               {isWatched ? (
                 <>

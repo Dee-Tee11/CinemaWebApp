@@ -22,8 +22,7 @@ interface FriendRequest {
 }
 
 interface MovieStats {
-  liked: number;
-  favorites: number;
+  watchLater: number;
   watched: number;
 }
 
@@ -36,8 +35,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [movieStats, setMovieStats] = useState<MovieStats>({
-    liked: 0,
-    favorites: 0,
+    watchLater: 0,
     watched: 0
   });
   const [loading, setLoading] = useState(true);
@@ -149,21 +147,23 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     if (!currentUserId) return;
 
     const { data, error } = await supabase
-      .from('User_Movies')
-      .select('Status, Rating')
-      .eq('User_id', currentUserId);
+      .from('user_movies')
+      .select('status')
+      .eq('user_id', currentUserId);
 
     if (error) {
       console.error('Error fetching movie stats:', error);
       return;
     }
 
+    console.log('Movie stats raw data:', data);
+
     const stats: MovieStats = {
-      liked: data.filter(m => m.Rating && m.Rating >= 4).length,
-      favorites: data.filter(m => m.Status === 'Favorite').length,
-      watched: data.filter(m => m.Status === 'Watched' || m.Status === 'Favorite').length
+      watchLater: data.filter(m => m.status === 'saved').length,
+      watched: data.filter(m => m.status === 'seen').length
     };
 
+    console.log('Calculated stats:', stats);
     setMovieStats(stats);
   };
 
@@ -342,14 +342,14 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                           className="accept-friend-button"
                           onClick={() => handleAcceptFriend(request.id, request.sender_id)}
                         >
-                          Aceitar amigo
+                          <Check size={16} />
                         </button>
                         <button
                           className="reject-friend-button"
                           onClick={() => handleRejectFriend(request.id)}
                           title="Reject request"
                         >
-                          <X size={18} />
+                          <X size={16} />
                         </button>
                       </div>
                     </li>
@@ -365,13 +365,8 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               {friends.length > 0 ? (
                 <ul className="list">
                   {friends.map((friend) => (
-                    <li key={friend.id} className="friend-item">
-                      <div className="friend-info">
-                        <div className="friend-avatar">
-                          <User size={20} color="#991b1b" />
-                        </div>
-                        <span className="friend-name">{friend.name}</span>
-                      </div>
+                    <li key={friend.id} className="request-item">
+                      <span>{friend.name}</span>
                       <button
                         className="remove-friend-button"
                         onClick={() => handleRemoveFriend(friend.id)}
@@ -389,21 +384,13 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           ) : (
             // Stats Grid
             <div className="stats-grid">
-              {/* Liked Movies */}
-              <div className="stat-item liked">
-                <div className="stat-icon liked">
-                  <Heart size={20} color="#ef4444" fill="#ef4444" />
-                </div>
-                <div className="stat-value">{movieStats.liked}</div>
-                <div className="stat-label">Liked</div>
-              </div>
-              {/* Favorite Movies */}
-              <div className="stat-item favorite">
-                <div className="stat-icon favorite">
+              {/* Watch Later */}
+              <div className="stat-item watch-later">
+                <div className="stat-icon watch-later">
                   <Star size={20} color="#eab308" fill="#eab308" />
                 </div>
-                <div className="stat-value">{movieStats.favorites}</div>
-                <div className="stat-label">Favorites</div>
+                <div className="stat-value">{movieStats.watchLater}</div>
+                <div className="stat-label">Watch Later</div>
               </div>
               {/* Watched Movies */}
               <div className="stat-item watched">
