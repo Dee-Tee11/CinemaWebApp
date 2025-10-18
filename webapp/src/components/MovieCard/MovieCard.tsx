@@ -26,6 +26,7 @@ export interface GridItem extends Item {
 export type MovieStatus = "saved" | "watching" | "seen" | null;
 
 export interface UserMovie {
+  review: null;
   status: MovieStatus;
   rating: number | null;
 }
