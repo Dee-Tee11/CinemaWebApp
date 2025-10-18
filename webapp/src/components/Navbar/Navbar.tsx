@@ -6,12 +6,14 @@ import styles from "./Navbar.module.css";
 interface NavbarProps {
   onHomeClick?: () => void;
   onFriendsClick?: () => void;
+  onExploreClick?: () => void;
   onSearch?: (query: string) => void;
 }
 
 export default function Navbar({
   onHomeClick,
   onFriendsClick,
+  onExploreClick,
   onSearch,
 }: NavbarProps) {
   const [activeTab, setActiveTab] = useState("forYou");
@@ -35,6 +37,8 @@ export default function Navbar({
       onHomeClick();
     } else if (tab === "friends" && onFriendsClick) {
       onFriendsClick();
+    } else if (tab === "explore" && onExploreClick) {
+      onExploreClick();
     }
   };
 
@@ -90,6 +94,16 @@ export default function Navbar({
         >
           Friends
           {activeTab === "friends" && <div className={styles.tabIndicator} />}
+        </button>
+
+        <button
+          onClick={() => handleTabClick("explore")}
+          className={`${styles.tabButton} ${
+            activeTab === "explore" ? styles.active : styles.inactive
+          } ${isScrolled ? styles.scrolled : styles.default}`}
+        >
+          Explore
+          {activeTab === "explore" && <div className={styles.tabIndicator} />}
         </button>
       </div>
 
