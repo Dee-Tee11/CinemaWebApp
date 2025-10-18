@@ -73,12 +73,12 @@ class SistemaRecomendacaoKNN:
                     print(f"❌ Número inválido! Usa entre 0 e {len(self.bd)-1}")
                     continue
                 
-                # Guardar escolhas com nota 9/10 (adorou)
-                print("\n✅ Filmes escolhidos (assumindo nota 9/10):")
+                # Guardar escolhas com nota 18/20 (adorou)
+                print("\n✅ Filmes escolhidos (assumindo nota 18/20):")
                 for idx in indices:
-                    self.avaliacoes[idx] = 9.0
+                    self.avaliacoes[idx] = 18.0
                     self.filmes_vistos.append(idx)
-                    print(f"   ⭐ {self.bd.iloc[idx]['Series_Title']} → 9/10")
+                    print(f"   ⭐ {self.bd.iloc[idx]['Series_Title']} → 18/20")
                 
                 break
                 
@@ -149,7 +149,7 @@ class SistemaRecomendacaoKNN:
         print(f"{'='*80}\n")
         
         print("Para cada filme:")
-        print("  ⭐ Digita nota de 1-10 se viste")
+        print("  ⭐ Digita nota de 0-20 se viste")
         print("  ⏭️  Digita 's' para skip (não vi)\n")
         
         for i, idx in enumerate(indices_filmes, 1):
@@ -161,7 +161,7 @@ class SistemaRecomendacaoKNN:
             print(f"    🎬 {filme['Director']}")
             
             while True:
-                resposta = input(f"    Tua nota (1-10 ou 's'): ").strip().lower()
+                resposta = input(f"    Tua nota (0-20 ou 's'): ").strip().lower()
                 
                 if resposta == 's':
                     self.filmes_vistos.append(idx)
@@ -170,24 +170,24 @@ class SistemaRecomendacaoKNN:
                 
                 try:
                     nota = float(resposta)
-                    if 1 <= nota <= 10:
+                    if 0 <= nota <= 20:
                         self.avaliacoes[idx] = nota
                         self.filmes_vistos.append(idx)
                         emoji = self._get_emoji_nota(nota)
-                        print(f"    ✅ Nota registada: {nota}/10 {emoji}")
+                        print(f"    ✅ Nota registada: {nota}/20 {emoji}")
                         break
                     else:
-                        print("    ❌ Nota deve ser entre 1 e 10!")
+                        print("    ❌ Nota deve ser entre 0 e 20!")
                 except ValueError:
-                    print("    ❌ Inválido! Usa número (1-10) ou 's'")
+                    print("    ❌ Inválido! Usa número (0-20) ou 's'")
     
     def _get_emoji_nota(self, nota):
         """Retorna emoji baseado na nota"""
-        if nota >= 9:
+        if nota >= 18:
             return "🔥"
-        elif nota >= 7:
+        elif nota >= 14:
             return "😊"
-        elif nota >= 5:
+        elif nota >= 10:
             return "😐"
         else:
             return "😞"
@@ -250,10 +250,10 @@ class SistemaRecomendacaoKNN:
         emb_filme = self.embeddings[idx_filme]
         similaridade = cosine_similarity([perfil_usuario], [emb_filme])[0][0]
         
-        # Converter para escala 1-10
+        # Converter para escala 0-20
         # Similaridade varia de -1 a 1, mas geralmente fica entre 0 e 1
-        score = 1 + (similaridade * 9)  # escala para 1-10
-        score = max(1, min(10, score))
+        score = similaridade * 20  # escala para 0-20
+        score = max(0, min(20, score))
         
         return score
     
@@ -313,7 +313,7 @@ class SistemaRecomendacaoKNN:
             emoji = self._get_emoji_nota(score)
             
             print(f"[{i}] {filme['titulo']}")
-            print(f"    📊 Score previsto: {score:.1f}/10 {emoji}")
+            print(f"    📊 Score previsto: {score:.1f}/20 {emoji}")
             print(f"    ⭐ IMDB: {filme['rating']}/10")
             print(f"    🎭 {filme['genero']}")
             print(f"    🎬 {filme['director']}")
@@ -328,27 +328,27 @@ class SistemaRecomendacaoKNN:
         nota_media = np.mean(notas)
         
         # Contar por faixa
-        excelentes = sum(1 for n in notas if n >= 8)
-        bons = sum(1 for n in notas if 6 <= n < 8)
-        medios = sum(1 for n in notas if 4 <= n < 6)
-        ruins = sum(1 for n in notas if n < 4)
+        excelentes = sum(1 for n in notas if n >= 16)
+        bons = sum(1 for n in notas if 12 <= n < 16)
+        medios = sum(1 for n in notas if 8 <= n < 12)
+        ruins = sum(1 for n in notas if n < 8)
         
         print(f"\n{'='*80}")
         print("📊 ESTATÍSTICAS DO TEU PERFIL")
         print(f"{'='*80}")
         print(f"Total de filmes avaliados: {len(self.avaliacoes)}")
-        print(f"Nota média: {nota_media:.1f}/10")
+        print(f"Nota média: {nota_media:.1f}/20")
         print(f"\nDistribuição:")
-        print(f"  🔥 Excelentes (8-10): {excelentes}")
-        print(f"  😊 Bons (6-8): {bons}")
-        print(f"  😐 Médios (4-6): {medios}")
-        print(f"  😞 Ruins (1-4): {ruins}")
+        print(f"  🔥 Excelentes (16-20): {excelentes}")
+        print(f"  😊 Bons (12-16): {bons}")
+        print(f"  😐 Médios (8-12): {medios}")
+        print(f"  😞 Ruins (0-8): {ruins}")
         
         # Top géneros
         print(f"\n🎬 Géneros favoritos:")
         generos_avaliados = []
         for idx, nota in self.avaliacoes.items():
-            if nota >= 7:  # Só os que gostou
+            if nota >= 14:  # Só os que gostou
                 genero = self.bd.iloc[idx]['Genre']
                 if pd.notna(genero):
                     generos_avaliados.extend([g.strip() for g in genero.split(',')])
