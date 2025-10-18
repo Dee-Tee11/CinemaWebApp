@@ -71,6 +71,7 @@ export default function Home() {
       <Navbar
         onHomeClick={handleForYouClick}
         onFriendsClick={handleFriendsClick}
+        onExploreClick={handleExploreClick}
         onSearch={handleSearch}
       />
 
