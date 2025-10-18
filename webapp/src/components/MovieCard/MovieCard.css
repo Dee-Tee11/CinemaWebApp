@@ -27,73 +27,18 @@
   position: relative;
 }
 
-/* Play Button */
-.play-button {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.play-button:hover {
-  background-color: rgba(0, 0, 0, 0.9);
-  transform: scale(1.1);
-}
-
-.play-button svg {
-  color: white;
-  fill: white;
-}
-
-/* Watch Button */
-.watch-button {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 2;
-}
-
-.watch-button:hover {
-  background-color: rgba(0, 0, 0, 0.9);
-  transform: scale(1.1);
-}
-
-.watch-button.watched {
-  background-color: rgba(34, 197, 94, 0.9);
-}
-
-.watch-button.watched:hover {
-  background-color: rgba(34, 197, 94, 1);
-}
-
-/* Rating Badge */
+/* Rating Badge (from API) */
 .rating-badge {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
   background-color: rgba(0, 0, 0, 0.8);
   border-radius: 8px;
   padding: 4px 8px;
   display: flex;
   align-items: center;
   gap: 4px;
+  z-index: 2;
 }
 
 .rating-badge svg {
@@ -107,49 +52,190 @@
   font-weight: bold;
 }
 
-/* Action Buttons Container */
-.action-buttons {
+/* User Rating Badge */
+.user-rating-badge {
   position: absolute;
+  top: 12px;
   right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px 8px;
+  border-radius: 8px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  z-index: 2;
 }
 
-.movie-card:hover .action-buttons {
+.user-rating-badge .rating-text {
+  color: #333;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+/* Status Buttons */
+.status-buttons {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 2;
+}
+
+.movie-card:hover .status-buttons {
   opacity: 1;
 }
 
-.action-button {
+.status-btn {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: 2px solid #ddd;
   outline: none;
 }
 
-.action-button:hover {
-  background-color: #991b1b;
+.status-btn:hover {
   transform: scale(1.1);
 }
 
-.action-button svg {
-  color: black;
-  transition: color 0.3s ease;
+/* Status button colors when active */
+.status-btn.saved.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
 }
 
-.action-button:hover svg {
+.status-btn.watching.active {
+  background-color: #f59e0b;
   color: white;
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+
+.status-btn.seen.active {
+  background-color: #10b981;
+  color: white;
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+}
+
+/* Rating Selector */
+.rating-selector {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.98);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  min-width: 250px;
+}
+
+.rating-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #333;
+}
+
+.rating-slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rating-number {
+  font-size: 32px;
+  font-weight: bold;
+  color: #991b1b;
+  text-align: center;
+}
+
+.rating-slider {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #ef4444, #f59e0b, #10b981);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.rating-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #991b1b;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.rating-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.rating-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid #991b1b;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.rating-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+.rating-range {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.rating-confirm-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #991b1b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rating-confirm-btn:hover {
+  background-color: #7f1d1d;
 }
 
 /* Info Section - ALTURA FIXA */
@@ -194,26 +280,39 @@
 
 /* Responsive adjustments for card */
 @media (max-width: 600px) {
-    .card-info-section {
-        height: 90px;
-        min-height: 90px;
-        max-height: 90px;
-        padding: 10px;
-    }
+  .card-info-section {
+    height: 90px;
+    min-height: 90px;
+    max-height: 90px;
+    padding: 10px;
+  }
 
-    .card-image-section {
-        height: calc(100% - 90px);
-    }
+  .card-image-section {
+    height: calc(100% - 90px);
+  }
 
-    .card-title {
-        font-size: 14px;
-    }
+  .card-title {
+    font-size: 14px;
+  }
 
-    .card-category {
-        font-size: 10px;
-    }
+  .card-category {
+    font-size: 10px;
+  }
 
-    .card-year {
-        font-size: 12px;
-    }
+  .card-year {
+    font-size: 12px;
+  }
+
+  .status-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .rating-selector {
+    padding: 16px;
+  }
+
+  .stars-container {
+    gap: 6px;
+  }
 }
