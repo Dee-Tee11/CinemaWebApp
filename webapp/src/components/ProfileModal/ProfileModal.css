@@ -265,6 +265,113 @@
   text-align: center;
 }
 
+/* Friend item styling */
+.friend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(153, 27, 27, 0.05);
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(153, 27, 27, 0.1);
+}
+
+.friend-item:hover {
+  background: rgba(153, 27, 27, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(153, 27, 27, 0.15);
+}
+
+.friend-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.friend-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(153, 27, 27, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(153, 27, 27, 0.3);
+}
+
+.friend-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+/* Friend Requests Buttons */
+.accept-friend-button {
+  padding: 0.5rem 1rem;
+  background: #991b1b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.accept-friend-button:hover {
+  background: #7f1d1d;
+  transform: scale(1.05);
+}
+
+.reject-friend-button {
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+}
+
+.reject-friend-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: scale(1.1);
+}
+
+/* Remove friend button */
+.remove-friend-button {
+  padding: 0.5rem 1rem;
+  background: #991b1b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.remove-friend-button:hover {
+  background: #7f1d1d;
+  transform: scale(1.05);
+}
+
+.remove-friend-button:active {
+  transform: scale(0.98);
+}
+
 /* Stats Grid */
 .stats-grid {
   display: flex;
@@ -340,6 +447,14 @@
   font-weight: 500;
 }
 
+/* Loading state */
+.loading {
+  text-align: center;
+  color: #991b1b;
+  font-weight: 600;
+  padding: 2rem;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
@@ -365,5 +480,16 @@
 @media (max-width: 768px) {
   .stats-grid {
     flex-direction: column !important;
+  }
+  
+  .friend-item {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .remove-friend-button {
+    width: 100%;
+    justify-content: center;
   }
 }
