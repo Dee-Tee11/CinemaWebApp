@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, Bookmark, Play, Star } from "lucide-react";
+import { Eye, Bookmark, Play, Star, ThumbsDown } from "lucide-react";
 import "./MovieCard.css";
 
 // TYPES
@@ -23,7 +23,7 @@ export interface GridItem extends Item {
   h: number;
 }
 
-export type MovieStatus = "saved" | "watching" | "seen" | null;
+export type MovieStatus = "saved" | "watching" | "seen" | "dont_recommend" | null;
 
 export interface UserMovie {
   review: null;
@@ -50,7 +50,7 @@ interface StatusButtonProps {
   isActive: boolean;
   onClick: (e: React.MouseEvent) => void;
   label: string;
-  statusType: "saved" | "watching" | "seen";
+  statusType: "saved" | "watching" | "seen" | "not_recommend";
 }
 
 const StatusButton: React.FC<StatusButtonProps> = ({
@@ -155,7 +155,7 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(
         return;
       }
 
-      // Para "saved" e "watching", muda diretamente
+      // Para os outros estados, muda diretamente
       onStatusChange(item.id, newStatus);
     };
 
@@ -221,6 +221,13 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(
                 onClick={(e) => handleStatusClick(e, "seen")}
                 label="Mark as seen"
                 statusType="seen"
+              />
+              <StatusButton
+                Icon={ThumbsDown}
+                isActive={userMovie?.status === "dont_recommend"}
+                onClick={(e) => handleStatusClick(e, "dont_recommend")}
+                label="Not recommend"
+                statusType="not_recommend"
               />
             </div>
 

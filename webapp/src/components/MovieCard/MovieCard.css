@@ -86,6 +86,22 @@
   z-index: 2;
 }
 
+/* Botão Not Recommend */
+.status-btn.not_recommend {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.3);
+}
+
+.status-btn.not_recommend:hover {
+  background: rgba(255, 59, 48, 0.2);
+  border-color: rgba(255, 59, 48, 0.5);
+}
+
+.status-btn.not_recommend.active {
+  background: rgba(255, 59, 48, 0.3);
+  border-color: #ff3b30;
+  color: #ff3b30;
+}
 .movie-card:hover .status-buttons {
   opacity: 1;
 }
