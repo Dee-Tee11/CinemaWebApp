@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import Logo from "../Logo";
 import styles from "./Navbar.module.css";
 
 interface NavbarProps {
-  onHomeClick?: () => void;
-  onFriendsClick?: () => void;
-  onExploreClick?: () => void;
   onSearch?: (query: string) => void;
 }
 
-export default function Navbar({
-  onHomeClick,
-  onFriendsClick,
-  onExploreClick,
-  onSearch,
-}: NavbarProps) {
-  const [activeTab, setActiveTab] = useState("forYou");
+export default function Navbar({ onSearch }: NavbarProps) {
+  const location = useLocation();
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
+
+  const getActiveTab = () => {
+    switch (location.pathname) {
+      case "/friends":
+        return "friends";
+      case "/explore":
+        return "explore";
+      default:
+        return "forYou";
+    }
+  };
+  const activeTab = getActiveTab();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,18 +34,6 @@ export default function Navbar({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const handleTabClick = (tab: string) => {
-    setActiveTab(tab);
-    setSearchExpanded(false);
-    if (tab === "forYou" && onHomeClick) {
-      onHomeClick();
-    } else if (tab === "friends" && onFriendsClick) {
-      onFriendsClick();
-    } else if (tab === "explore" && onExploreClick) {
-      onExploreClick();
-    }
-  };
 
   const handleSearchSubmit = () => {
     if (onSearch && searchQuery.trim()) {
@@ -76,35 +69,35 @@ export default function Navbar({
           searchExpanded ? styles.hidden : styles.visible
         }`}
       >
-        <button
-          onClick={() => handleTabClick("forYou")}
+        <Link
+          to="/"
           className={`${styles.tabButton} ${
             activeTab === "forYou" ? styles.active : styles.inactive
           } ${isScrolled ? styles.scrolled : styles.default}`}
         >
           For You
           {activeTab === "forYou" && <div className={styles.tabIndicator} />}
-        </button>
+        </Link>
 
-        <button
-          onClick={() => handleTabClick("friends")}
+        <Link
+          to="/friends"
           className={`${styles.tabButton} ${
             activeTab === "friends" ? styles.active : styles.inactive
           } ${isScrolled ? styles.scrolled : styles.default}`}
         >
           Friends
           {activeTab === "friends" && <div className={styles.tabIndicator} />}
-        </button>
+        </Link>
 
-        <button
-          onClick={() => handleTabClick("explore")}
+        <Link
+          to="/explore"
           className={`${styles.tabButton} ${
             activeTab === "explore" ? styles.active : styles.inactive
           } ${isScrolled ? styles.scrolled : styles.default}`}
         >
           Explore
           {activeTab === "explore" && <div className={styles.tabIndicator} />}
-        </button>
+        </Link>
       </div>
 
       {/* Search Bar */}

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Sidebar from "./components/Slidebar";
 import Navbar from "./components/Navbar/Navbar";
 import Masonry from "./components/Masonry/Masonry";
@@ -11,17 +12,31 @@ import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useUserStats } from "./hooks/useUserStats";
 import "./home.css";
 
+type ViewType = "forYou" | "friends" | "explore";
+
 export default function Home() {
+  const location = useLocation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
-  const [activeView, setActiveView] = useState<
-    "forYou" | "friends" | "explore"
-  >("forYou");
+  const [activeView, setActiveView] = useState<ViewType>("forYou");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
     undefined
   );
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === "/friends") {
+      setActiveView("friends");
+    } else if (path === "/explore") {
+      setActiveView("explore");
+    } else {
+      setActiveView("forYou");
+    }
+    setSelectedCategory(undefined);
+    setSearchQuery("");
+  }, [location.pathname]);
 
   const { items, isLoading, hasMore, loadMore } = useMovies(
     activeView,
@@ -40,24 +55,6 @@ export default function Home() {
     setIsProfileOpen(true);
   };
 
-  const handleForYouClick = () => {
-    console.log("For You clicked!");
-    setActiveView("forYou");
-    setSelectedCategory(undefined);
-  };
-
-  const handleFriendsClick = () => {
-    console.log("Friends suggestions clicked!");
-    setActiveView("friends");
-    setSelectedCategory(undefined);
-  };
-
-  const handleExploreClick = () => {
-    console.log("Explore clicked!");
-    setActiveView("explore");
-    setSelectedCategory(undefined);
-  };
-
   const handleSearch = (query: string) => {
     console.log("Searching for:", query);
     setSearchQuery(query);
@@ -68,17 +65,11 @@ export default function Home() {
 
   return (
     <div className="home-container">
-      <Navbar
-        onHomeClick={handleForYouClick}
-        onFriendsClick={handleFriendsClick}
-        onExploreClick={handleExploreClick}
-        onSearch={handleSearch}
-      />
+      <Navbar onSearch={handleSearch} />
 
       <Sidebar
         onSettingsClick={handleSettingsClick}
         onProfileClick={handleProfileClick}
-        onExploreClick={handleExploreClick}
       />
 
       <ProfileModal
