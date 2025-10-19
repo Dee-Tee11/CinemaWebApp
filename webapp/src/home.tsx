@@ -8,6 +8,7 @@ import CategoryFilters from "./components/CategoryFilters";
 import SettingsPopup from "./components/SettingsPopup";
 import AddFriendPopup from "./components/AddFriend/AddFriend";
 import { useMovies } from "./hooks/useMovies";
+import { useRecommendedMovies } from "./hooks/useRecommendedMovies";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useUserStats } from "./hooks/useUserStats";
 import "./home.css";
@@ -38,11 +39,14 @@ export default function Home() {
     setSearchQuery("");
   }, [location.pathname]);
 
-  const { items, isLoading, hasMore, loadMore } = useMovies(
+  const exploreMovies = useMovies(
     activeView,
     selectedCategory,
     searchQuery
   );
+  const recommendedMovies = useRecommendedMovies();
+
+  const { items, isLoading, hasMore, loadMore } = activeView === 'forYou' ? recommendedMovies : exploreMovies;
   const userStats = useUserStats();
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
