@@ -59,7 +59,7 @@ function App() {
         height: '100vh',
         background: '#0a0a0a'
       }}>
-        <p style={{ color: '#fff' }}>Carregando...</p>
+        <p style={{ color: '#fff' }}>Loading...</p>
       </div>
     );
   }
