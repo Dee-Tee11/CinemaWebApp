@@ -7,6 +7,8 @@ export default function AppRouter() {
       <div style={{ background: "#0a0a0a", minHeight: "100vh" }}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/friends" element={<Home />} />
+          <Route path="/explore" element={<Home />} />
         </Routes>
       </div>
     </BrowserRouter>

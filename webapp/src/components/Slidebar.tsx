@@ -1,19 +1,18 @@
 import React, { useState } from "react";
 import { Settings, User, Compass, UserPlus } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
+import { Link } from "react-router-dom";
 import SettingsPopup from "./SettingsPopup";
 import AddFriendPopup from "./AddFriend/AddFriend"; // Ajuste o caminho conforme necessário
 
 interface SidebarProps {
   onSettingsClick?: () => void;
   onProfileClick?: () => void;
-  onExploreClick?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   onSettingsClick,
   onProfileClick,
-  onExploreClick,
 }) => {
   const { signOut } = useClerk();
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
@@ -78,8 +77,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         {/* Explore Button */}
-        <button
-          onClick={onExploreClick}
+        <Link
+          to="/explore"
           style={{
             width: "48px",
             height: "48px",
@@ -106,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           aria-label="Explore"
         >
           <Compass size={22} />
-        </button>
+        </Link>
 
         {/* Adicionar Amigo Button */}
         <button

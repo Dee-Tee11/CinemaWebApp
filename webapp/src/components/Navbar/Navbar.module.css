@@ -67,6 +67,7 @@
   white-space: nowrap;
   position: relative;
   background: transparent;
+  text-decoration: none;
 }
 
 .tabButton.active.scrolled {
