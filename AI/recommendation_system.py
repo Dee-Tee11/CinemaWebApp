@@ -12,7 +12,7 @@ class SistemaRecomendacaoKNN:
             embeddings_path: Caminho para o arquivo .npy com embeddings
             dataset_source: Caminho para CSV OU DataFrame com dados dos filmes
         """
-        print("🎬 Carregando sistema de recomendação...")
+        print("Carregando sistema de recomendação...")
         self.embeddings = np.load(embeddings_path)
         
         # Aceitar tanto CSV quanto DataFrame

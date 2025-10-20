@@ -8,7 +8,7 @@ interface Movie {
   title: string;
   category: string;
   img: string;
-  rating?: number;
+  rating?: number;  
   time?: string;
   synopsis?: string;
 }

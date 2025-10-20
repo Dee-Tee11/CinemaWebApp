@@ -27,14 +27,14 @@ app.add_middleware(
 
 # Supabase Initialization
 supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_SERVICE_KEY")  # Mudei de SUPABASE_SERVICE_KEY para SUPABASE_KEY
+supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
 
 if not supabase_url or not supabase_key:
     raise ValueError(
         "❌ Variáveis de ambiente não configuradas!\n"
         "Adicione ao arquivo FastApi/.env:\n"
         "SUPABASE_URL=...\n"
-        "SUPABASE_KEY=..."
+        "SUPABASE_SERVICE_KEY=..."
     )
 
 print(f"✅ Conectando ao Supabase: {supabase_url[:40]}...")
@@ -55,8 +55,10 @@ except Exception as e:
     print(f"✅ {len(df_movies)} filmes carregados do CSV\n")
 
 # Recommendation System Initialization
+# Futuramente mudar para os embeddings da supabase
 embeddings_path = os.path.join(os.path.dirname(__file__), '..', 'AI', 'movie_embeddings.npy')
 rec_system = SistemaRecomendacaoKNN(embeddings_path, df_movies)
+
 
 def generate_and_save_recommendations(user_id: str):
     """
@@ -122,18 +124,11 @@ def generate_and_save_recommendations(user_id: str):
             'position': i + 1,
         })
 
-    # 5. Salvar no Supabase (deletar antigas e inserir novas)
+    # 5. Usar upsert para inserir ou atualizar recomendações
     try:
-        # Deletar recomendações antigas
+        # Usar upsert que insere ou atualiza automaticamente
         supabase.table('user_recommendations')\
-            .delete()\
-            .eq('user_id', user_id)\
-            .execute()
-        print(f"🗑️  Recomendações antigas removidas")
-        
-        # Inserir novas recomendações
-        supabase.table('user_recommendations')\
-            .insert(recs_to_insert)\
+            .upsert(recs_to_insert, on_conflict='user_id,movie_id')\
             .execute()
         
         print(f"✅ {len(recs_to_insert)} recomendações salvas no Supabase!")
@@ -146,6 +141,7 @@ def generate_and_save_recommendations(user_id: str):
     
     print(f"{'='*60}\n")
 
+
 @app.post("/generate-recommendations/{user_id}")
 def trigger_recommendation_generation(user_id: str, background_tasks: BackgroundTasks):
     """
@@ -156,6 +152,7 @@ def trigger_recommendation_generation(user_id: str, background_tasks: Background
         "message": f"Geração de recomendações iniciada para o usuário {user_id}",
         "status": "processing"
     }
+
 
 @app.get("/recommendations/{user_id}")
 def get_user_recommendations(user_id: str, limit: int = 20):
@@ -178,6 +175,7 @@ def get_user_recommendations(user_id: str, limit: int = 20):
     except Exception as e:
         return {"error": str(e)}
 
+
 @app.get("/")
 def home():
     return {
@@ -190,9 +188,6 @@ def home():
         }
     }
 
-@app.get("/for-you-test")
-def for_you_test():
-    return {"message": "✅ For You endpoint funcionando!"}
 
 @app.get("/health")
 def health_check():
