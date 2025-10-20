@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import pandas as pd
+import random
 
 # Carregar variáveis de ambiente PRIMEIRO
 load_dotenv()
@@ -153,6 +154,16 @@ def trigger_recommendation_generation(user_id: str, background_tasks: Background
         "status": "processing"
     }
 
+@app.get("/onboarding")
+def start_onboarding():
+    # Buscar todos os filmes da tabela 'movies'
+    response = supabase.table('movies').select('id, series_title, genre, poster_url, imdb_rating, overview').execute()
+    movies = response.data
+    
+    # Escolher 5 filmes aleatórios
+    selected_movies = random.sample(movies, min(5, len(movies))) if movies else []
+    
+    return {"movies": selected_movies}
 
 @app.get("/recommendations/{user_id}")
 def get_user_recommendations(user_id: str, limit: int = 20):

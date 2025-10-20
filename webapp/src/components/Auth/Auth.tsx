@@ -7,10 +7,11 @@ import {
 } from "@clerk/clerk-react";
 import styles from "./Auth.module.css";
 import GridMotion from "../GridMotion/GridMotion";
-
-
+import { useGridMovies } from "../../hooks/useGridMovies";
 
 const Auth = () => {
+  const { items, isLoading } = useGridMovies();
+
   return (
     <div
       style={{
@@ -20,7 +21,7 @@ const Auth = () => {
         overflow: "hidden",
       }}
     >
-      {/* GridMotion Background */}
+      {/* GridMotion Background with movie posters */}
       <div
         style={{
           position: "absolute",
@@ -32,7 +33,22 @@ const Auth = () => {
           backgroundColor: "#8b0000",
         }}
       >
-        <GridMotion gradientColor="transparent" />
+        {!isLoading ? (
+          <GridMotion gradientColor="transparent" items={items} />
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              color: "white",
+              fontSize: "1.2rem",
+            }}
+          >
+            Loading movies...
+          </div>
+        )}
       </div>
 
       {/* Authentication Buttons */}
