@@ -80,7 +80,11 @@ export const useRecommendedMovies = () => {
         synopsis: movie.overview || 'Synopsis not available',
       }));
 
-      setItems(prev => (reset ? formattedItems : [...prev, ...formattedItems]));
+      setItems(prev => {
+        const existingIds = new Set(prev.map(item => item.id));
+        const newItems = formattedItems.filter(item => !existingIds.has(item.id));
+        return reset ? newItems : [...prev, ...newItems];
+      });
       setHasMore(movieData.length === ITEMS_PER_PAGE);
       setIsLoading(false);
     }

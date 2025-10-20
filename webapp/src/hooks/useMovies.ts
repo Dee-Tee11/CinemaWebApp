@@ -84,7 +84,11 @@ export const useMovies = (activeView: string, selectedCategory?: string, searchQ
       };
     });
 
-    setItems(prev => (reset ? formattedItems : [...prev, ...formattedItems]));
+    setItems(prev => {
+      const existingIds = new Set(prev.map(item => item.id));
+      const newItems = formattedItems.filter(item => !existingIds.has(item.id));
+      return reset ? newItems : [...prev, ...newItems];
+    });
     setHasMore(data.length === itemsToFetch);
     setIsLoading(false);
   };
