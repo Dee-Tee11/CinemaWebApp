@@ -170,7 +170,7 @@ const MovieOnboardingSlider = () => {
         <div className="progress-bar-container">
           {movies.map((_, idx) => (
             <div
-              key={idx}
+              key={`progress-${idx}`}
               className={`progress-bar-item ${
                 idx < currentIndex ? 'completed' :
                 idx === currentIndex ? 'active' :
