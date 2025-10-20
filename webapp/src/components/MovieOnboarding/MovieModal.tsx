@@ -1,29 +1,32 @@
 import React, { useEffect } from 'react';
-import { Eye, EyeOff, Star, X, Heart, Save,Bookmark } from 'lucide-react';
-import { type GridItem } from '../MovieCard/MovieCard';
+import { Eye, EyeOff, Star, X } from 'lucide-react';
 import { formatRuntime } from '../../lib/utils';
-import './MovieModal.css';
+import '../MovieModal/MovieModal.css';
+
+interface Movie {
+  id: string;
+  title: string;
+  category: string;
+  img: string;
+  rating?: number;
+  time?: string;
+  synopsis?: string;
+}
 
 interface MovieModalProps {
-  movie: GridItem;
+  movie: Movie;
   isWatched: boolean;
   onClose: () => void;
   onToggleWatched: (id: string, e: React.MouseEvent) => void;
 }
 
-const MovieModal: React.FC<MovieModalProps> = ({ 
-  movie, 
-  isWatched, 
-  onClose, 
-  onToggleWatched 
-}) => {
+const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onToggleWatched }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.body.style.overflow = 'hidden';
     window.addEventListener('keydown', handleEscape);
-    
     return () => {
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleEscape);
@@ -33,7 +36,10 @@ const MovieModal: React.FC<MovieModalProps> = ({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="close-button">
+        <button
+          onClick={onClose}
+          className="close-button"
+        >
           <X size={24} />
         </button>
 
@@ -44,11 +50,9 @@ const MovieModal: React.FC<MovieModalProps> = ({
 
         <div className="modal-info">
           <div className="modal-header">
-            {/* PREMIUM CATEGORY BADGE */}
             <span className="modal-category">
               {movie.category || 'Uncategorized'}
             </span>
-            
             {movie.rating && (
               <div className="modal-rating">
                 <Star size={18} color="#FFD700" fill="#FFD700" />
@@ -60,21 +64,18 @@ const MovieModal: React.FC<MovieModalProps> = ({
           <h2 className="modal-title">{movie.title}</h2>
 
           <p className="modal-runtime">
-            {movie.time && `${formatRuntime(movie.time)}`}
+            {movie.time && `| ${formatRuntime(movie.time)}`}
           </p>
 
-          {/* PREMIUM SYNOPSIS CONTAINER */}
-          <div className="synopsis-container">
+          <div>
             <h3 className="synopsis-title">Synopsis</h3>
             <p className="synopsis-text">
-              {movie.synopsis ||
-                'An engaging story that captivates audiences around the world. This film features a complex narrative and memorable characters that explore deep themes of the human condition, leaving a lasting mark on the history of cinema.'}
+              {movie.synopsis || 'An engaging story that captivates audiences around the world. This film features a complex narrative and memorable characters that explore deep themes of the human condition, leaving a lasting mark on the history of cinema.'}
             </p>
           </div>
 
           <div className="modal-actions">
             <button className="add-to-favorites-button">
-              <Bookmark size={20} />
               Add to Favorites
             </button>
             <button
@@ -82,8 +83,7 @@ const MovieModal: React.FC<MovieModalProps> = ({
                 e.stopPropagation();
                 onToggleWatched(movie.id, e);
               }}
-              className={`watched-button ${isWatched ? 'watched' : ''}`}
-            >
+              className={`watched-button ${isWatched ? 'watched' : ''}`}>
               {isWatched ? (
                 <>
                   <Eye size={20} /> Watched
