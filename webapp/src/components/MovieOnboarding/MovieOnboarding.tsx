@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import './MovieOnboarding.css';
-import MovieModal from './MovieModal';
+import MovieModal from './MovieOnboardingModal';
 
 interface Movie {
   id: number;
