@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import './MovieOnboarding.css';
+import MovieModal from './MovieModal';
 
 interface Movie {
   id: number;
-  title: string;
-  category: string;
-  year: string;
-  time: string;
-  rating: number;
-  img: string;
+  series_title: string;
+  genre: string;
+  poster_url: string;
+  imdb_rating: number;
+  overview: string;
 }
 
 const MovieOnboardingSlider = () => {
@@ -18,63 +18,48 @@ const MovieOnboardingSlider = () => {
   const [showRatingSelector, setShowRatingSelector] = useState(false);
   const [tempRating, setTempRating] = useState(20);
   const [isComplete, setIsComplete] = useState(false);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const movies: Movie[] = [
-    { 
-      id: 1, 
-      title: "The Shawshank Redemption", 
-      category: "Drama", 
-      year: "1994",
-      time: "142",
-      rating: 9.3,
-      img: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&h=600&fit=crop"
-    },
-    { 
-      id: 2, 
-      title: "The Godfather", 
-      category: "Crime, Drama", 
-      year: "1972",
-      time: "175",
-      rating: 9.2,
-      img: "https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=400&h=600&fit=crop"
-    },
-    { 
-      id: 3, 
-      title: "The Dark Knight", 
-      category: "Action, Crime", 
-      year: "2008",
-      time: "152",
-      rating: 9.0,
-      img: "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=400&h=600&fit=crop"
-    },
-    { 
-      id: 4, 
-      title: "Pulp Fiction", 
-      category: "Crime, Drama", 
-      year: "1994",
-      time: "154",
-      rating: 8.9,
-      img: "https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=400&h=600&fit=crop"
-    },
-    { 
-      id: 5, 
-      title: "Inception", 
-      category: "Action, Sci-Fi", 
-      year: "2010",
-      time: "148",
-      rating: 8.8,
-      img: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&h=600&fit=crop"
-    }
-  ];
+  useEffect(() => {
+    setLoading(true);
+    console.log('Starting call to /api/onboarding/start...');
+    fetch('http://localhost:8000/api/onboarding/start')
+      .then((response) => {
+        console.log('Response received, status:', response.status);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Data received:', data);
+        if (data.movies && Array.isArray(data.movies)) {
+          setMovies(data.movies);
+          setError(null);
+        } else {
+          throw new Error('Invalid response: "movies" is not an array');
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading movies:', error);
+        setError('Error loading movies');
+      })
+      .finally(() => {
+        console.log('Loading completed');
+        setLoading(false);
+      });
+  }, []);
 
-  const formatRuntime = (minutes: string): string => {
-    const mins = parseInt(minutes);
-    const hours = Math.floor(mins / 60);
-    const remainingMins = mins % 60;
-    return remainingMins > 0 ? `${hours}h ${remainingMins}min` : `${hours}h`;
+  const currentMovie = movies[currentIndex] || { 
+    id: 0, 
+    series_title: '', 
+    genre: '', 
+    poster_url: '', 
+    imdb_rating: 0, 
+    overview: '' 
   };
-
-  const currentMovie = movies[currentIndex];
+  
   const hasRating = ratings[currentMovie.id] !== undefined;
   const isLastMovie = currentIndex === movies.length - 1;
 
@@ -111,21 +96,49 @@ const MovieOnboardingSlider = () => {
     setShowRatingSelector(false);
   };
 
+  // FIX: Só abre modal se não estiver mostrando rating selector
+  const handleOpenModal = (e: React.MouseEvent) => {
+    if (!showRatingSelector) {
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="onboarding-container">
+        <p>Loading Movies...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="onboarding-container">
+        <h1>Error loading movies</h1>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   if (isComplete) {
     return (
       <div className="onboarding-container">
         <div className="complete-card">
           <div className="complete-emoji">🎉</div>
-          <h2 className="complete-title">Thanks!</h2>
-          <p className="complete-subtitle">Rate {Object.keys(ratings).length} movies</p>
+          <h2 className="complete-title">Thanks, now you can use the app</h2>
+          <p className="complete-subtitle">You rated {Object.keys(ratings).length} movies</p>
           
           <div className="ratings-list">
-            {movies.map(movie => (
+            {movies.map((movie) => (
               ratings[movie.id] !== undefined && (
                 <div key={movie.id} className="rating-item">
                   <div className="rating-item-info">
-                    <div className="rating-item-title">{movie.title}</div>
-                    <div className="rating-item-category">{movie.category}</div>
+                    <div className="rating-item-title">{movie.series_title}</div>
+                    <div className="rating-item-category">{movie.genre}</div>
                   </div>
                   <div className="rating-item-score">
                     <Star size={18} className="star-red" fill="#ef4444" />
@@ -137,7 +150,7 @@ const MovieOnboardingSlider = () => {
           </div>
 
           <button onClick={handleRestart} className="btn-restart">
-            Start over
+            Start Over
           </button>
         </div>
       </div>
@@ -149,8 +162,8 @@ const MovieOnboardingSlider = () => {
       <div className="onboarding-content">
         {/* Header */}
         <div className="onboarding-header">
-          <h1 className="onboarding-title"> Rating these movies</h1>
-          <p className="onboarding-subtitle">Movie {currentIndex + 1} de {movies.length}</p>
+          <h1 className="onboarding-title">Rate These Movies</h1>
+          <p className="onboarding-subtitle">Movie {currentIndex + 1} of {movies.length}</p>
         </div>
 
         {/* Progress Bar */}
@@ -174,12 +187,13 @@ const MovieOnboardingSlider = () => {
               {/* Image Section */}
               <div 
                 className="card-image"
-                style={{ backgroundImage: `url(${currentMovie.img})` }}
+                style={{ backgroundImage: `url(${currentMovie.poster_url || ''})` }}
+                onClick={handleOpenModal}
               >
                 {/* Movie Rating Badge */}
                 <div className="badge-rating">
                   <Star size={14} className="star-yellow" fill="#fbbf24" />
-                  <span className="badge-text">{currentMovie.rating}</span>
+                  <span className="badge-text">{currentMovie.imdb_rating || 0}</span>
                 </div>
 
                 {/* User Rating Badge */}
@@ -190,9 +204,12 @@ const MovieOnboardingSlider = () => {
                   </div>
                 )}
 
-                {/* Rating Selector Overlay */}
+                {/* Rating Selector Overlay - FIX: stopPropagation */}
                 {showRatingSelector && (
-                  <div className="rating-overlay">
+                  <div 
+                    className="rating-overlay"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="rating-selector-content">
                       <div className="rating-selector-header">
                         <div className="rating-selector-title">Rate this movie</div>
@@ -224,13 +241,13 @@ const MovieOnboardingSlider = () => {
               {/* Info Section */}
               <div className="card-info">
                 <div className="card-category">
-                  {currentMovie.category}
+                  {currentMovie.genre || 'No category'}
                 </div>
                 <div className="card-title">
-                  {currentMovie.title}
+                  {currentMovie.series_title || 'No title'}
                 </div>
                 <div className="card-meta">
-                  {currentMovie.year} • {formatRuntime(currentMovie.time)}
+                  {/* Placeholder for year and time */}
                 </div>
               </div>
 
@@ -239,7 +256,7 @@ const MovieOnboardingSlider = () => {
                 {!hasRating ? (
                   <button onClick={handleRateClick} className="btn-rate">
                     <Star size={18} />
-                   Rating Film
+                    Rate Movie
                   </button>
                 ) : (
                   <button onClick={handleRateClick} className="btn-change-rating">
@@ -255,7 +272,7 @@ const MovieOnboardingSlider = () => {
                     className="btn-nav btn-previous"
                   >
                     <ChevronLeft size={18} />
-                    Back
+                    Previous
                   </button>
                   <button onClick={handleNext} className="btn-nav btn-next">
                     {isLastMovie ? 'Finish' : 'Next'}
@@ -267,6 +284,24 @@ const MovieOnboardingSlider = () => {
           </div>
         </div>
       </div>
+      
+      {/* Modal */}
+      {isModalOpen && (
+        <MovieModal
+          movie={{
+            id: currentMovie.id.toString(),
+            title: currentMovie.series_title,
+            category: currentMovie.genre,
+            img: currentMovie.poster_url,
+            rating: currentMovie.imdb_rating,
+            time: '',
+            synopsis: currentMovie.overview || 'Synopsis not available'
+          }}
+          isWatched={false}
+          onClose={handleCloseModal}
+          onToggleWatched={() => {}}
+        />
+      )}
     </div>
   );
 };
