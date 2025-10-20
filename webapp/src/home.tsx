@@ -46,7 +46,7 @@ export default function Home() {
   );
   const recommendedMovies = useRecommendedMovies();
 
-  const { items, isLoading, hasMore, loadMore } = activeView === 'forYou' ? recommendedMovies : exploreMovies;
+  const { items, isLoading, hasMore, loadMore, needsRecommendations } = activeView === 'forYou' ? recommendedMovies : { ...exploreMovies, needsRecommendations: false };
   const userStats = useUserStats();
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
@@ -135,9 +135,15 @@ export default function Home() {
             )}
           </div>
 
+          {activeView === 'forYou' && needsRecommendations && (
+            <div className="no-movies-container">
+              <p>Rate at least 5 movies to get personalized recommendations. 🎬</p>
+            </div>
+          )}
+
           <Masonry items={itemsToDisplay} />
 
-          {items.length === 0 && !isLoading && (
+          {items.length === 0 && !isLoading && !needsRecommendations && (
             <div className="no-movies-container">
               {searchQuery
                 ? `No movies found for "${searchQuery}" 🔍`
