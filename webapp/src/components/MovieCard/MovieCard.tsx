@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, Bookmark, Play, Star } from "lucide-react";
+import { Eye, Bookmark, Play, Star} from "lucide-react";
 import "./MovieCard.css";
 
 // TYPES
