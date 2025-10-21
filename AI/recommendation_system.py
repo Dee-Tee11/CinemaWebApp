@@ -132,7 +132,7 @@ class SistemaRecomendacaoKNN:
         score = max(0, min(20, similaridade * 20))
         return score
     
-    def gerar_recomendacoes(self, n: int = 20) -> List[Dict]:
+    def gerar_recomendacoes(self, n: int = 25) -> List[Dict]:
         """Gera top N recomendações para o usuário"""
         if len(self.avaliacoes) == 0:
             print("⚠️  Nenhuma avaliação fornecida.")

@@ -11,6 +11,7 @@ export default function AppRouter() {
           <Route path="/Onboarding" element={<Onboarding />} />
           <Route path="/friends" element={<Home />} />
           <Route path="/explore" element={<Home />} />
+          <Route path="/foryou" element={<Home />} />
         </Routes>
       </div>
     </BrowserRouter>
