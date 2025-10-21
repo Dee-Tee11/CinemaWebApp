@@ -60,15 +60,11 @@ except Exception as e:
 embeddings_path = os.path.join(os.path.dirname(__file__), '..', 'AI', 'movie_embeddings.npy')
 rec_system = SistemaRecomendacaoKNN(embeddings_path, df_movies)
 
-
+#usa só gerar_recomendacoes falta integrar o resto dos métodos
 def generate_and_save_recommendations(user_id: str):
     """
     Gera e salva recomendações para um usuário específico
     """
-    print(f"\n{'='*60}")
-    print(f"🎯 Gerando recomendações para usuário: {user_id}")
-    print(f"{'='*60}")
-
     # 1. Buscar filmes avaliados pelo usuário no Supabase
     try:
         response = supabase.table('user_movies')\
@@ -106,7 +102,7 @@ def generate_and_save_recommendations(user_id: str):
     # 3. Configurar dados do usuário e gerar recomendações
     try:
         rec_system.set_user_data(avaliacoes_por_movie_id, filmes_vistos_ids)
-        recommendations = rec_system.gerar_recomendacoes(n=50)
+        recommendations = rec_system.gerar_recomendacoes()
     except Exception as e:
         print(f"❌ Erro ao gerar recomendações: {e}")
         return
@@ -166,7 +162,7 @@ def start_onboarding():
     return {"movies": selected_movies}
 
 @app.get("/recommendations/{user_id}")
-def get_user_recommendations(user_id: str, limit: int = 20):
+def get_user_recommendations(user_id: str, limit: int = 25):
     """
     Buscar recomendações salvas de um usuário
     """
@@ -197,16 +193,4 @@ def home():
             "get": "/recommendations/{user_id}",
             "test": "/for-you-test"
         }
-    }
-
-
-@app.get("/health")
-def health_check():
-    """
-    Verificar se a API está funcionando
-    """
-    return {
-        "status": "healthy",
-        "movies_loaded": len(rec_system.bd),
-        "embeddings_shape": rec_system.embeddings.shape
     }

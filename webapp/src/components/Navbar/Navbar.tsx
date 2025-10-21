@@ -20,6 +20,8 @@ export default function Navbar({ onSearch }: NavbarProps) {
         return "friends";
       case "/explore":
         return "explore";
+      case "/foryou":
+        return "forYou";
       default:
         return "forYou";
     }
@@ -70,7 +72,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
         }`}
       >
         <Link
-          to="/"
+          to="/foryou"
           className={`${styles.tabButton} ${
             activeTab === "forYou" ? styles.active : styles.inactive
           } ${isScrolled ? styles.scrolled : styles.default}`}
