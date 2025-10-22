@@ -74,27 +74,7 @@ const MovieModal: React.FC<MovieModalProps> = ({ movie, isWatched, onClose, onTo
             </p>
           </div>
 
-          <div className="modal-actions">
-            <button className="add-to-favorites-button">
-              Add to Favorites
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleWatched(movie.id, e);
-              }}
-              className={`watched-button ${isWatched ? 'watched' : ''}`}>
-              {isWatched ? (
-                <>
-                  <Eye size={20} /> Watched
-                </>
-              ) : (
-                <>
-                  <EyeOff size={20} /> Mark as Watched
-                </>
-              )}
-            </button>
-          </div>
+         
         </div>
       </div>
     </div>

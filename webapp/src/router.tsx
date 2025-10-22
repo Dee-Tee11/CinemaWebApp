@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./home";
-import Onboarding from "./components/MovieOnboarding/MovieOnboarding"; // Novo componente
+import Onboarding from './components/MovieOnboarding/MovieOnboardingNewVersion';
 
 export default function AppRouter() {
   return (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
 import Sidebar from "./components/Slidebar";
 import Navbar from "./components/Navbar/Navbar";
 import Masonry from "./components/Masonry/Masonry";
@@ -17,6 +18,8 @@ type ViewType = "forYou" | "friends" | "explore";
 
 export default function Home() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useUser();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
@@ -63,6 +66,31 @@ export default function Home() {
     console.log("Searching for:", query);
     setSearchQuery(query);
     setSelectedCategory(undefined);
+  };
+
+  const handleGoToOnboarding = async () => {
+    console.log('Botão clicado!');
+    console.log('User:', user);
+    
+    if (user) {
+      try {
+        console.log('Atualizando metadata...');
+        await user.update({
+          publicMetadata: {
+            ...user.publicMetadata,
+            onboardingCompleted: false,
+          },
+        });
+        console.log('Metadata atualizado! Navegando...');
+        navigate('/onboarding');
+      } catch (error) {
+        console.error('Erro ao atualizar:', error);
+        // Tenta navegar mesmo com erro
+        navigate('/onboarding');
+      }
+    } else {
+      console.error('User não encontrado');
+    }
   };
 
   const itemsToDisplay = items;
@@ -138,6 +166,23 @@ export default function Home() {
           {activeView === 'forYou' && needsRecommendations && (
             <div className="no-movies-container">
               <p>Rate at least 5 movies to get personalized recommendations. 🎬</p>
+              <div className="no-movies-buttons">
+                <button
+                  onClick={handleGoToOnboarding}
+                  className="onboarding-cta-button"
+                >
+                  Start Rating Movies
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedCategory(undefined);
+                    setSearchQuery("");
+                  }}
+                  className="see-all-movies-button"
+                >
+                  See all movies
+                </button>
+              </div>
             </div>
           )}
 
