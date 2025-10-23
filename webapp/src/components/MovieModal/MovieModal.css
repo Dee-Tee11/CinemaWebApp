@@ -5,8 +5,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-background: rgba(0, 0, 0, 0.75);
-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -156,7 +156,7 @@ backdrop-filter: blur(8px);
   opacity: 0.8;
 }
 
-/* PREMIUM SYNOPSIS CONTAINER */
+/* PREMIUM SYNOPSIS CONTAINER (usado também para Friends) */
 .synopsis-container {
   background: white;
   border-radius: 16px;
@@ -199,6 +199,19 @@ backdrop-filter: blur(8px);
   color: #4a4a4a;
   font-size: 15px;
   line-height: 1.7;
+}
+
+.friends-text {
+  color: #4a4a4a;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.friend-text {
+  margin: 5px 0;
+  padding: 10px;
+  background: #fff0f0;
+  border-radius: 8px;
 }
 
 /* Action Buttons */
@@ -305,4 +318,38 @@ backdrop-filter: blur(8px);
   .synopsis-container {
     padding: 18px;
   }
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: #7c1616;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-button.active {
+  color: #991b1b;
+  border-bottom: 2px solid #991b1b;
+}
+
+.tab-button:hover {
+  color: #7c1616;
+}
+
+/* Tab Content */
+.tab-content {
+  min-height: 150px;
 }

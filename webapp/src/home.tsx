@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
+import { UserPlus } from "lucide-react";
 import Sidebar from "./components/Slidebar";
 import Navbar from "./components/Navbar/Navbar";
 import Masonry from "./components/Masonry/Masonry";
@@ -10,6 +11,7 @@ import SettingsPopup from "./components/SettingsPopup";
 import AddFriendPopup from "./components/AddFriend/AddFriend";
 import { useMovies } from "./hooks/useMovies";
 import { useRecommendedMovies } from "./hooks/useRecommendedMovies";
+import { useFriendsMovies } from "./hooks/useFriendsMovies";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import { useUserStats } from "./hooks/useUserStats";
 import "./home.css";
@@ -42,15 +44,43 @@ export default function Home() {
     setSearchQuery("");
   }, [location.pathname]);
 
-  const exploreMovies = useMovies(
-    activeView,
-    selectedCategory,
-    searchQuery
-  );
+  // Hooks para diferentes views
+  const exploreMovies = useMovies(activeView, selectedCategory, searchQuery);
   const recommendedMovies = useRecommendedMovies();
-
-  const { items, isLoading, hasMore, loadMore, needsRecommendations } = activeView === 'forYou' ? recommendedMovies : { ...exploreMovies, needsRecommendations: false };
+  const friendsMovies = useFriendsMovies();
   const userStats = useUserStats();
+
+  // Selecionar dados baseado na view ativa
+  const getCurrentViewData = () => {
+    switch (activeView) {
+      case 'forYou':
+        return {
+          ...recommendedMovies,
+          needsRecommendations: recommendedMovies.needsOnboarding
+        };
+      case 'friends':
+        return {
+          ...friendsMovies,
+          needsRecommendations: false,
+          noFriends: !friendsMovies.hasFriends
+        };
+      case 'explore':
+      default:
+        return {
+          ...exploreMovies,
+          needsRecommendations: false
+        };
+    }
+  };
+
+  const { 
+    items, 
+    isLoading, 
+    hasMore, 
+    loadMore, 
+    needsRecommendations,
+    noFriends 
+  } = getCurrentViewData();
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
 
@@ -85,7 +115,6 @@ export default function Home() {
         navigate('/onboarding');
       } catch (error) {
         console.error('Erro ao atualizar:', error);
-        // Tenta navegar mesmo com erro
         navigate('/onboarding');
       }
     } else {
@@ -131,7 +160,7 @@ export default function Home() {
                 : activeView === "forYou"
                 ? "For You"
                 : activeView === "friends"
-                ? "Friend's Suggestions"
+                ? "Friends Activity"
                 : "Explore"}
             </h2>
             <p className="page-subtitle">
@@ -142,7 +171,7 @@ export default function Home() {
                 : activeView === "forYou"
                 ? "Recommended movies based on your taste"
                 : activeView === "friends"
-                ? "See what your friends are watching"
+                ? `See what your ${friendsMovies.friendsCount} ${friendsMovies.friendsCount === 1 ? 'friend is' : 'friends are'} watching`
                 : "Filter by category and explore movies"}
             </p>
 
@@ -163,6 +192,7 @@ export default function Home() {
             )}
           </div>
 
+          {/* For You - Needs Onboarding */}
           {activeView === 'forYou' && needsRecommendations && (
             <div className="no-movies-container">
               <p>Rate at least 5 movies to get personalized recommendations. 🎬</p>
@@ -186,9 +216,51 @@ export default function Home() {
             </div>
           )}
 
-          <Masonry items={itemsToDisplay} />
+          {/* Friends - No Friends Yet */}
+          {activeView === 'friends' && noFriends && !isLoading && (
+            <div className="no-movies-container">
+              <div className="empty-friends-state">
+                <UserPlus size={64} color="#991b1b" />
+                <h3>No Friends Yet</h3>
+                <p>Add friends to see what they're watching!</p>
+                <button
+                  onClick={() => setIsAddFriendOpen(true)}
+                  className="add-friends-button"
+                >
+                  <UserPlus size={20} />
+                  Add Friends
+                </button>
+              </div>
+            </div>
+          )}
 
-          {items.length === 0 && !isLoading && !needsRecommendations && (
+          {/* Friends - Has Friends But No Activity */}
+          {activeView === 'friends' && !noFriends && items.length === 0 && !isLoading && (
+            <div className="no-movies-container">
+              <div className="empty-friends-state">
+                <p>Your friends haven't rated any movies yet. 🎬</p>
+                <p className="empty-friends-subtitle">
+                  Be the first to rate movies and inspire your friends!
+                </p>
+                <button
+                  onClick={() => navigate('/explore')}
+                  className="see-all-movies-button"
+                >
+                  Explore Movies
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Show Movies */}
+          {items.length > 0 && <Masonry items={itemsToDisplay} />}
+
+          {/* No Results for Search/Category */}
+          {items.length === 0 && 
+           !isLoading && 
+           !needsRecommendations && 
+           !noFriends && 
+           activeView !== 'friends' && (
             <div className="no-movies-container">
               {searchQuery
                 ? `No movies found for "${searchQuery}" 🔍`
@@ -206,12 +278,14 @@ export default function Home() {
             </div>
           )}
 
+          {/* Loading */}
           {isLoading && (
             <div className="loading-container">
               Loading more movies...
             </div>
           )}
 
+          {/* End of Results */}
           {!hasMore && items.length > 0 && (
             <div className="end-of-results-container">
               You have reached the end! 🎬
