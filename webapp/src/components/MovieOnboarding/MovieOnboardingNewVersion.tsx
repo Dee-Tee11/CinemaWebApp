@@ -56,12 +56,12 @@ const OnboardingFlow: React.FC = () => {
         onMouseEnter={(e) => {
           e.currentTarget.style.borderColor = '#991b1b';
           e.currentTarget.style.color = '#991b1b';
-            e.currentTarget.style.background = 'white';
+          e.currentTarget.style.background = 'white';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = '#991b1b';
           e.currentTarget.style.color = 'white';
-          e.currentTarget.style.background= '#991b1b';
+          e.currentTarget.style.background = '#991b1b';
         }}
       >
         <SkipForward size={16} />
@@ -406,7 +406,10 @@ const OnboardingFlow: React.FC = () => {
       <p className="complete-subtitle">
         Your personalized "For You" page is ready with recommendations based on your taste
       </p>
-      <button className="onboarding-btn primary" onClick={handleComplete}>
+      <button 
+        className="onboarding-btn primary" 
+        onClick={handleComplete}
+      >
         Explore Movies
       </button>
     </div>

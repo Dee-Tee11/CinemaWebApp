@@ -9,7 +9,7 @@ import styles from "./Auth.module.css";
 import GridMotion from "../GridMotion/GridMotion";
 import { useGridMovies } from "../../hooks/useGridMovies";
 
-const Auth = () => {
+const Auth: React.FC = () => {
   const { items, isLoading } = useGridMovies();
 
   return (
@@ -20,6 +20,7 @@ const Auth = () => {
         height: "100vh",
         overflow: "hidden",
       }}
+      className={styles.authContainer}
     >
       {/* GridMotion Background with movie posters */}
       <div

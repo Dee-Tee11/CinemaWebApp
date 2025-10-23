@@ -10,19 +10,31 @@ function App() {
   const supabase = useSupabase();
   const [, setUserData] = useState<any[] | null>(null);
   const [synced, setSynced] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
     if (isLoaded && user && !synced) {
-      syncUserToSupabase();
+      checkAndSyncUser();
     }
   }, [isLoaded, user, synced]);
 
-  async function syncUserToSupabase() {
+  async function checkAndSyncUser() {
     try {
       if (!user) {
         return;
       }
 
+      // Verifica se o user já existe no Supabase
+      const { data: existingUser } = await supabase
+        .from("User")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      // Se não existe, é user novo! Marca para redirecionar
+      const isNewUser = !existingUser;
+
+      // Sincroniza no Supabase
       const { error } = await supabase.from("User").upsert({
         id: user.id,
         name: user.fullName,
@@ -32,21 +44,22 @@ function App() {
       if (error) {
         console.error("Erro ao sincronizar usuário:", error);
       } else {
-        setSynced(true);
+        const response = await supabase
+          .from("User")
+          .select("*")
+          .eq("id", user.id);
+        setUserData(response.data);
+      }
 
-        let data = null;
-        if (user?.id) {
-          const response = await supabase
-            .from("User")
-            .select("*")
-            .eq("id", user.id);
-          data = response.data;
-        }
-
-        setUserData(data);
+      setSynced(true);
+      
+      // Se é novo user, ativa o redirect
+      if (isNewUser) {
+        setShouldRedirect(true);
       }
     } catch (error) {
       console.error("Erro:", error);
+      setSynced(true);
     }
   }
 
@@ -65,7 +78,7 @@ function App() {
   }
 
   if (user) {
-    return <AppRouter />;
+    return <AppRouter shouldRedirectToOnboarding={shouldRedirect} />;
   }
 
   return (
@@ -85,4 +98,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
