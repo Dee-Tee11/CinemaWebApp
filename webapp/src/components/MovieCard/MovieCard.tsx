@@ -83,7 +83,7 @@ const RatingSelector: React.FC<RatingSelectorProps> = ({
   onRate,
   onClose,
 }) => {
-  const [tempRating, setTempRating] = useState<number>(currentRating || 20);
+  const [tempRating, setTempRating] = useState<number>(currentRating || 10);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTempRating(Number(e.target.value));
@@ -127,6 +127,7 @@ export interface MovieCardProps {
   onMouseEnter: (item: GridItem) => void;
   onMouseLeave: (item: GridItem) => void;
   onClick: (item: GridItem) => void;
+  onStatsChange?: () => void; // NOVO: callback para notificar mudanças
 }
 
 const MovieCard: React.FC<MovieCardProps> = React.memo(
@@ -137,6 +138,7 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(
     onMouseEnter,
     onMouseLeave,
     onClick,
+    onStatsChange, // NOVO
   }) => {
     const [showRatingSelector, setShowRatingSelector] = useState(false);
 
@@ -146,6 +148,8 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(
       // Se clicar no mesmo status, remove-o
       if (userMovie?.status === newStatus) {
         onStatusChange(item.id, null);
+        // Notifica que houve mudança
+        if (onStatsChange) onStatsChange();
         return;
       }
 
@@ -157,11 +161,15 @@ const MovieCard: React.FC<MovieCardProps> = React.memo(
 
       // Para "saved" e "watching", muda diretamente
       onStatusChange(item.id, newStatus);
+      // Notifica que houve mudança
+      if (onStatsChange) onStatsChange();
     };
 
     const handleRate = (rating: number) => {
       onStatusChange(item.id, "seen", rating);
       setShowRatingSelector(false);
+      // Notifica que houve mudança
+      if (onStatsChange) onStatsChange();
     };
 
     const handleCardClick = () => {

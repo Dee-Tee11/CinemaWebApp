@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Star, Sparkles, ChevronLeft, SkipForward } from 'lucide-react';
+import { ChevronRight, Star, Sparkles, ChevronLeft } from 'lucide-react';
 import MovieModal from './MovieOnboardingModal';
 import { useOnboarding } from '../../hooks/useOnboarding';
 import './MovieOnboardingNewVersion.css';
@@ -23,7 +23,6 @@ const OnboardingFlow: React.FC = () => {
     setError,
     handleMovieSelect,
     handlePhase1Complete,
-    handleSkipOnboarding,
     handleRateClick,
     handleConfirmRating,
     handleNext,
@@ -37,40 +36,6 @@ const OnboardingFlow: React.FC = () => {
   // ============================================
   const renderWelcome = () => (
     <div className="onboarding-page-content welcome-phase">
-      <button 
-        onClick={handleSkipOnboarding}
-        style={{
-          position: 'absolute',
-          top: '24px',
-          right: '24px',
-          background: '#991b1b',
-          border: '1px solid #991b1b',
-          color: 'rgba(255,255,255,0.7)',
-          padding: '10px 20px',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '14px',
-          transition: 'all 0.2s',
-          zIndex: 10
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = '#991b1b';
-          e.currentTarget.style.color = '#991b1b';
-          e.currentTarget.style.background = 'white';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = '#991b1b';
-          e.currentTarget.style.color = 'white';
-          e.currentTarget.style.background = '#991b1b';
-        }}
-      >
-        <SkipForward size={16} />
-        Skip
-      </button>
-
       <div className="welcome-icon">
         <Sparkles size={64} color="#991b1b" />
       </div>
@@ -112,38 +77,6 @@ const OnboardingFlow: React.FC = () => {
         style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}
       >
         <ChevronLeft size={24} />
-      </button>
-
-      <button 
-        onClick={handleSkipOnboarding}
-        style={{
-          position: 'absolute',
-          top: '24px',
-          right: '24px',
-          background: 'transparent',
-          border: '1px solid rgba(255,255,255,0.2)',
-          color: 'rgba(255,255,255,0.7)',
-          padding: '10px 20px',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '14px',
-          transition: 'all 0.2s',
-          zIndex: 10
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
-          e.currentTarget.style.color = 'white';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-          e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
-        }}
-      >
-        <SkipForward size={16} />
-        Skip
       </button>
 
       <div className="phase-header">
@@ -241,38 +174,6 @@ const OnboardingFlow: React.FC = () => {
           style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}
         >
           <ChevronLeft size={24} />
-        </button>
-
-        <button 
-          onClick={handleSkipOnboarding}
-          style={{
-            position: 'absolute',
-            top: '24px',
-            right: '24px',
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.2)',
-            color: 'rgba(255,255,255,0.7)',
-            padding: '10px 20px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px',
-            transition: 'all 0.2s',
-            zIndex: 100
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
-            e.currentTarget.style.color = 'white';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-            e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
-          }}
-        >
-          <SkipForward size={16} />
-          Skip
         </button>
 
         <div className="slider-header">

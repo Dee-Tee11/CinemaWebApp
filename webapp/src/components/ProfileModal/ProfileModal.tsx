@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Heart, Star, Eye, User, ChevronLeft, UserPlus, Check, XCircle, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Bookmark, Play, Eye, User, ChevronLeft, UserPlus } from 'lucide-react';
 import { useUser } from '@clerk/clerk-react';
 import { useSupabase } from '@/hooks/useSupabase';
 import './ProfileModal.css';
@@ -7,6 +7,7 @@ import './ProfileModal.css';
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  refreshTrigger?: number;
 }
 
 interface Friend {
@@ -22,12 +23,12 @@ interface FriendRequest {
 }
 
 interface MovieStats {
-  liked: number;
-  favorites: number;
-  watched: number;
+  saved: number;
+  watching: number;
+  seen: number;
 }
 
-export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
+export default function ProfileModal({ isOpen, onClose, refreshTrigger }: ProfileModalProps) {
   const { user } = useUser();
   const supabase = useSupabase();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -36,39 +37,47 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [movieStats, setMovieStats] = useState<MovieStats>({
-    liked: 0,
-    favorites: 0,
-    watched: 0
+    saved: 0,
+    watching: 0,
+    seen: 0
   });
   const [loading, setLoading] = useState(true);
 
-  // Get current user ID from Clerk
   useEffect(() => {
     if (user) {
-      console.log("Setting current user ID from Clerk:", user.id);
       setCurrentUserId(user.id);
     }
   }, [user]);
 
-  // Fetch all data when modal opens
-  useEffect(() => {
-    if (isOpen && currentUserId) {
-      fetchAllData();
+  const fetchMovieStats = useCallback(async () => {
+    if (!currentUserId) return;
+
+    console.log('🔄 Fetching movie stats for user:', currentUserId);
+
+    const { data, error } = await supabase
+      .from('user_movies')
+      .select('status, rating')
+      .eq('user_id', currentUserId);
+
+    if (error) {
+      console.error('Error fetching movie stats:', error);
+      return;
     }
-  }, [isOpen, currentUserId]);
 
-  const fetchAllData = async () => {
-    setLoading(true);
-    await Promise.all([
-      fetchFriends(),
-      fetchFriendRequests(),
-      fetchMovieStats()
-    ]);
-    setLoading(false);
-  };
+    console.log('📊 Raw data from DB:', data);
+    console.log('📊 Unique statuses:', [...new Set(data.map(m => m.status))]);
 
-  // Fetch friends list
-  const fetchFriends = async () => {
+    const stats: MovieStats = {
+      saved: data.filter(m => m.status === 'saved').length,
+      watching: data.filter(m => m.status === 'watching').length,
+      seen: data.filter(m => m.status === 'seen').length
+    };
+
+    console.log('✅ Calculated stats:', stats);
+    setMovieStats(stats);
+  }, [currentUserId, supabase]);
+
+  const fetchFriends = useCallback(async () => {
     if (!currentUserId) return;
 
     const { data, error } = await supabase
@@ -86,7 +95,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       return;
     }
 
-    // Map friends - get the OTHER user in the friendship
     const friendsList: Friend[] = data.map((friendship: any) => {
       if (friendship.user_id_a === currentUserId) {
         return {
@@ -102,16 +110,10 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     });
 
     setFriends(friendsList);
-  };
+  }, [currentUserId, supabase]);
 
-  // Fetch pending friend requests (received by current user)
-  const fetchFriendRequests = async () => {
-    if (!currentUserId) {
-      console.log("No currentUserId, skipping fetchFriendRequests");
-      return;
-    }
-
-    console.log("Fetching friend requests for user:", currentUserId);
+  const fetchFriendRequests = useCallback(async () => {
+    if (!currentUserId) return;
 
     const { data, error } = await supabase
       .from('friend_request')
@@ -131,8 +133,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       return;
     }
 
-    console.log("Friend requests data:", data);
-
     const requestsList: FriendRequest[] = data.map((req: any) => ({
       id: req.id,
       sender_id: req.sender_id,
@@ -140,39 +140,37 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       created_at: req.created_at
     }));
 
-    console.log("Parsed friend requests:", requestsList);
     setFriendRequests(requestsList);
-  };
+  }, [currentUserId, supabase]);
 
-  // Fetch movie statistics
-  const fetchMovieStats = async () => {
+  const fetchAllData = useCallback(async () => {
     if (!currentUserId) return;
+    setLoading(true);
+    await Promise.all([
+      fetchFriends(),
+      fetchFriendRequests(),
+      fetchMovieStats()
+    ]);
+    setLoading(false);
+  }, [currentUserId, fetchFriends, fetchFriendRequests, fetchMovieStats]);
 
-    const { data, error } = await supabase
-      .from('User_Movies')
-      .select('Status, Rating')
-      .eq('User_id', currentUserId);
-
-    if (error) {
-      console.error('Error fetching movie stats:', error);
-      return;
+  useEffect(() => {
+    if (isOpen && currentUserId) {
+      fetchAllData();
     }
+  }, [isOpen, currentUserId, fetchAllData]);
 
-    const stats: MovieStats = {
-      liked: data.filter(m => m.Rating && m.Rating >= 4).length,
-      favorites: data.filter(m => m.Status === 'Favorite').length,
-      watched: data.filter(m => m.Status === 'Watched' || m.Status === 'Favorite').length
-    };
+  useEffect(() => {
+    if (refreshTrigger !== undefined && currentUserId) {
+      console.log('🔔 refreshTrigger changed:', refreshTrigger);
+      fetchMovieStats();
+    }
+  }, [refreshTrigger, currentUserId, fetchMovieStats]);
 
-    setMovieStats(stats);
-  };
-
-  // Accept friend request
   const handleAcceptFriend = async (requestId: string, senderId: string) => {
     if (!currentUserId) return;
 
     try {
-      // 1. Update request status to 'accepted'
       const { error: updateError } = await supabase
         .from('friend_request')
         .update({ status: 'accepted' })
@@ -180,7 +178,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
       if (updateError) throw updateError;
 
-      // 2. Create friendship entry
       const { error: friendshipError } = await supabase
         .from('friendships')
         .insert({
@@ -191,9 +188,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
       if (friendshipError) throw friendshipError;
 
-      console.log('Friend request accepted!');
-      
-      // Refresh data
       await fetchAllData();
 
     } catch (error) {
@@ -202,20 +196,14 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     }
   };
 
-  // Reject friend request
   const handleRejectFriend = async (requestId: string) => {
     try {
-      // Update request status to 'rejected'
       const { error } = await supabase
         .from('friend_request')
         .update({ status: 'rejected' })
         .eq('id', requestId);
 
       if (error) throw error;
-
-      console.log('Friend request rejected');
-      
-      // Refresh requests list
       await fetchFriendRequests();
 
     } catch (error) {
@@ -224,27 +212,20 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     }
   };
 
-  // Remove friend
   const handleRemoveFriend = async (friendId: string) => {
     if (!currentUserId) return;
 
-    // Confirm before removing
     if (!confirm('Are you sure you want to remove this friend?')) {
       return;
     }
 
     try {
-      // Delete friendship entry (works for both directions)
       const { error } = await supabase
         .from('friendships')
         .delete()
         .or(`and(user_id_a.eq.${currentUserId},user_id_b.eq.${friendId}),and(user_id_a.eq.${friendId},user_id_b.eq.${currentUserId})`);
 
       if (error) throw error;
-
-      console.log('Friend removed successfully');
-      
-      // Refresh friends list
       await fetchFriends();
 
     } catch (error) {
@@ -260,12 +241,9 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
   return (
     <>
-      {/* Backdrop */}
       <div className="backdrop" onClick={onClose} />
 
-      {/* Modal */}
       <div className="modal">
-        {/* Header */}
         <div className="header">
           {(showFriends || showFriendRequests) && (
             <button className="back-button" onClick={() => {
@@ -279,7 +257,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             {showFriendRequests ? 'Friend Requests' : showFriends ? 'My Friends' : 'My Profile'}
           </h2>
           <div className="header-buttons">
-            {/* Friend Requests Icon with Badge */}
             <button
               className="icon-button friend-requests"
               aria-label="View friend requests"
@@ -293,16 +270,13 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 <span className="badge">{friendRequests.length}</span>
               )}
             </button>
-            {/* Close Button */}
             <button className="icon-button close" onClick={onClose}>
               <X size={20} />
             </button>
           </div>
         </div>
 
-        {/* Content */}
         <div className="content">
-          {/* User Info */}
           <div className="user-info">
             <div className="avatar-container">
               {user?.imageUrl ? (
@@ -313,7 +287,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             </div>
             <h3 className="user-name">{userName}</h3>
             {userEmail && <p className="user-email">{userEmail}</p>}
-            {/* Friends Toggle Button */}
             <button
               className={`friends-toggle ${showFriends ? 'underline' : ''}`}
               onClick={() => {
@@ -326,11 +299,9 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
             </button>
           </div>
 
-          {/* Content Switch */}
           {loading ? (
             <div className="loading">Loading...</div>
           ) : showFriendRequests ? (
-            // Friend Requests List
             <div className="list-container">
               {friendRequests.length > 0 ? (
                 <ul className="list">
@@ -342,7 +313,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                           className="accept-friend-button"
                           onClick={() => handleAcceptFriend(request.id, request.sender_id)}
                         >
-                          Aceitar amigo
+                          Accept
                         </button>
                         <button
                           className="reject-friend-button"
@@ -360,7 +331,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               )}
             </div>
           ) : showFriends ? (
-            // Friends List
             <div className="list-container">
               {friends.length > 0 ? (
                 <ul className="list">
@@ -377,7 +347,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         onClick={() => handleRemoveFriend(friend.id)}
                         title="Remove friend"
                       >
-                        Remover amigo
+                        Remove
                       </button>
                     </li>
                   ))}
@@ -387,31 +357,30 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               )}
             </div>
           ) : (
-            // Stats Grid
             <div className="stats-grid">
-              {/* Liked Movies */}
-              <div className="stat-item liked">
-                <div className="stat-icon liked">
-                  <Heart size={20} color="#ef4444" fill="#ef4444" />
+              {/* Saved - Bookmark icon (igual ao MovieCard) */}
+              <div className="stat-item saved">
+                <div className="stat-icon saved">
+                  <Bookmark size={20} color="#f59e0b" fill="#f59e0b" />
                 </div>
-                <div className="stat-value">{movieStats.liked}</div>
-                <div className="stat-label">Liked</div>
+                <div className="stat-value">{movieStats.saved}</div>
+                <div className="stat-label">Saved</div>
               </div>
-              {/* Favorite Movies */}
-              <div className="stat-item favorite">
-                <div className="stat-icon favorite">
-                  <Star size={20} color="#eab308" fill="#eab308" />
+              {/* Watching - Play icon (igual ao MovieCard) */}
+              <div className="stat-item watching">
+                <div className="stat-icon watching">
+                  <Play size={20} color="#10b981" fill="#10b981" />
                 </div>
-                <div className="stat-value">{movieStats.favorites}</div>
-                <div className="stat-label">Favorites</div>
+                <div className="stat-value">{movieStats.watching}</div>
+                <div className="stat-label">Watching</div>
               </div>
-              {/* Watched Movies */}
-              <div className="stat-item watched">
-                <div className="stat-icon watched">
+              {/* Seen - Eye icon (igual ao MovieCard) */}
+              <div className="stat-item seen">
+                <div className="stat-icon seen">
                   <Eye size={20} color="#3b82f6" />
                 </div>
-                <div className="stat-value">{movieStats.watched}</div>
-                <div className="stat-label">Watched</div>
+                <div className="stat-value">{movieStats.seen}</div>
+                <div className="stat-label">Seen</div>
               </div>
             </div>
           )}

@@ -55,7 +55,7 @@ export const useOnboarding = () => {
           .select('id, series_title, genre, poster_url, imdb_rating, overview, runtime')
           .not('poster_url', 'is', null)
           .gte('imdb_rating', 7.0)
-          .order('imdb_rating', { ascending: false }) // Ordenar por rating (maior primeiro)
+          .order('imdb_rating', { ascending: false })
           .limit(50);
 
         if (error) throw error;
@@ -114,7 +114,7 @@ export const useOnboarding = () => {
       });
 
       // Buscar filmes relacionados baseados nos géneros
-      const genreArray = Array.from(genres).slice(0, 3); // Top 3 géneros
+      const genreArray = Array.from(genres).slice(0, 3);
       const { data, error } = await supabase
         .from('movies')
         .select('id, series_title, genre, poster_url, imdb_rating, overview, runtime')
@@ -122,13 +122,12 @@ export const useOnboarding = () => {
         .gte('imdb_rating', 6.5)
         .not('id', 'in', `(${Array.from(selectedMovies).join(',')})`)
         .or(genreArray.map(g => `genre.ilike.%${g}%`).join(','))
-        .order('imdb_rating', { ascending: false }) // Ordenar por rating
-        .limit(15);
+        .order('imdb_rating', { ascending: false })
+        .limit(25);
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Pegar os 10 primeiros (já ordenados por rating)
         const topMovies = data.slice(0, 10);
         console.log(`✅ Selected ${topMovies.length} top-rated related movies`);
         setRelatedMovies(topMovies);
@@ -144,9 +143,12 @@ export const useOnboarding = () => {
     }
   };
 
-  // Skip onboarding (save nothing, just navigate)
+  // Skip onboarding - just navigate without saving anything
   const handleSkipOnboarding = () => {
-    navigate('/');
+    console.log('⏭️ Skipping onboarding (not marking as complete)');
+    // Marcar flag no sessionStorage para evitar redirect automático
+    sessionStorage.setItem('skipped_onboarding', 'true');
+    navigate('/', { replace: true });
   };
 
   // Rating handlers
@@ -189,7 +191,7 @@ export const useOnboarding = () => {
     setIsModalOpen(true);
   };
 
-  // Complete onboarding - save all data and trigger recommendations
+  // Complete onboarding - save all data, mark as complete, and trigger recommendations
   const handleComplete = async () => {
     if (!userId) {
       setError('User not authenticated');
@@ -200,11 +202,11 @@ export const useOnboarding = () => {
     setCurrentPhase('complete');
 
     try {
-      // 1. Guardar os 5 filmes selecionados como "watched" com rating 15 (default alto)
+      // 1. Guardar os 5 filmes selecionados como "seen" com rating 15
       const selectedMoviesData = Array.from(selectedMovies).map(movieId => ({
         user_id: userId,
         movie_id: movieId,
-        status: 'watched',
+        status: 'seen',
         rating: 15,
         created_at: new Date().toISOString()
       }));
@@ -222,7 +224,7 @@ export const useOnboarding = () => {
         const ratingsData = ratings.map(r => ({
           user_id: userId,
           movie_id: r.movieId,
-          status: 'watched',
+          status: 'seen',
           rating: r.rating,
           created_at: new Date().toISOString()
         }));
@@ -237,15 +239,35 @@ export const useOnboarding = () => {
       }
 
       // 3. Chamar a API para gerar recomendações
-      await fetch(`http://127.0.0.1:8000/generate-recommendations/${userId}`, {
-        method: 'POST',
-      });
+      try {
+        await fetch(`http://127.0.0.1:8000/generate-recommendations/${userId}`, {
+          method: 'POST',
+        });
+        console.log('✅ Recommendations generation triggered');
+      } catch (apiError) {
+        console.warn('⚠️ Could not trigger recommendations API:', apiError);
+        // Não bloquear o fluxo se a API falhar
+      }
 
-      console.log('✅ Onboarding completed and recommendations triggered');
+      // 4. Marcar onboarding como completo
+      const { error: updateError } = await supabase
+        .from('User')
+        .update({ has_completed_onboarding: true })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('❌ Error marking onboarding as complete:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Onboarding completed successfully!');
+
+      // Limpar flag do sessionStorage
+      sessionStorage.removeItem('skipped_onboarding');
 
       // Aguardar 2 segundos antes de redirecionar
       setTimeout(() => {
-        navigate('/');
+        navigate('/', { replace: true });
       }, 2000);
 
     } catch (err) {
