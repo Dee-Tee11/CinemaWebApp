@@ -13,7 +13,6 @@ import { useMovies } from "./hooks/useMovies";
 import { useRecommendedMovies } from "./hooks/useRecommendedMovies";
 import { useFriendsMovies } from "./hooks/useFriendsMovies";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
-import { useUserStats } from "./hooks/useUserStats";
 import "./home.css";
 
 type ViewType = "forYou" | "friends" | "explore";
@@ -32,74 +31,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
-  // Verificar onboarding status
-  useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      if (!isLoaded) return;
-      if (!user) {
-        setIsCheckingOnboarding(false);
-        return;
-      }
-
-      try {
-        console.log('🔍 Checking onboarding status for user:', user.id);
-
-        // Verificar se o user existe na BD
-        const { data: userData, error: fetchError } = await supabase
-          .from('User')
-          .select('id, has_completed_onboarding')
-          .eq('id', user.id)
-          .single();
-
-        if (fetchError && fetchError.code === 'PGRST116') {
-          // User não existe, criar
-          console.log('👤 Creating new user in database...');
-          
-          const { error: insertError } = await supabase
-            .from('User')
-            .insert({
-              id: user.id,
-              email: user.primaryEmailAddress?.emailAddress || '',
-              name: user.fullName || user.username || 'User',
-              has_completed_onboarding: false,
-              created_at: new Date().toISOString()
-            });
-
-          if (insertError) {
-            console.error('❌ Error creating user:', insertError);
-          } else {
-            console.log('✅ User created, redirecting to onboarding');
-            navigate('/onboarding', { replace: true });
-          }
-          setIsCheckingOnboarding(false);
-          return;
-        }
-
-        if (fetchError) {
-          console.error('❌ Error fetching user:', fetchError);
-          setIsCheckingOnboarding(false);
-          return;
-        }
-
-        // Verificar se completou onboarding
-        if (!userData.has_completed_onboarding) {
-          console.log('⚠️ User has not completed onboarding, redirecting...');
-          navigate('/onboarding', { replace: true });
-        } else {
-          console.log('✅ User has completed onboarding');
-        }
-
-        setIsCheckingOnboarding(false);
-
-      } catch (error) {
-        console.error('❌ Unexpected error:', error);
-        setIsCheckingOnboarding(false);
-      }
-    };
-
-    checkOnboardingStatus();
-  }, [user, isLoaded, navigate, supabase]);
-
   useEffect(() => {
     const path = location.pathname;
     if (path === "/friends") {
@@ -113,6 +44,42 @@ export default function Home() {
     setSearchQuery("");
   }, [location.pathname]);
 
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!isLoaded || !user || !supabase) {
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('User')
+          .select('Onboarding_status')
+          .eq('id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') { // Ignore "row not found" error
+          throw error;
+        }
+
+        const status = data?.Onboarding_status;
+
+        if (status === 'completed' || status === 'skipped') {
+          // User is onboarded or has skipped, show the main page
+          setIsCheckingOnboarding(false);
+        } else {
+          // Status is 'pending', null, or undefined. Redirect to onboarding
+          navigate('/onboarding');
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        // Fallback to allow access to the app even if the check fails
+        setIsCheckingOnboarding(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [isLoaded, user, supabase, navigate]);
+
   const exploreMovies = useMovies(activeView, selectedCategory, searchQuery);
   const recommendedMovies = useRecommendedMovies();
   const friendsMovies = useFriendsMovies();
@@ -124,7 +91,6 @@ export default function Home() {
       ? { ...friendsMovies, needsRecommendations: false }
       : { ...exploreMovies, needsRecommendations: false };
 
-  const userStats = useUserStats();
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
 

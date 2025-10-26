@@ -80,8 +80,8 @@ const OnboardingFlow: React.FC = () => {
       </button>
 
       <div className="phase-header">
-        <h2 className="phase-title">Choose 5 movies you LOVE</h2>
-        <div className="phase-progress">{selectedMovies.size} / 5 selected</div>
+        <h2 className="phase-title">Choose at least 5 movies you LOVE</h2>
+        <div className="phase-progress">{selectedMovies.size} movies selected</div>
       </div>
 
       {error && (
@@ -150,7 +150,7 @@ const OnboardingFlow: React.FC = () => {
         <button
           className="onboarding-btn primary"
           onClick={handlePhase1Complete}
-          disabled={selectedMovies.size !== 5 || loading}
+          disabled={selectedMovies.size < 5 || loading}
         >
           {loading ? "Loading..." : "Continue"} <ChevronRight size={20} />
         </button>
