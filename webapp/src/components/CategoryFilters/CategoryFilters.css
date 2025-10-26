@@ -1,0 +1,110 @@
+/* Container elegante */
+.category-filters {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Esconder scrollbar mas manter funcionalidade */
+.category-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.category-filters {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Botão minimalista e elegante */
+.category-btn {
+  padding: 10px 24px;
+  background: transparent;
+  border: none;
+  color: rgba(26, 26, 26, 0.6);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  position: relative;
+  border-radius: 8px;
+}
+
+/* Underline elegante */
+.category-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 2px;
+  background: #991b1b;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1px;
+}
+
+/* Hover sutil */
+.category-btn:hover {
+  color: rgba(26, 26, 26, 0.9);
+  background: rgba(153, 27, 27, 0.04);
+}
+
+.category-btn:hover::after {
+  transform: translateX(-50%) scaleX(0.5);
+}
+
+/* Estado ativo - minimalista e sofisticado */
+.category-btn.active {
+  color: #991b1b;
+  font-weight: 600;
+  background: rgba(153, 27, 27, 0.06);
+}
+
+.category-btn.active::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+/* Touch feedback */
+.category-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .category-filters {
+    gap: 4px;
+    margin-top: 20px;
+  }
+
+  .category-btn {
+    padding: 8px 18px;
+    font-size: 13px;
+  }
+}
+
+/* Variante alternativa: com borda */
+.category-filters.bordered .category-btn {
+  border: 1.5px solid rgba(153, 27, 27, 0.15);
+  border-radius: 24px;
+}
+
+.category-filters.bordered .category-btn::after {
+  display: none;
+}
+
+.category-filters.bordered .category-btn.active {
+  background: #991b1b;
+  border-color: #991b1b;
+  color: white;
+}
+
+.category-filters.bordered .category-btn:hover {
+  border-color: rgba(153, 27, 27, 0.3);
+}

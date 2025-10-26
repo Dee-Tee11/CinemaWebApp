@@ -20,6 +20,8 @@ export default function Navbar({ onSearch }: NavbarProps) {
         return "friends";
       case "/explore":
         return "explore";
+      case "/mymovies":
+        return "myMovies";
       case "/foryou":
         return "forYou";
       default:
@@ -63,7 +65,7 @@ export default function Navbar({ onSearch }: NavbarProps) {
       } ${searchExpanded ? styles.expanded : ""}`}
     >
       {/* Logo */}
-      <Logo width={28} height={28} color="white" />
+      <Logo width={28} height={28}  />
 
       {/* Tabs */}
       <div
@@ -79,6 +81,16 @@ export default function Navbar({ onSearch }: NavbarProps) {
         >
           For You
           {activeTab === "forYou" && <div className={styles.tabIndicator} />}
+        </Link>
+
+        <Link
+          to="/mymovies"
+          className={`${styles.tabButton} ${
+            activeTab === "myMovies" ? styles.active : styles.inactive
+          } ${isScrolled ? styles.scrolled : styles.default}`}
+        >
+          My Movies
+          {activeTab === "myMovies" && <div className={styles.tabIndicator} />}
         </Link>
 
         <Link
