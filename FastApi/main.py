@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import pandas as pd
-import random
 
 # Carregar variáveis de ambiente PRIMEIRO
 load_dotenv()
@@ -56,9 +55,22 @@ except Exception as e:
     print(f"✅ {len(df_movies)} filmes carregados do CSV\n")
 
 # Recommendation System Initialization
-# Futuramente mudar para os embeddings da supabase
-embeddings_path = os.path.join(os.path.dirname(__file__), '..', 'AI', 'movie_embeddings.npy')
-rec_system = SistemaRecomendacaoKNN(embeddings_path, df_movies)
+import numpy as np
+print("⚙️  Extraindo embeddings do DataFrame...")
+
+try:
+    # A coluna de embedding pode vir como uma string, ex: '[0.1, 0.2, ...]'.
+    # A função 'eval' converte a string de uma lista para uma lista de verdade.
+    embeddings_list = df_movies['embedding'].apply(eval).tolist()
+except Exception as e:
+    print(f"⚠️  Falha ao converter embeddings com 'eval', tentando conversão direta. Erro: {e}")
+    # Fallback se os dados já estiverem no formato correto (lista de listas)
+    embeddings_list = df_movies['embedding'].tolist()
+
+movie_embeddings = np.array(embeddings_list, dtype=np.float32)
+print(f"✅ Embeddings extraídos. Shape: {movie_embeddings.shape}")
+
+rec_system = SistemaRecomendacaoKNN(movie_embeddings, df_movies)
 
 #usa só gerar_recomendacoes falta integrar o resto dos métodos
 def generate_and_save_recommendations(user_id: str):
@@ -89,7 +101,6 @@ def generate_and_save_recommendations(user_id: str):
     for movie in user_movies:
         movie_id = int(movie['movie_id'])
         rating = float(movie['rating'])
-        
         avaliacoes_por_movie_id[movie_id] = rating
         filmes_vistos_ids.append(movie_id)
     
@@ -148,49 +159,4 @@ def trigger_recommendation_generation(user_id: str, background_tasks: Background
     return {
         "message": f"Geração de recomendações iniciada para o usuário {user_id}",
         "status": "processing"
-    }
-
-@app.get("/onboarding")
-def start_onboarding():
-    # Buscar todos os filmes da tabela 'movies'
-    response = supabase.table('movies').select('id, series_title, genre, poster_url, imdb_rating, overview').execute()
-    movies = response.data
-    
-    # Escolher 5 filmes aleatórios
-    selected_movies = random.sample(movies, min(5, len(movies))) if movies else []
-    
-    return {"movies": selected_movies}
-
-@app.get("/recommendations/{user_id}")
-def get_user_recommendations(user_id: str, limit: int = 25):
-    """
-    Buscar recomendações salvas de um usuário
-    """
-    try:
-        response = supabase.table('user_recommendations')\
-            .select('*, movies(*)')\
-            .eq('user_id', user_id)\
-            .order('position')\
-            .limit(limit)\
-            .execute()
-        
-        return {
-            "user_id": user_id,
-            "total": len(response.data),
-            "recommendations": response.data
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-
-@app.get("/")
-def home():
-    return {
-        "message": "🎬 API de Recomendação de Filmes",
-        "version": "1.0",
-        "endpoints": {
-            "generate": "/generate-recommendations/{user_id}",
-            "get": "/recommendations/{user_id}",
-            "test": "/for-you-test"
-        }
     }

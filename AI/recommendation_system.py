@@ -4,16 +4,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 from typing import Dict, List, Union
 
 class SistemaRecomendacaoKNN:
-    def __init__(self, embeddings_path: str, dataset_source: Union[str, pd.DataFrame]):
+    def __init__(self, embeddings: np.ndarray, dataset_source: Union[str, pd.DataFrame]):
         """
         Inicializa o sistema de recomendação
         
         Args:
-            embeddings_path: Caminho para o arquivo .npy com embeddings
+            embeddings: Array NumPy com os embeddings dos filmes
             dataset_source: Caminho para CSV OU DataFrame com dados dos filmes
         """
         print("Carregando sistema de recomendação...")
-        self.embeddings = np.load(embeddings_path)
+        self.embeddings = embeddings
         
         # Aceitar tanto CSV quanto DataFrame
         if isinstance(dataset_source, pd.DataFrame):

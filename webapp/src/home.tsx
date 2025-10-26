@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useUser } from '@clerk/clerk-react';
-import { useSupabase } from './hooks/useSupabase';
+import { useUser } from "@clerk/clerk-react";
+import { useSupabase } from "./hooks/useSupabase";
 import Sidebar from "./components/Slidebar";
 import Navbar from "./components/Navbar/Navbar";
 import Masonry from "./components/Masonry/Masonry";
@@ -25,13 +25,17 @@ export default function Home() {
   const navigate = useNavigate();
   const { user, isLoaded } = useUser();
   const supabase = useSupabase();
-  
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [activeView, setActiveView] = useState<ViewType>("forYou");
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
-  const [selectedStatus, setSelectedStatus] = useState<MovieStatus | undefined>(undefined);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined
+  );
+  const [selectedStatus, setSelectedStatus] = useState<MovieStatus | undefined>(
+    undefined
+  );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
@@ -61,24 +65,24 @@ export default function Home() {
 
       try {
         const { data, error } = await supabase
-          .from('User')
-          .select('Onboarding_status')
-          .eq('id', user.id)
+          .from("User")
+          .select("onboarding_status")
+          .eq("id", user.id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
+        if (error && error.code !== "PGRST116") {
           throw error;
         }
 
-        const status = data?.Onboarding_status;
+        const status = data?.onboarding_status;
 
-        if (status === 'completed' || status === 'skipped') {
+        if (status === "completed" || status === "skipped") {
           setIsCheckingOnboarding(false);
         } else {
-          navigate('/onboarding');
+          navigate("/onboarding");
         }
       } catch (error) {
-        console.error('Error checking onboarding status:', error);
+        console.error("Error checking onboarding status:", error);
         setIsCheckingOnboarding(false);
       }
     };
@@ -94,18 +98,19 @@ export default function Home() {
 
   // Select data based on activeView
   let currentData;
-  
-  if (activeView === 'forYou') {
+
+  if (activeView === "forYou") {
     currentData = recommendedMovies;
-  } else if (activeView === 'friends') {
+  } else if (activeView === "friends") {
     currentData = { ...friendsMovies, needsRecommendations: false };
-  } else if (activeView === 'myMovies') {
+  } else if (activeView === "myMovies") {
     currentData = { ...myMoviesData, needsRecommendations: false };
   } else {
     currentData = { ...exploreMovies, needsRecommendations: false };
   }
 
-  const { items, isLoading, hasMore, loadMore, needsRecommendations } = currentData;
+  const { items, isLoading, hasMore, loadMore, needsRecommendations } =
+    currentData;
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
 
@@ -126,22 +131,26 @@ export default function Home() {
 
   if (isCheckingOnboarding || !isLoaded) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: '#0a0a0a',
-        color: 'white',
-        fontSize: '1.2rem'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          background: "#0a0a0a",
+          color: "white",
+          fontSize: "1.2rem",
+        }}
+      >
         Loading...
       </div>
     );
   }
 
-  const getTotalCount = () => 
-    myMoviesData.counts.saved + myMoviesData.counts.watching + myMoviesData.counts.seen;
+  const getTotalCount = () =>
+    myMoviesData.counts.saved +
+    myMoviesData.counts.watching +
+    myMoviesData.counts.seen;
 
   return (
     <div className="home-container">
@@ -183,7 +192,9 @@ export default function Home() {
             </h2>
             <p className="page-subtitle">
               {searchQuery
-                ? `${items.length} ${items.length === 1 ? "movie found" : "movies found"}`
+                ? `${items.length} ${
+                    items.length === 1 ? "movie found" : "movies found"
+                  }`
                 : activeView === "forYou"
                 ? "Recommended movies based on your taste"
                 : activeView === "friends"
@@ -221,27 +232,34 @@ export default function Home() {
           </div>
 
           {/* For You - Needs Recommendations */}
-          {activeView === 'forYou' && needsRecommendations && (
+          {activeView === "forYou" && needsRecommendations && (
             <div className="no-movies-container">
-              <p>Rate at least 5 movies to get personalized recommendations. 🎬</p>
+              <p>
+                Rate at least 5 movies to get personalized recommendations. 🎬
+              </p>
             </div>
           )}
 
           {/* Friends - No Friends */}
-          {activeView === 'friends' && !friendsMovies.hasFriends && !isLoading && (
-            <div className="no-movies-container">
-              <p>You don't have any friends yet. Add friends to see their activity! 👥</p>
-              <button
-                onClick={() => setIsAddFriendOpen(true)}
-                className="see-all-movies-button"
-              >
-                Add Friends
-              </button>
-            </div>
-          )}
+          {activeView === "friends" &&
+            !friendsMovies.hasFriends &&
+            !isLoading && (
+              <div className="no-movies-container">
+                <p>
+                  You don't have any friends yet. Add friends to see their
+                  activity! 👥
+                </p>
+                <button
+                  onClick={() => setIsAddFriendOpen(true)}
+                  className="see-all-movies-button"
+                >
+                  Add Friends
+                </button>
+              </div>
+            )}
 
           {/* My Movies - Empty State */}
-          {activeView === 'myMovies' && items.length === 0 && !isLoading && (
+          {activeView === "myMovies" && items.length === 0 && !isLoading && (
             <div className="no-movies-container">
               <div className="no-movies-icon">🎬</div>
               <h3>No movies found</h3>
@@ -270,33 +288,31 @@ export default function Home() {
           {items.length > 0 && <Masonry items={items} />}
 
           {/* Explore - No Results */}
-          {items.length === 0 && 
-           !isLoading && 
-           !needsRecommendations && 
-           activeView !== 'friends' && 
-           activeView !== 'myMovies' && (
-            <div className="no-movies-container">
-              {searchQuery
-                ? `No movies found for "${searchQuery}" 🔍`
-                : "No movies found for this category 🎬"}
-              <br />
-              <button
-                onClick={() => {
-                  setSelectedCategory(undefined);
-                  setSearchQuery("");
-                }}
-                className="see-all-movies-button"
-              >
-                See all movies
-              </button>
-            </div>
-          )}
+          {items.length === 0 &&
+            !isLoading &&
+            !needsRecommendations &&
+            activeView !== "friends" &&
+            activeView !== "myMovies" && (
+              <div className="no-movies-container">
+                {searchQuery
+                  ? `No movies found for "${searchQuery}" 🔍`
+                  : "No movies found for this category 🎬"}
+                <br />
+                <button
+                  onClick={() => {
+                    setSelectedCategory(undefined);
+                    setSearchQuery("");
+                  }}
+                  className="see-all-movies-button"
+                >
+                  See all movies
+                </button>
+              </div>
+            )}
 
           {/* Loading */}
           {isLoading && (
-            <div className="loading-container">
-              Loading more movies...
-            </div>
+            <div className="loading-container">Loading more movies...</div>
           )}
 
           {/* End of Results */}
