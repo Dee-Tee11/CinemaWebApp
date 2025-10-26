@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Star, X, Bookmark, Play } from 'lucide-react';
+import { Eye, EyeOff, Star, X, Bookmark, Play, Users } from 'lucide-react';
 import { type GridItem, type UserMovie, type MovieStatus } from '../MovieCard/MovieCard';
 import { formatRuntime } from '../../lib/utils';
+import { useFriendsMovies } from '../../hooks/useFriendsMovies';
 import './MovieModal.css';
 
 interface MovieModalProps {
@@ -21,6 +22,9 @@ const MovieModal: React.FC<MovieModalProps> = ({
   const [showRatingSelector, setShowRatingSelector] = useState(false);
   const [tempRating, setTempRating] = useState<number>(10);
 
+  // 🎯 Buscar atividades dos amigos para ESTE filme específico
+  const { friendsActivity, isLoading: loadingFriends } = useFriendsMovies(movie.id);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -37,26 +41,50 @@ const MovieModal: React.FC<MovieModalProps> = ({
   const handleStatusClick = (e: React.MouseEvent, newStatus: MovieStatus) => {
     e.stopPropagation();
 
-    // Se clicar no mesmo status, remove-o
     if (userMovie?.status === newStatus) {
       onStatusChange(movie.id, null);
       return;
     }
 
-    // Se mudar para "seen", mostra o seletor de rating
     if (newStatus === "seen") {
       setTempRating(userMovie?.rating || 10);
       setShowRatingSelector(true);
       return;
     }
 
-    // Para "saved" e "watching", muda diretamente
     onStatusChange(movie.id, newStatus);
   };
 
   const handleConfirmRating = () => {
     onStatusChange(movie.id, "seen", tempRating);
     setShowRatingSelector(false);
+  };
+
+  const getStatusEmoji = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'seen':
+        return '👁️';
+      case 'watching':
+        return '▶️';
+      case 'saved':
+      case 'watch later':
+        return '🔖';
+      default:
+        return '⭐';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const isSaved = userMovie?.status === 'saved';
@@ -74,7 +102,6 @@ const MovieModal: React.FC<MovieModalProps> = ({
           className="modal-image"
           style={{ backgroundImage: `url(${movie.img})` }}
         >
-          {/* Rating Selector Overlay */}
           {showRatingSelector && (
             <div className="modal-rating-selector-overlay" onClick={(e) => e.stopPropagation()}>
               <div className="modal-rating-selector">
@@ -130,10 +157,9 @@ const MovieModal: React.FC<MovieModalProps> = ({
             {movie.time && `${formatRuntime(movie.time)}`}
           </p>
 
-          {/* User Rating Display */}
           {userMovie?.status === 'seen' && userMovie.rating && (
             <div className="user-rating-display">
-              <Star size={20} color="#FF6B6B" fill="#FF6B6B" />
+              <Star size={20} color="#FFD700" fill="#FFD700" />
               <span>Your rating: {userMovie.rating}/20</span>
             </div>
           )}
@@ -151,6 +177,9 @@ const MovieModal: React.FC<MovieModalProps> = ({
               onClick={() => setActiveTab('friends')}
             >
               Friends
+              {friendsActivity.length > 0 && (
+                <span className="friends-count-badge">{friendsActivity.length}</span>
+              )}
             </button>
           </div>
 
@@ -169,8 +198,28 @@ const MovieModal: React.FC<MovieModalProps> = ({
             {activeTab === 'friends' && (
               <div className="synopsis-container">
                 <h3 className="synopsis-title">FRIENDS' ACTIVITY</h3>
-                <div className="friends-text">
-                  <p className="friend-text">No friends have interacted with this movie yet.</p>
+                <div className="friends-activities">
+                  {loadingFriends ? (
+                    <div className="friends-loading">
+                      <div className="loading-spinner"></div>
+                      <p>Loading friends' activity...</p>
+                    </div>
+                  ) : friendsActivity.length > 0 ? (
+                    friendsActivity.map((activity, index) => (
+                      <div key={index} className="friend-activity-item">
+                        <span className="friend-activity-text">
+                          {activity.friend_name} - {activity.status.toLowerCase()}
+                          {activity.rating && ` (Rating: ${activity.rating}/20)`} - {formatDate(activity.created_at)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="no-friends-activity">
+                      <Users size={48} color="#ccc" />
+                      <p>No friends have interacted with this movie yet.</p>
+                      <p className="no-friends-subtitle">Be the first to rate it!</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -6,16 +6,19 @@ import Sidebar from "./components/Slidebar";
 import Navbar from "./components/Navbar/Navbar";
 import Masonry from "./components/Masonry/Masonry";
 import ProfileModal from "./components/ProfileModal/ProfileModal";
-import CategoryFilters from "./components/CategoryFilters";
+import CategoryFilters from "./components/CategoryFilters/CategoryFilters";
+import StatusFilters from "./components/MyMovies/MyMovies";
 import SettingsPopup from "./components/SettingsPopup";
 import AddFriendPopup from "./components/AddFriend/AddFriend";
 import { useMovies } from "./hooks/useMovies";
 import { useRecommendedMovies } from "./hooks/useRecommendedMovies";
 import { useFriendsMovies } from "./hooks/useFriendsMovies";
+import { useMyMovies } from "./hooks/useMyMovies";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
+import type { MovieStatus } from "./components/MovieCard/MovieCard";
 import "./home.css";
 
-type ViewType = "forYou" | "friends" | "explore";
+type ViewType = "forYou" | "friends" | "myMovies" | "explore";
 
 export default function Home() {
   const location = useLocation();
@@ -28,22 +31,28 @@ export default function Home() {
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [activeView, setActiveView] = useState<ViewType>("forYou");
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [selectedStatus, setSelectedStatus] = useState<MovieStatus | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
 
+  // Update activeView based on route
   useEffect(() => {
     const path = location.pathname;
     if (path === "/friends") {
       setActiveView("friends");
     } else if (path === "/explore") {
       setActiveView("explore");
+    } else if (path === "/mymovies") {
+      setActiveView("myMovies");
     } else {
       setActiveView("forYou");
     }
     setSelectedCategory(undefined);
+    setSelectedStatus(undefined);
     setSearchQuery("");
   }, [location.pathname]);
 
+  // Check onboarding status
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (!isLoaded || !user || !supabase) {
@@ -57,22 +66,19 @@ export default function Home() {
           .eq('id', user.id)
           .single();
 
-        if (error && error.code !== 'PGRST116') { // Ignore "row not found" error
+        if (error && error.code !== 'PGRST116') {
           throw error;
         }
 
         const status = data?.Onboarding_status;
 
         if (status === 'completed' || status === 'skipped') {
-          // User is onboarded or has skipped, show the main page
           setIsCheckingOnboarding(false);
         } else {
-          // Status is 'pending', null, or undefined. Redirect to onboarding
           navigate('/onboarding');
         }
       } catch (error) {
         console.error('Error checking onboarding status:', error);
-        // Fallback to allow access to the app even if the check fails
         setIsCheckingOnboarding(false);
       }
     };
@@ -80,17 +86,26 @@ export default function Home() {
     checkOnboardingStatus();
   }, [isLoaded, user, supabase, navigate]);
 
+  // Hooks for each view
   const exploreMovies = useMovies(activeView, selectedCategory, searchQuery);
   const recommendedMovies = useRecommendedMovies();
   const friendsMovies = useFriendsMovies();
+  const myMoviesData = useMyMovies(selectedStatus, searchQuery);
 
-  const { items, isLoading, hasMore, loadMore, needsRecommendations } = 
-    activeView === 'forYou' 
-      ? recommendedMovies 
-      : activeView === 'friends'
-      ? { ...friendsMovies, needsRecommendations: false }
-      : { ...exploreMovies, needsRecommendations: false };
+  // Select data based on activeView
+  let currentData;
+  
+  if (activeView === 'forYou') {
+    currentData = recommendedMovies;
+  } else if (activeView === 'friends') {
+    currentData = { ...friendsMovies, needsRecommendations: false };
+  } else if (activeView === 'myMovies') {
+    currentData = { ...myMoviesData, needsRecommendations: false };
+  } else {
+    currentData = { ...exploreMovies, needsRecommendations: false };
+  }
 
+  const { items, isLoading, hasMore, loadMore, needsRecommendations } = currentData;
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
 
@@ -106,9 +121,9 @@ export default function Home() {
     console.log("Searching for:", query);
     setSearchQuery(query);
     setSelectedCategory(undefined);
+    setSelectedStatus(undefined);
   };
 
-  // Mostrar loading enquanto verifica onboarding
   if (isCheckingOnboarding || !isLoaded) {
     return (
       <div style={{
@@ -125,7 +140,8 @@ export default function Home() {
     );
   }
 
-  const itemsToDisplay = items;
+  const getTotalCount = () => 
+    myMoviesData.counts.saved + myMoviesData.counts.watching + myMoviesData.counts.seen;
 
   return (
     <div className="home-container">
@@ -161,24 +177,36 @@ export default function Home() {
                 ? "For You"
                 : activeView === "friends"
                 ? "Friend's Suggestions"
+                : activeView === "myMovies"
+                ? "My Movies"
                 : "Explore"}
             </h2>
             <p className="page-subtitle">
               {searchQuery
-                ? `${items.length} ${
-                    items.length === 1 ? "movie found" : "movies found"
-                  }`
+                ? `${items.length} ${items.length === 1 ? "movie found" : "movies found"}`
                 : activeView === "forYou"
                 ? "Recommended movies based on your taste"
                 : activeView === "friends"
                 ? "See what your friends are watching"
+                : activeView === "myMovies"
+                ? `You have ${getTotalCount()} movies in your collection`
                 : "Filter by category and explore movies"}
             </p>
 
+            {/* Category Filters for Explore */}
             {activeView === "explore" && !searchQuery && (
               <CategoryFilters
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
+              />
+            )}
+
+            {/* Status Filters for My Movies */}
+            {activeView === "myMovies" && !searchQuery && (
+              <StatusFilters
+                selectedStatus={selectedStatus}
+                setSelectedStatus={setSelectedStatus}
+                counts={myMoviesData.counts}
               />
             )}
 
@@ -192,12 +220,14 @@ export default function Home() {
             )}
           </div>
 
+          {/* For You - Needs Recommendations */}
           {activeView === 'forYou' && needsRecommendations && (
             <div className="no-movies-container">
               <p>Rate at least 5 movies to get personalized recommendations. 🎬</p>
             </div>
           )}
 
+          {/* Friends - No Friends */}
           {activeView === 'friends' && !friendsMovies.hasFriends && !isLoading && (
             <div className="no-movies-container">
               <p>You don't have any friends yet. Add friends to see their activity! 👥</p>
@@ -210,9 +240,41 @@ export default function Home() {
             </div>
           )}
 
-          <Masonry items={itemsToDisplay} />
+          {/* My Movies - Empty State */}
+          {activeView === 'myMovies' && items.length === 0 && !isLoading && (
+            <div className="no-movies-container">
+              <div className="no-movies-icon">🎬</div>
+              <h3>No movies found</h3>
+              <p>
+                {searchQuery
+                  ? `No movies found for "${searchQuery}"`
+                  : selectedStatus
+                  ? `You don't have any ${selectedStatus} movies yet`
+                  : "Start adding movies to your collection!"}
+              </p>
+              {(searchQuery || selectedStatus) && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedStatus(undefined);
+                  }}
+                  className="see-all-movies-button"
+                >
+                  See all movies
+                </button>
+              )}
+            </div>
+          )}
 
-          {items.length === 0 && !isLoading && !needsRecommendations && activeView !== 'friends' && (
+          {/* Movies Grid */}
+          {items.length > 0 && <Masonry items={items} />}
+
+          {/* Explore - No Results */}
+          {items.length === 0 && 
+           !isLoading && 
+           !needsRecommendations && 
+           activeView !== 'friends' && 
+           activeView !== 'myMovies' && (
             <div className="no-movies-container">
               {searchQuery
                 ? `No movies found for "${searchQuery}" 🔍`
@@ -230,12 +292,14 @@ export default function Home() {
             </div>
           )}
 
+          {/* Loading */}
           {isLoading && (
             <div className="loading-container">
               Loading more movies...
             </div>
           )}
 
+          {/* End of Results */}
           {!hasMore && items.length > 0 && (
             <div className="end-of-results-container">
               You have reached the end! 🎬

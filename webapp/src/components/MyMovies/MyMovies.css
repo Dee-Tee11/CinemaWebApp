@@ -1,0 +1,65 @@
+.status-filters {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0;
+  flex-wrap: wrap;
+}
+
+.status-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border: 2px solid rgba(153, 27, 27, 0.2);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #4a4a4a;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.status-filter-btn:hover {
+  background: rgba(153, 27, 27, 0.05);
+  border-color: rgba(153, 27, 27, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.status-filter-btn.active {
+  background: linear-gradient(135deg, #991b1b 0%, #7c1616 100%);
+  color: white;
+  border-color: #991b1b;
+  box-shadow: 0 4px 16px rgba(153, 27, 27, 0.3);
+}
+
+.status-icon {
+  display: flex;
+  align-items: center;
+}
+
+.status-filter-btn.active .status-icon {
+  color: white !important;
+}
+
+.status-label {
+  font-weight: 600;
+}
+
+.status-count {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .status-filters {
+    gap: 8px;
+  }
+
+  .status-filter-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
