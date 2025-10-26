@@ -75,18 +75,13 @@ export const useOnboarding = () => {
     fetchInitialMovies();
   }, []);
 
-  // Handle movie selection (max 5)
+  // Handle movie selection (min 5)
   const handleMovieSelect = (movieId: number) => {
     setSelectedMovies((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(movieId)) {
         newSet.delete(movieId);
       } else {
-        if (newSet.size >= 5) {
-          setError('You can only select 5 movies');
-          setTimeout(() => setError(null), 3000);
-          return prev;
-        }
         newSet.add(movieId);
       }
       return newSet;
@@ -95,8 +90,8 @@ export const useOnboarding = () => {
 
   // Generate related movies based on selected ones (Phase 2)
   const handlePhase1Complete = async () => {
-    if (selectedMovies.size !== 5) {
-      setError('Please select exactly 5 movies');
+    if (selectedMovies.size < 5) {
+      setError('Please select at least 5 movies');
       return;
     }
 
@@ -143,12 +138,27 @@ export const useOnboarding = () => {
     }
   };
 
-  // Skip onboarding - just navigate without saving anything
-  const handleSkipOnboarding = () => {
-    console.log('⏭️ Skipping onboarding (not marking as complete)');
-    // Marcar flag no sessionStorage para evitar redirect automático
-    sessionStorage.setItem('skipped_onboarding', 'true');
-    navigate('/', { replace: true });
+  // Skip onboarding and save status to DB
+  const handleSkipOnboarding = async () => {
+    if (!userId || !supabase) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('User')
+        .update({ Onboarding_status: 'skipped' })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      console.log('✅ Onboarding skipped and status saved.');
+      navigate('/', { replace: true });
+
+    } catch (err) {
+      console.error('Error skipping onboarding:', err);
+      setError('Failed to update your status. Please try again.');
+      setLoading(false);
+    }
   };
 
   // Rating handlers
@@ -252,7 +262,7 @@ export const useOnboarding = () => {
       // 4. Marcar onboarding como completo
       const { error: updateError } = await supabase
         .from('User')
-        .update({ has_completed_onboarding: true })
+        .update({ Onboarding_status: 'completed' })
         .eq('id', userId);
 
       if (updateError) {
@@ -261,9 +271,6 @@ export const useOnboarding = () => {
       }
 
       console.log('✅ Onboarding completed successfully!');
-
-      // Limpar flag do sessionStorage
-      sessionStorage.removeItem('skipped_onboarding');
 
       // Aguardar 2 segundos antes de redirecionar
       setTimeout(() => {
