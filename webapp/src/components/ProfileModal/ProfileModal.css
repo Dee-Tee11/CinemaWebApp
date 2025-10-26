@@ -8,6 +8,34 @@
   animation: fadeIn 0.3s ease-out;
 }
 
+/* Copy Tag Button */
+.copy-tag-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #991b1b;
+}
+
+.copy-tag-button:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.copy-tag-button.copied {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  color: #10b981;
+}
+
 /* Modal */
 .modal {
   position: fixed;
@@ -65,6 +93,7 @@
   gap: 0.5rem;
 }
 
+/* Icon Buttons */
 .icon-button {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -76,12 +105,12 @@
   justify-content: center;
   cursor: pointer;
   color: white;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.icon-button.close:hover {
+.icon-button.add-friend:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: rotate(90deg);
+  transform: scale(1.1);
 }
 
 .icon-button.friend-requests {
@@ -90,6 +119,12 @@
 
 .icon-button.friend-requests:hover {
   background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.icon-button.close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
 }
 
 .badge {
@@ -294,7 +329,11 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(153, 27, 27, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(153, 27, 27, 0.2) 0%,
+    rgba(220, 38, 38, 0.2) 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
@@ -397,17 +436,17 @@
   transform: scale(1.05);
 }
 
-.stat-item.liked {
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+.stat-item.saved {
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.stat-item.favorite {
-  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.2);
-  border: 1px solid rgba(234, 179, 8, 0.3);
+.stat-item.watching {
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
-.stat-item.watched {
+.stat-item.seen {
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
@@ -422,15 +461,15 @@
   margin: 0 auto 0.5rem;
 }
 
-.stat-icon.liked {
-  background: rgba(239, 68, 68, 0.2);
+.stat-icon.saved {
+  background: rgba(245, 158, 11, 0.2);
 }
 
-.stat-icon.favorite {
-  background: rgba(234, 179, 8, 0.2);
+.stat-icon.watching {
+  background: rgba(16, 185, 129, 0.2);
 }
 
-.stat-icon.watched {
+.stat-icon.seen {
   background: rgba(59, 130, 246, 0.2);
 }
 
@@ -481,13 +520,13 @@
   .stats-grid {
     flex-direction: column !important;
   }
-  
+
   .friend-item {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .remove-friend-button {
     width: 100%;
     justify-content: center;
