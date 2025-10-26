@@ -1,8 +1,8 @@
-import React from 'react';
-import { ChevronRight, Star, Sparkles, ChevronLeft } from 'lucide-react';
-import MovieModal from './MovieOnboardingModal';
-import { useOnboarding } from '../../hooks/useOnboarding';
-import './MovieOnboardingNewVersion.css';
+import React from "react";
+import { ChevronRight, Star, Sparkles, ChevronLeft } from "lucide-react";
+import MovieModal from "./MovieOnboardingModal";
+import { useOnboarding } from "../../hooks/useOnboarding";
+import "./MovieOnboardingNewVersion.css";
 
 const OnboardingFlow: React.FC = () => {
   const {
@@ -28,7 +28,7 @@ const OnboardingFlow: React.FC = () => {
     handleNext,
     handlePrevious,
     handleOpenModal,
-    handleComplete
+    handleComplete,
   } = useOnboarding();
 
   // ============================================
@@ -39,7 +39,7 @@ const OnboardingFlow: React.FC = () => {
       <div className="welcome-icon">
         <Sparkles size={64} color="#991b1b" />
       </div>
-      <h1 className="welcome-title">Welcome to CineMatch! 🎬</h1>
+      <h1 className="welcome-title">Welcome to Movie Night ! 🎬</h1>
       <p className="welcome-subtitle">
         Let's personalize your experience with movies you love
       </p>
@@ -59,7 +59,7 @@ const OnboardingFlow: React.FC = () => {
       </div>
       <button
         className="onboarding-btn primary"
-        onClick={() => setCurrentPhase('initial-selection')}
+        onClick={() => setCurrentPhase("initial-selection")}
       >
         Let's Start <ChevronRight size={20} />
       </button>
@@ -71,43 +71,43 @@ const OnboardingFlow: React.FC = () => {
   // ============================================
   const renderInitialSelection = () => (
     <div className="onboarding-page-content selection-phase">
-      <button 
+      <button
         className="back-button"
-        onClick={() => setCurrentPhase('welcome')}
-        style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}
+        onClick={() => setCurrentPhase("welcome")}
+        style={{ position: "absolute", top: "24px", left: "24px", zIndex: 10 }}
       >
         <ChevronLeft size={24} />
       </button>
 
       <div className="phase-header">
         <h2 className="phase-title">Choose 5 movies you LOVE</h2>
-        <div className="phase-progress">
-          {selectedMovies.size} / 5 selected
-        </div>
+        <div className="phase-progress">{selectedMovies.size} / 5 selected</div>
       </div>
 
       {error && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#ef4444',
-          color: 'white',
-          padding: '12px 24px',
-          borderRadius: '8px',
-          zIndex: 1000
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "#ef4444",
+            color: "white",
+            padding: "12px 24px",
+            borderRadius: "8px",
+            zIndex: 1000,
+          }}
+        >
           {error}
-          <button 
+          <button
             onClick={() => setError(null)}
             style={{
-              marginLeft: '12px',
-              background: 'transparent',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '18px'
+              marginLeft: "12px",
+              background: "transparent",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              fontSize: "18px",
             }}
           >
             ✕
@@ -116,10 +116,12 @@ const OnboardingFlow: React.FC = () => {
       )}
 
       <div className="movies-grid">
-        {availableMovies.map(movie => (
+        {availableMovies.map((movie) => (
           <div
             key={movie.id}
-            className={`onboarding-movie-card ${selectedMovies.has(movie.id) ? 'selected' : ''}`}
+            className={`onboarding-movie-card ${
+              selectedMovies.has(movie.id) ? "selected" : ""
+            }`}
             onClick={() => handleMovieSelect(movie.id)}
           >
             <div
@@ -150,7 +152,7 @@ const OnboardingFlow: React.FC = () => {
           onClick={handlePhase1Complete}
           disabled={selectedMovies.size !== 5 || loading}
         >
-          {loading ? 'Loading...' : 'Continue'} <ChevronRight size={20} />
+          {loading ? "Loading..." : "Continue"} <ChevronRight size={20} />
         </button>
       </div>
     </div>
@@ -161,17 +163,22 @@ const OnboardingFlow: React.FC = () => {
   // ============================================
   const renderRateRelated = () => {
     if (relatedMovies.length === 0) return null;
-    
+
     const currentMovie = relatedMovies[currentIndex];
-    const hasRating = ratings.some(r => r.movieId === currentMovie.id);
+    const hasRating = ratings.some((r) => r.movieId === currentMovie.id);
     const isLastMovie = currentIndex === relatedMovies.length - 1;
 
     return (
       <div className="onboarding-page-content rating-phase-slider">
-        <button 
+        <button
           className="back-button"
-          onClick={() => setCurrentPhase('initial-selection')}
-          style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}
+          onClick={() => setCurrentPhase("initial-selection")}
+          style={{
+            position: "absolute",
+            top: "24px",
+            left: "24px",
+            zIndex: 10,
+          }}
         >
           <ChevronLeft size={24} />
         </button>
@@ -188,9 +195,11 @@ const OnboardingFlow: React.FC = () => {
             <div
               key={`progress-${idx}`}
               className={`progress-bar-item ${
-                idx < currentIndex ? 'completed' :
-                idx === currentIndex ? 'active' :
-                'inactive'
+                idx < currentIndex
+                  ? "completed"
+                  : idx === currentIndex
+                  ? "active"
+                  : "inactive"
               }`}
             />
           ))}
@@ -198,7 +207,7 @@ const OnboardingFlow: React.FC = () => {
 
         <div className="slider-card-container">
           <div className="slider-movie-card">
-            <div 
+            <div
               className="slider-card-image"
               style={{ backgroundImage: `url(${currentMovie.poster_url})` }}
               onClick={handleOpenModal}
@@ -212,22 +221,25 @@ const OnboardingFlow: React.FC = () => {
                 <div className="badge-user-rating">
                   <Star size={14} className="star-white" fill="white" />
                   <span className="badge-text">
-                    {ratings.find(r => r.movieId === currentMovie.id)?.rating}/20
+                    {ratings.find((r) => r.movieId === currentMovie.id)?.rating}
+                    /20
                   </span>
                 </div>
               )}
 
               {showRatingSelector && (
-                <div 
+                <div
                   className="rating-overlay"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="rating-selector-content">
                     <div className="rating-selector-header">
-                      <div className="rating-selector-title">Rate this movie</div>
+                      <div className="rating-selector-title">
+                        Rate this movie
+                      </div>
                       <div className="rating-display">{tempRating}</div>
                     </div>
-                    
+
                     <input
                       type="range"
                       min="0"
@@ -236,13 +248,16 @@ const OnboardingFlow: React.FC = () => {
                       onChange={(e) => setTempRating(Number(e.target.value))}
                       className="rating-slider"
                     />
-                    
+
                     <div className="rating-range-labels">
                       <span>0</span>
                       <span>20</span>
                     </div>
 
-                    <button onClick={handleConfirmRating} className="btn-confirm">
+                    <button
+                      onClick={handleConfirmRating}
+                      className="btn-confirm"
+                    >
                       Confirm Rating
                     </button>
                   </div>
@@ -252,8 +267,12 @@ const OnboardingFlow: React.FC = () => {
 
             <div className="slider-card-info">
               <div className="slider-card-category">{currentMovie.genre}</div>
-              <div className="slider-card-title">{currentMovie.series_title}</div>
-              <div className="slider-card-meta">{currentMovie.runtime || ''}</div>
+              <div className="slider-card-title">
+                {currentMovie.series_title}
+              </div>
+              <div className="slider-card-meta">
+                {currentMovie.runtime || ""}
+              </div>
             </div>
 
             <div className="slider-card-actions">
@@ -279,7 +298,7 @@ const OnboardingFlow: React.FC = () => {
                   Previous
                 </button>
                 <button onClick={handleNext} className="btn-nav btn-next">
-                  {isLastMovie ? 'Finish' : 'Next'}
+                  {isLastMovie ? "Finish" : "Next"}
                   <ChevronRight size={18} />
                 </button>
               </div>
@@ -295,8 +314,8 @@ const OnboardingFlow: React.FC = () => {
               category: currentMovie.genre,
               img: currentMovie.poster_url,
               rating: currentMovie.imdb_rating,
-              time: currentMovie.runtime || '',
-              synopsis: currentMovie.overview || 'Synopsis not available'
+              time: currentMovie.runtime || "",
+              synopsis: currentMovie.overview || "Synopsis not available",
             }}
             isWatched={false}
             onClose={() => setIsModalOpen(false)}
@@ -317,12 +336,10 @@ const OnboardingFlow: React.FC = () => {
       </div>
       <h1 className="complete-title">You're all set! 🎉</h1>
       <p className="complete-subtitle">
-        Your personalized "For You" page is ready with recommendations based on your taste
+        Your personalized "For You" page is ready with recommendations based on
+        your taste
       </p>
-      <button 
-        className="onboarding-btn primary" 
-        onClick={handleComplete}
-      >
+      <button className="onboarding-btn primary" onClick={handleComplete}>
         Explore Movies
       </button>
     </div>
@@ -340,10 +357,10 @@ const OnboardingFlow: React.FC = () => {
         </div>
       )}
 
-      {currentPhase === 'welcome' && renderWelcome()}
-      {currentPhase === 'initial-selection' && renderInitialSelection()}
-      {currentPhase === 'rate-related' && renderRateRelated()}
-      {currentPhase === 'complete' && renderComplete()}
+      {currentPhase === "welcome" && renderWelcome()}
+      {currentPhase === "initial-selection" && renderInitialSelection()}
+      {currentPhase === "rate-related" && renderRateRelated()}
+      {currentPhase === "complete" && renderComplete()}
     </div>
   );
 };

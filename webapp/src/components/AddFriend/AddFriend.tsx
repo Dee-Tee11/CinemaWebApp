@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, UserPlus, Check } from "lucide-react";
+import { X, UserPlus, Check, Search } from "lucide-react";
 import { useSupabase } from "@/hooks/useSupabase";
 import { useUser } from "@clerk/clerk-react";
 import "./AddFriend.css";
@@ -12,15 +12,19 @@ interface AddFriendPopupProps {
 interface Friend {
   id: string;
   name: string;
-  requestStatus?: 'none' | 'pending' | 'friends';
+  taguser: string;
+  requestStatus?: "none" | "pending" | "friends";
 }
 
 const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const supabase = useSupabase();
   const { user: clerkUser } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestedFriends, setSuggestedFriends] = useState<Friend[]>([]);
+  const [searchResult, setSearchResult] = useState<Friend | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Loads the authenticated user ID from Clerk
   useEffect(() => {
@@ -30,7 +34,6 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
         return;
       }
 
-      // Get the user ID from Clerk
       const userId = clerkUser.id;
       console.log("Clerk User ID:", userId);
       setCurrentUserId(userId);
@@ -51,63 +54,90 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
     getUserId();
   }, [clerkUser, supabase]);
 
-  // Search for users based on searchQuery
+  // Search for user by tag
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (!searchQuery.trim()) {
-        setSuggestedFriends([]);
+    const searchByTag = async () => {
+      const trimmedQuery = searchQuery.trim();
+
+      if (!trimmedQuery) {
+        setSearchResult(null);
+        setSearchError(null);
         return;
       }
-      console.log("Searching for users:", searchQuery);
-      const { data, error } = await supabase
-        .from("User")
-        .select("id, name")
-        .ilike("name", `%${searchQuery.trim().toLowerCase()}%`)
-        .neq("id", currentUserId) // Excludes the logged in user from the results
-        .limit(5);
-      if (error) {
-        console.error("Error fetching users:", error.message);
-        setSuggestedFriends([]);
-      } else {
-        console.log("Search results:", data);
-        
-        if (!data || data.length === 0) {
-          setSuggestedFriends([]);
+
+      setIsSearching(true);
+      setSearchError(null);
+
+      console.log("Searching for tag:", trimmedQuery);
+
+      try {
+        const { data, error } = await supabase
+          .from("User")
+          .select("id, name, taguser")
+          .eq("taguser", trimmedQuery)
+          .neq("id", currentUserId) // Exclude current user
+          .single();
+
+        if (error) {
+          console.log("User not found with tag:", trimmedQuery);
+          setSearchResult(null);
+          setSearchError("User not found with this tag");
+          setIsSearching(false);
           return;
         }
 
-        // Check status for each user found
-        const usersWithStatus = await Promise.all(
-          data.map(async (user) => {
-            // Check if already friends
-            const { data: friendshipData } = await supabase
-              .from("friendships")
-              .select("*")
-              .or(`and(user_id_a.eq.${currentUserId},user_id_b.eq.${user.id}),and(user_id_a.eq.${user.id},user_id_b.eq.${currentUserId})`);
+        if (!data) {
+          setSearchResult(null);
+          setSearchError("User not found with this tag");
+          setIsSearching(false);
+          return;
+        }
 
-            if (friendshipData && friendshipData.length > 0) {
-              return { ...user, requestStatus: 'friends' as const };
-            }
+        console.log("User found:", data);
 
-            // Check if there's a pending request
-            const { data: requestData } = await supabase
-              .from("friend_request")
-              .select("*")
-              .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${currentUserId})`)
-              .eq("status", "pending");
+        // Check if already friends
+        const { data: friendshipData } = await supabase
+          .from("friendships")
+          .select("*")
+          .or(
+            `and(user_id_a.eq.${currentUserId},user_id_b.eq.${data.id}),and(user_id_a.eq.${data.id},user_id_b.eq.${currentUserId})`
+          );
 
-            if (requestData && requestData.length > 0) {
-              return { ...user, requestStatus: 'pending' as const };
-            }
+        if (friendshipData && friendshipData.length > 0) {
+          setSearchResult({ ...data, requestStatus: "friends" });
+          setIsSearching(false);
+          return;
+        }
 
-            return { ...user, requestStatus: 'none' as const };
-          })
-        );
+        // Check if there's a pending request
+        const { data: requestData } = await supabase
+          .from("friend_request")
+          .select("*")
+          .or(
+            `and(sender_id.eq.${currentUserId},receiver_id.eq.${data.id}),and(sender_id.eq.${data.id},receiver_id.eq.${currentUserId})`
+          )
+          .eq("status", "pending");
 
-        setSuggestedFriends(usersWithStatus);
+        if (requestData && requestData.length > 0) {
+          setSearchResult({ ...data, requestStatus: "pending" });
+        } else {
+          setSearchResult({ ...data, requestStatus: "none" });
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+        setSearchError("Error searching for user");
+        setSearchResult(null);
+      } finally {
+        setIsSearching(false);
       }
     };
-    fetchUsers();
+
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      searchByTag();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [searchQuery, supabase, currentUserId]);
 
   const handleAddFriend = async (friendId: string) => {
@@ -116,39 +146,51 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
       alert("You must be logged in to send friend requests");
       return;
     }
-    
+
     console.log(`Sending friend request to user: ${friendId}`);
     console.log(`Current user ID: ${currentUserId}`);
-    
+
     try {
       const { data, error } = await supabase
         .from("friend_request")
         .insert({
           sender_id: currentUserId,
           receiver_id: friendId,
-          status: "pending"
+          status: "pending",
         })
         .select();
 
       if (error) {
         console.error("Error sending friend request:", error);
-        console.error("Error details:", error.message, error.details, error.hint);
-        alert(`Error sending friend request: ${error.message}`);
+        console.error(
+          "Error details:",
+          error.message,
+          error.details,
+          error.hint
+        );
+        setSearchError(`Error: ${error.message}`);
       } else {
         console.log("Friend request sent successfully!", data);
-        alert("Friend request sent!");
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 3000);
         // Update the local state to reflect the new status
-        setSuggestedFriends(prev =>
-          prev.map(friend =>
-            friend.id === friendId
-              ? { ...friend, requestStatus: 'pending' }
-              : friend
-          )
-        );
+        if (searchResult && searchResult.id === friendId) {
+          setSearchResult({ ...searchResult, requestStatus: "pending" });
+        }
       }
     } catch (err) {
       console.error("Unexpected error:", err);
-      alert("An unexpected error occurred");
+      setSearchError("An unexpected error occurred");
+    }
+  };
+
+  const handlePasteTag = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setSearchQuery(text.trim());
+    } catch (err) {
+      console.error("Failed to read clipboard:", err);
+      setSearchError("Failed to paste. Please paste manually.");
     }
   };
 
@@ -160,61 +202,80 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
       <div className="backdrop" onClick={onClose} />
 
       {/* Modal */}
-      <div className="modal">
+      <div className="modal modal-compact">
         {/* Premium Header */}
-        <div className="header">
+        <div className="header header-compact">
           <div className="header-content">
-            <h2 className="header-title">Add a friend</h2>
-            <span className="header-badge">and share moments</span>
+            <h2 className="header-title">Add Friend</h2>
           </div>
           <button className="close-button" onClick={onClose}>
-            <X size={26} />
+            <X size={22} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="content">
+        <div className="content content-compact">
           {/* Premium Search Bar */}
           <div className="search-container">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search friends..."
+              placeholder="Paste friend's tag (e.g., USR-A7K9B2)"
               className="search-input"
             />
-            <UserPlus size={20} className="search-icon" />
+            <Search size={20} className="search-icon" />
           </div>
 
-          {/* Suggested Friends List */}
+          {/* Search Result */}
           <div className="friends-list">
-            {suggestedFriends.length > 0 ? (
-              suggestedFriends.map((friend) => (
-                <div key={friend.id} className="friend-item">
-                  <span className="friend-name">{friend.name}</span>
-                  {friend.requestStatus === 'friends' ? (
-                    <button className="add-button friends" disabled>
-                      <Check size={16} /> Friends
-                    </button>
-                  ) : friend.requestStatus === 'pending' ? (
-                    <button className="add-button pending" disabled>
-                      Pending
-                    </button>
-                  ) : (
-                    <button
-                      className="add-button"
-                      onClick={() => handleAddFriend(friend.id)}
-                    >
-                      <UserPlus size={16} /> Add
-                    </button>
-                  )}
+            {isSearching ? (
+              <p className="loading-message">Searching...</p>
+            ) : searchError ? (
+              <p className="no-results">{searchError}</p>
+            ) : searchResult ? (
+              <div className="friend-item">
+                <div className="friend-info">
+                  <span className="friend-name">{searchResult.name}</span>
+                  <span className="friend-tag">{searchResult.taguser}</span>
                 </div>
-              ))
-            ) : searchQuery ? (
-              <p className="no-results">No user found.</p>
-            ) : null}
+                {searchResult.requestStatus === "friends" ? (
+                  <button className="add-button friends" disabled>
+                    <Check size={16} /> Friends
+                  </button>
+                ) : searchResult.requestStatus === "pending" ? (
+                  <button className="add-button pending" disabled>
+                    Pending
+                  </button>
+                ) : (
+                  <button
+                    className="add-button"
+                    onClick={() => handleAddFriend(searchResult.id)}
+                  >
+                    <UserPlus size={16} /> Add
+                  </button>
+                )}
+              </div>
+            ) : searchQuery ? null : (
+              <div className="empty-state">
+                <UserPlus size={48} className="empty-icon" />
+                <p className="empty-title">Find friends by tag</p>
+                <p className="empty-description">
+                  Ask your friend to copy their tag from their profile and paste
+                  it here
+                </p>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Success Toast */}
+        {showSuccessToast && (
+          <div className="success-toast">
+            <Check size={20} />
+            <span>Friend request sent successfully!</span>
+          </div>
+        )}
       </div>
     </>
   );

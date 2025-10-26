@@ -128,10 +128,10 @@ export const useOnboarding = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const topMovies = data.slice(0, 10);
-        console.log(`✅ Selected ${topMovies.length} top-rated related movies`);
-        setRelatedMovies(topMovies);
-        setCurrentPhase('rate-related');
+          const topMovies = data.slice(0, 25);
+          console.log(`✅ Selected ${topMovies.length} top-rated related movies`);
+          setRelatedMovies(topMovies);
+          setCurrentPhase('rate-related');
       } else {
         throw new Error('No related movies found');
       }
