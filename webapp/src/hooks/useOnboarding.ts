@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useSupabase } from './useSupabase';
-import { useAuth } from '@clerk/clerk-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useSupabase } from "./useSupabase";
+import { useAuth } from "@clerk/clerk-react";
+import { useNavigate } from "react-router-dom";
 
 interface Movie {
   id: number;
@@ -18,7 +18,7 @@ interface Rating {
   rating: number;
 }
 
-type Phase = 'welcome' | 'initial-selection' | 'rate-related' | 'complete';
+type Phase = "welcome" | "initial-selection" | "rate-related" | "complete";
 
 export const useOnboarding = () => {
   const supabase = useSupabase();
@@ -26,7 +26,7 @@ export const useOnboarding = () => {
   const navigate = useNavigate();
 
   // Phase management
-  const [currentPhase, setCurrentPhase] = useState<Phase>('welcome');
+  const [currentPhase, setCurrentPhase] = useState<Phase>("welcome");
 
   // Movie data
   const [availableMovies, setAvailableMovies] = useState<Movie[]>([]);
@@ -51,11 +51,13 @@ export const useOnboarding = () => {
       try {
         // Buscar 50 filmes populares ordenados por rating
         const { data, error } = await supabase
-          .from('movies')
-          .select('id, series_title, genre, poster_url, imdb_rating, overview, runtime')
-          .not('poster_url', 'is', null)
-          .gte('imdb_rating', 7.0)
-          .order('imdb_rating', { ascending: false })
+          .from("movies")
+          .select(
+            "id, series_title, genre, poster_url, imdb_rating, overview, runtime"
+          )
+          .not("poster_url", "is", null)
+          .gte("imdb_rating", 7.0)
+          .order("imdb_rating", { ascending: false })
           .limit(50);
 
         if (error) throw error;
@@ -65,8 +67,8 @@ export const useOnboarding = () => {
           setAvailableMovies(data);
         }
       } catch (err) {
-        console.error('Error fetching initial movies:', err);
-        setError('Failed to load movies. Please try again.');
+        console.error("Error fetching initial movies:", err);
+        setError("Failed to load movies. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -91,48 +93,60 @@ export const useOnboarding = () => {
   // Generate related movies based on selected ones (Phase 2)
   const handlePhase1Complete = async () => {
     if (selectedMovies.size < 5) {
-      setError('Please select at least 5 movies');
+      setError("Please select at least 5 movies");
       return;
     }
 
     setLoading(true);
     try {
       // Buscar os géneros dos filmes selecionados
-      const selectedMoviesList = availableMovies.filter(m => 
+      const selectedMoviesList = availableMovies.filter((m) =>
         selectedMovies.has(m.id)
       );
 
-      // Extrair todos os géneros
-      const genres = new Set<string>();
-      selectedMoviesList.forEach(movie => {
-        movie.genre.split(',').forEach(g => genres.add(g.trim()));
+      // Contar a ocorrência de cada género
+      const genreCounts = new Map<string, number>();
+      selectedMoviesList.forEach((movie) => {
+        movie.genre.split(",").forEach((g) => {
+          const genre = g.trim();
+          genreCounts.set(genre, (genreCounts.get(genre) || 0) + 1);
+        });
       });
 
+      // Ordenar os géneros por contagem e pegar os 3 mais proeminentes
+      const sortedGenres = Array.from(genreCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map((entry) => entry[0]);
+
+      const top3Genres = sortedGenres.slice(0, 3);
+
       // Buscar filmes relacionados baseados nos géneros
-      const genreArray = Array.from(genres).slice(0, 3);
+      const genreArray = top3Genres;
       const { data, error } = await supabase
-        .from('movies')
-        .select('id, series_title, genre, poster_url, imdb_rating, overview, runtime')
-        .not('poster_url', 'is', null)
-        .gte('imdb_rating', 6.5)
-        .not('id', 'in', `(${Array.from(selectedMovies).join(',')})`)
-        .or(genreArray.map(g => `genre.ilike.%${g}%`).join(','))
-        .order('imdb_rating', { ascending: false })
+        .from("movies")
+        .select(
+          "id, series_title, genre, poster_url, imdb_rating, overview, runtime"
+        )
+        .not("poster_url", "is", null)
+        .gte("imdb_rating", 6.5)
+        .not("id", "in", `(${Array.from(selectedMovies).join(",")})`)
+        .or(genreArray.map((g) => `genre.ilike.%${g}%`).join(","))
+        .order("imdb_rating", { ascending: false })
         .limit(25);
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-          const topMovies = data.slice(0, 25);
-          console.log(`✅ Selected ${topMovies.length} top-rated related movies`);
-          setRelatedMovies(topMovies);
-          setCurrentPhase('rate-related');
+        const topMovies = data.slice(0, 25);
+        console.log(`✅ Selected ${topMovies.length} top-rated related movies`);
+        setRelatedMovies(topMovies);
+        setCurrentPhase("rate-related");
       } else {
-        throw new Error('No related movies found');
+        throw new Error("No related movies found");
       }
     } catch (err) {
-      console.error('Error generating related movies:', err);
-      setError('Failed to load related movies. Please try again.');
+      console.error("Error generating related movies:", err);
+      setError("Failed to load related movies. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -145,18 +159,17 @@ export const useOnboarding = () => {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('User')
-        .update({ Onboarding_status: 'skipped' })
-        .eq('id', userId);
+        .from("User")
+        .update({ onboarding_status: "skipped" })
+        .eq("id", userId);
 
       if (error) throw error;
 
-      console.log('✅ Onboarding skipped and status saved.');
-      navigate('/', { replace: true });
-
+      console.log("✅ Onboarding skipped and status saved.");
+      navigate("/", { replace: true });
     } catch (err) {
-      console.error('Error skipping onboarding:', err);
-      setError('Failed to update your status. Please try again.');
+      console.error("Error skipping onboarding:", err);
+      setError("Failed to update your status. Please try again.");
       setLoading(false);
     }
   };
@@ -164,15 +177,15 @@ export const useOnboarding = () => {
   // Rating handlers
   const handleRateClick = () => {
     const currentMovie = relatedMovies[currentIndex];
-    const existingRating = ratings.find(r => r.movieId === currentMovie.id);
+    const existingRating = ratings.find((r) => r.movieId === currentMovie.id);
     setTempRating(existingRating?.rating || 10);
     setShowRatingSelector(true);
   };
 
   const handleConfirmRating = () => {
     const currentMovie = relatedMovies[currentIndex];
-    setRatings(prev => {
-      const filtered = prev.filter(r => r.movieId !== currentMovie.id);
+    setRatings((prev) => {
+      const filtered = prev.filter((r) => r.movieId !== currentMovie.id);
       return [...filtered, { movieId: currentMovie.id, rating: tempRating }];
     });
     setShowRatingSelector(false);
@@ -181,18 +194,18 @@ export const useOnboarding = () => {
   // Navigation
   const handleNext = async () => {
     const isLastMovie = currentIndex === relatedMovies.length - 1;
-    
+
     if (isLastMovie) {
       await handleComplete();
     } else {
-      setCurrentIndex(prev => prev + 1);
+      setCurrentIndex((prev) => prev + 1);
       setShowRatingSelector(false);
     }
   };
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
+      setCurrentIndex((prev) => prev - 1);
       setShowRatingSelector(false);
     }
   };
@@ -204,45 +217,45 @@ export const useOnboarding = () => {
   // Complete onboarding - save all data, mark as complete, and trigger recommendations
   const handleComplete = async () => {
     if (!userId) {
-      setError('User not authenticated');
+      setError("User not authenticated");
       return;
     }
 
     setLoading(true);
-    setCurrentPhase('complete');
+    setCurrentPhase("complete");
 
     try {
       // 1. Guardar os 5 filmes selecionados como "seen" com rating 15
-      const selectedMoviesData = Array.from(selectedMovies).map(movieId => ({
+      const selectedMoviesData = Array.from(selectedMovies).map((movieId) => ({
         user_id: userId,
         movie_id: movieId,
-        status: 'seen',
+        status: "seen",
         rating: 15,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       }));
 
       const { error: selectedError } = await supabase
-        .from('user_movies')
-        .upsert(selectedMoviesData, { 
-          onConflict: 'user_id,movie_id' 
+        .from("user_movies")
+        .upsert(selectedMoviesData, {
+          onConflict: "user_id,movie_id",
         });
 
       if (selectedError) throw selectedError;
 
       // 2. Guardar os ratings dos filmes relacionados
       if (ratings.length > 0) {
-        const ratingsData = ratings.map(r => ({
+        const ratingsData = ratings.map((r) => ({
           user_id: userId,
           movie_id: r.movieId,
-          status: 'seen',
+          status: "seen",
           rating: r.rating,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         }));
 
         const { error: ratingsError } = await supabase
-          .from('user_movies')
-          .upsert(ratingsData, { 
-            onConflict: 'user_id,movie_id' 
+          .from("user_movies")
+          .upsert(ratingsData, {
+            onConflict: "user_id,movie_id",
           });
 
         if (ratingsError) throw ratingsError;
@@ -250,36 +263,38 @@ export const useOnboarding = () => {
 
       // 3. Chamar a API para gerar recomendações
       try {
-        await fetch(`http://127.0.0.1:8000/generate-recommendations/${userId}`, {
-          method: 'POST',
-        });
-        console.log('✅ Recommendations generation triggered');
+        await fetch(
+          `http://127.0.0.1:8000/generate-recommendations/${userId}`,
+          {
+            method: "POST",
+          }
+        );
+        console.log("✅ Recommendations generation triggered");
       } catch (apiError) {
-        console.warn('⚠️ Could not trigger recommendations API:', apiError);
+        console.warn("⚠️ Could not trigger recommendations API:", apiError);
         // Não bloquear o fluxo se a API falhar
       }
 
       // 4. Marcar onboarding como completo
       const { error: updateError } = await supabase
-        .from('User')
-        .update({ Onboarding_status: 'completed' })
-        .eq('id', userId);
+        .from("User")
+        .update({ onboarding_status: "completed" })
+        .eq("id", userId);
 
       if (updateError) {
-        console.error('❌ Error marking onboarding as complete:', updateError);
+        console.error("❌ Error marking onboarding as complete:", updateError);
         throw updateError;
       }
 
-      console.log('✅ Onboarding completed successfully!');
+      console.log("✅ Onboarding completed successfully!");
 
       // Aguardar 2 segundos antes de redirecionar
       setTimeout(() => {
-        navigate('/', { replace: true });
+        navigate("/foryou", { replace: true });
       }, 2000);
-
     } catch (err) {
-      console.error('Error completing onboarding:', err);
-      setError('Failed to save your preferences. Please try again.');
+      console.error("Error completing onboarding:", err);
+      setError("Failed to save your preferences. Please try again.");
       setLoading(false);
     }
   };
@@ -308,6 +323,6 @@ export const useOnboarding = () => {
     handleNext,
     handlePrevious,
     handleOpenModal,
-    handleComplete
+    handleComplete,
   };
 };
