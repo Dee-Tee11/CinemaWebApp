@@ -50,6 +50,7 @@ export default function ProfileModal({
   const [userTag, setUserTag] = useState<string>("");
   const [tagCopied, setTagCopied] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
+  const [showAddFriend, setShowAddFriend] = useState(false);
   const [showFriendRequests, setShowFriendRequests] = useState(false);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
@@ -330,7 +331,7 @@ export default function ProfileModal({
             <button
               className="icon-button add-friend"
               aria-label="Add friend"
-              onClick={() => setShowFriends(true)}
+              onClick={() => setShowAddFriend(true)}
               title="Add friend"
             >
               <UserPlus size={20} />
@@ -493,7 +494,7 @@ export default function ProfileModal({
         </div>
 
         {/* Add Friend Popup */}
-        <AddFriend isOpen={showFriends} onClose={() => setShowFriends(false)} />
+        <AddFriend isOpen={showAddFriend} onClose={() => setShowAddFriend(false)} />
       </div>
     </>
   );
