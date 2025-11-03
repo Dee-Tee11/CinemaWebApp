@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { X, UserPlus, Check, Search } from "lucide-react";
 import { useSupabase } from "@/hooks/useSupabase";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
+import {
+  verifyUserInSupabase,
+  searchUserByTag,
+  sendFriendRequest,
+} from "../../hooks/addFriend";
+import type { Friend } from "../../hooks/addFriend";
 import "./AddFriend.css";
 
 interface AddFriendPopupProps {
@@ -9,16 +15,11 @@ interface AddFriendPopupProps {
   onClose: () => void;
 }
 
-interface Friend {
-  id: string;
-  name: string;
-  taguser: string;
-  requestStatus?: "none" | "pending" | "friends";
-}
-
 const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const supabase = useSupabase();
   const { user: clerkUser } = useUser();
+  const { getToken } = useAuth();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<Friend | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -39,27 +40,15 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
       setCurrentUserId(userId);
 
       // Verify user exists in Supabase
-      const { data, error } = await supabase
-        .from("User")
-        .select("id")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        console.error("User not found in Supabase:", error);
-      } else {
-        console.log("User found in Supabase:", data);
-      }
+      await verifyUserInSupabase(supabase, userId);
     };
     getUserId();
   }, [clerkUser, supabase]);
 
   // Search for user by tag
   useEffect(() => {
-    const searchByTag = async () => {
-      const trimmedQuery = searchQuery.trim();
-
-      if (!trimmedQuery) {
+    const performSearch = async () => {
+      if (!searchQuery.trim()) {
         setSearchResult(null);
         setSearchError(null);
         return;
@@ -68,129 +57,46 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
       setIsSearching(true);
       setSearchError(null);
 
-      console.log("Searching for tag:", trimmedQuery);
+      const { user, error } = await searchUserByTag({
+        supabase,
+        searchQuery,
+        currentUserId,
+      });
 
-      try {
-        const { data, error } = await supabase
-          .from("User")
-          .select("id, name, taguser")
-          .eq("taguser", trimmedQuery)
-          .neq("id", currentUserId) // Exclude current user
-          .single();
-
-        if (error) {
-          console.log("User not found with tag:", trimmedQuery);
-          setSearchResult(null);
-          setSearchError("User not found with this tag");
-          setIsSearching(false);
-          return;
-        }
-
-        if (!data) {
-          setSearchResult(null);
-          setSearchError("User not found with this tag");
-          setIsSearching(false);
-          return;
-        }
-
-        console.log("User found:", data);
-
-        // Check if already friends
-        const { data: friendshipData } = await supabase
-          .from("friendships")
-          .select("*")
-          .or(
-            `and(user_id_a.eq.${currentUserId},user_id_b.eq.${data.id}),and(user_id_a.eq.${data.id},user_id_b.eq.${currentUserId})`
-          );
-
-        if (friendshipData && friendshipData.length > 0) {
-          setSearchResult({ ...data, requestStatus: "friends" });
-          setIsSearching(false);
-          return;
-        }
-
-        // Check if there's a pending request
-        const { data: requestData } = await supabase
-          .from("friend_request")
-          .select("*")
-          .or(
-            `and(sender_id.eq.${currentUserId},receiver_id.eq.${data.id}),and(sender_id.eq.${data.id},receiver_id.eq.${currentUserId})`
-          )
-          .eq("status", "pending");
-
-        if (requestData && requestData.length > 0) {
-          setSearchResult({ ...data, requestStatus: "pending" });
-        } else {
-          setSearchResult({ ...data, requestStatus: "none" });
-        }
-      } catch (err) {
-        console.error("Search error:", err);
-        setSearchError("Error searching for user");
-        setSearchResult(null);
-      } finally {
-        setIsSearching(false);
-      }
+      setSearchResult(user);
+      setSearchError(error);
+      setIsSearching(false);
     };
 
     // Debounce search
     const timeoutId = setTimeout(() => {
-      searchByTag();
+      performSearch();
     }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, supabase, currentUserId]);
 
   const handleAddFriend = async (friendId: string) => {
-    if (!currentUserId) {
-      console.error("User not authenticated");
-      alert("You must be logged in to send friend requests");
-      return;
-    }
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    console.log(`Sending friend request to user: ${friendId}`);
-    console.log(`Current user ID: ${currentUserId}`);
+    const { success, error } = await sendFriendRequest({
+      friendId,
+      currentUserId,
+      getToken,
+      supabaseUrl,
+      supabaseAnonKey,
+    });
 
-    try {
-      const { data, error } = await supabase
-        .from("friend_request")
-        .insert({
-          sender_id: currentUserId,
-          receiver_id: friendId,
-          status: "pending",
-        })
-        .select();
+    if (success) {
+      setShowSuccessToast(true);
+      setTimeout(() => setShowSuccessToast(false), 3000);
 
-      if (error) {
-        console.error("Error sending friend request:", error);
-        console.error(
-          "Error details:",
-          error.message,
-          error.details,
-          error.hint
-        );
-        setSearchError(`Error: ${error.message}`);
-      } else {
-        console.log("Friend request sent successfully!", data);
-        setShowSuccessToast(true);
-        setTimeout(() => setShowSuccessToast(false), 3000);
-        // Update the local state to reflect the new status
-        if (searchResult && searchResult.id === friendId) {
-          setSearchResult({ ...searchResult, requestStatus: "pending" });
-        }
+      if (searchResult && searchResult.id === friendId) {
+        setSearchResult({ ...searchResult, requestStatus: "pending" });
       }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      setSearchError("An unexpected error occurred");
-    }
-  };
-
-  const handlePasteTag = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      setSearchQuery(text.trim());
-    } catch (err) {
-      console.error("Failed to read clipboard:", err);
-      setSearchError("Failed to paste. Please paste manually.");
+    } else {
+      setSearchError(error);
     }
   };
 
