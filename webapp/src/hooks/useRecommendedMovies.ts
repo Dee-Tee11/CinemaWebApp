@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSupabase } from "./useSupabase";
 import { useAuth } from "@clerk/clerk-react";
 import type { Item } from "./useMovies";
@@ -7,7 +7,7 @@ const ITEMS_PER_PAGE = 10;
 
 export const useRecommendedMovies = () => {
   const supabase = useSupabase();
-  const { userId } = useAuth();
+  const { userId, getToken } = useAuth();
   const [items, setItems] = useState<Item[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -15,15 +15,72 @@ export const useRecommendedMovies = () => {
   const [needsRecommendations, setNeedsRecommendations] = useState(false);
 
   const triggerRecommendationGeneration = async () => {
-    if (!userId) return;
-    console.log("Triggering recommendation generation for user:", userId);
+    if (!userId) {
+      console.error("No userId available");
+      return;
+    }
+    
+    console.log("=== TRIGGERING RECOMMENDATION GENERATION ===");
+    console.log("User ID:", userId);
+    
     try {
-      await fetch(`http://127.0.0.1:8000/generate-recommendations/${userId}`, {
+      // Get authentication token
+      const token = await getToken({ template: "supabase" });
+      console.log("Token exists:", !!token);
+      console.log("Token preview:", token?.substring(0, 50) + "...");
+      
+      if (!token) {
+        console.error("Authentication token not found");
+        return;
+      }
+
+      // Get Supabase URL and anon key from environment
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      console.log("Supabase URL:", supabaseUrl);
+      console.log("Anon Key exists:", !!supabaseAnonKey);
+
+      const url = `${supabaseUrl}/functions/v1/get-recommendations`;
+      console.log("Calling edge function at:", url);
+
+      // Call edge function
+      const response = await fetch(url, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          apikey: supabaseAnonKey,
+        },
       });
-      console.log("Recommendation generation triggered successfully");
+
+      console.log("Response status:", response.status);
+      console.log("Response statusText:", response.statusText);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log("Parsed response data:", data);
+      } catch (e) {
+        console.error("Failed to parse response as JSON:", e);
+        throw new Error(`Server returned invalid response: ${responseText.substring(0, 100)}`);
+      }
+
+      if (!response.ok) {
+        console.error("Edge function returned error:", data);
+        throw new Error(data?.error || `Server error: ${response.status}`);
+      }
+
+      console.log("✅ Recommendation generation triggered successfully:", data);
+      console.log("===========================================");
     } catch (error) {
-      console.error("Error triggering recommendation generation:", error);
+      console.error("❌ Error triggering recommendation generation:", error);
+      console.log("===========================================");
+      throw error;
     }
   };
 
