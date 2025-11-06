@@ -1,312 +1,216 @@
-// Supabase Edge Function: generate-recommendations
-// Path: C:\Users\win11\Documents\GitHub\CinemaWebApp\webapp\supabase\functions\generate-recommendations\index.ts
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-interface UserRating {
-  movie_id: number;
-  rating: number;
-}
-
-interface MovieSimilarity {
-  movie_id: number;
-  score: number;
-}
+const MINIMUM_RATED_MOVIES = 5;
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 405,
+      }
+    );
   }
 
   try {
-    // Check Authorization header
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
-        JSON.stringify({
-          error: "Missing Authorization Header",
-        }),
+        JSON.stringify({ error: "Missing Authorization header" }),
         {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 401,
         }
       );
     }
 
-    // Get Supabase credentials
+    const token = authHeader.replace("Bearer ", "");
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Invalid token: missing user ID" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !serviceRoleKey) {
       return new Response(
-        JSON.stringify({
-          error: "Server configuration error",
-        }),
+        JSON.stringify({ error: "Server configuration error" }),
         {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
         }
       );
     }
 
-    // Create Supabase client with service role
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Extract user_id from JWT token
-    const token = authHeader.replace("Bearer ", "");
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const userId = payload.sub;
+    console.log("🎬 Generating recommendations for user:", userId);
 
-    console.log("✅ Generating recommendations for user:", userId);
+    // 1. Verifica se tem ≥5 filmes
+    const { count: userMoviesCount, error: countError } = await supabase
+      .from("user_movies")
+      .select("movie_id", { count: "exact", head: true })
+      .eq("user_id", userId);
 
-    // Step 1: Verify user has completed onboarding
-    const { data: userData, error: userError } = await supabase
-      .from("User")
-      .select("onboarding_status")
-      .eq("id", userId)
-      .single();
+    if (countError) throw countError;
 
-    if (userError || !userData) {
+    console.log(`📊 User has ${userMoviesCount || 0} rated movies`);
+
+    if (!userMoviesCount || userMoviesCount < MINIMUM_RATED_MOVIES) {
       return new Response(
         JSON.stringify({
-          error: "User not found",
+          success: false,
+          needsMoreRatings: true,
+          currentCount: userMoviesCount || 0,
+          requiredCount: MINIMUM_RATED_MOVIES,
+          message: `You need to rate at least ${MINIMUM_RATED_MOVIES} movies. You have rated ${userMoviesCount || 0}.`,
         }),
         {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    // 2. Pega gêneros mais frequentes
+    const { data: userMovies, error: moviesError } = await supabase
+      .from("user_movies")
+      .select("movie_id")
+      .eq("user_id", userId);
+
+    if (moviesError) throw moviesError;
+
+    const movieIds = userMovies.map((m) => m.movie_id);
+
+    const { data: genresData, error: genresError } = await supabase
+      .from("movies")
+      .select("id, genre")
+      .in("id", movieIds);
+
+    if (genresError) throw genresError;
+
+    const genreCount: Record<string, number> = {};
+    genresData.forEach((movie) => {
+      const genres = movie.genre?.split(", ") || [];
+      genres.forEach((g) => {
+        genreCount[g] = (genreCount[g] || 0) + 1;
+      });
+    });
+
+    const topGenres = Object.entries(genreCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([genre]) => genre);
+
+    console.log("🎭 Top genres:", topGenres);
+
+    if (topGenres.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No genres found in user movies" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
+
+    // 3. Busca filmes NÃO vistos nos top genres
+    let candidateQuery = supabase
+      .from("movies")
+      .select("id")
+      .not("id", "in", `(${movieIds.join(",")})`)
+      .limit(200);
+
+    // Adiciona filtro de gêneros (usando OR para qualquer dos top genres)
+    const genreFilters = topGenres.map((g) => `genre.ilike.%${g}%`).join(",");
+    candidateQuery = candidateQuery.or(genreFilters);
+
+    const { data: candidateMovies, error: candidateError } =
+      await candidateQuery;
+
+    if (candidateError) throw candidateError;
+
+    if (!candidateMovies || candidateMovies.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No candidate movies found" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 404,
         }
       );
     }
 
-    if (userData.onboarding_status !== "completed" && userData.onboarding_status !== "skipped") {
-      return new Response(
-        JSON.stringify({
-          error: "User has not completed onboarding",
-          onboarding_status: userData.onboarding_status,
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-          status: 400,
-        }
-      );
-    }
+    console.log(`🎯 Found ${candidateMovies.length} candidate movies`);
 
-    // Step 2: Get user's rated movies
-    const { data: userMovies, error: userMoviesError } = await supabase
-      .from("user_movies")
-      .select("movie_id, rating")
-      .eq("user_id", userId)
-      .not("rating", "is", null);
+    // 4. Embaralha e pega 50
+    const shuffled = candidateMovies.sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, 50);
 
-    if (userMoviesError) {
-      throw userMoviesError;
-    }
-
-    if (!userMovies || userMovies.length < 5) {
-      return new Response(
-        JSON.stringify({
-          error: "User needs at least 5 rated movies",
-          rated_count: userMovies?.length || 0,
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-          status: 400,
-        }
-      );
-    }
-
-    console.log(`✅ User has ${userMovies.length} rated movies`);
-
-    // Step 3: Get all movies with their genres
-    const { data: allMovies, error: allMoviesError } = await supabase
-      .from("movies")
-      .select("id, genre, imdb_rating");
-
-    if (allMoviesError) {
-      throw allMoviesError;
-    }
-
-    // Step 4: Calculate recommendations using hybrid approach
-    const userRatings = userMovies as UserRating[];
-    const userMovieIds = new Set(userRatings.map((m) => m.movie_id));
-
-    // Calculate user's genre preferences
-    const genrePreferences = calculateGenrePreferences(userRatings, allMovies);
-
-    // Calculate user's average rating
-    const avgUserRating =
-      userRatings.reduce((sum, m) => sum + m.rating, 0) / userRatings.length;
-
-    console.log(`✅ User average rating: ${avgUserRating.toFixed(2)}`);
-
-    // Score each unwatched movie
-    const recommendations: MovieSimilarity[] = [];
-
-    for (const movie of allMovies) {
-      // Skip movies user has already rated
-      if (userMovieIds.has(movie.id)) continue;
-
-      let score = 0;
-
-      // Content-based: Genre similarity (40% weight)
-      const genres = movie.genre
-        ? movie.genre.split(",").map((g: string) => g.trim())
-        : [];
-      const genreScore =
-        genres.reduce((sum: number, genre: string) => {
-          return sum + (genrePreferences[genre] || 0);
-        }, 0) / Math.max(genres.length, 1);
-      score += genreScore * 0.4;
-
-      // Quality filter: IMDb rating (30% weight)
-      if (movie.imdb_rating) {
-        const ratingScore = parseFloat(movie.imdb_rating) / 10;
-        score += ratingScore * 0.3;
-      }
-
-      // Preference alignment: Favor highly-rated genres (30% weight)
-      const highlyRatedGenres = userRatings
-        .filter((r) => r.rating >= avgUserRating)
-        .map((r) => {
-          const m = allMovies.find((am) => am.id === r.movie_id);
-          return m?.genre || "";
-        })
-        .join(",");
-
-      const alignmentScore =
-        genres.reduce((sum: number, genre: string) => {
-          return sum + (highlyRatedGenres.includes(genre) ? 1 : 0);
-        }, 0) / Math.max(genres.length, 1);
-      score += alignmentScore * 0.3;
-
-      recommendations.push({
-        movie_id: movie.id,
-        score: score,
-      });
-    }
-
-    // Sort by score and take top 50
-    recommendations.sort((a, b) => b.score - a.score);
-    const topRecommendations = recommendations.slice(0, 50);
-
-    console.log(`✅ Generated ${topRecommendations.length} recommendations`);
-
-    // Step 5: Clear existing recommendations for this user
+    // 5. Apaga recomendações antigas
     const { error: deleteError } = await supabase
       .from("user_recommendations")
       .delete()
       .eq("user_id", userId);
 
-    if (deleteError) {
-      console.error("⚠️ Error deleting old recommendations:", deleteError);
-    }
+    if (deleteError) throw deleteError;
 
-    // Step 6: Insert new recommendations
-    const recommendationsToInsert = topRecommendations.map((rec, index) => ({
+    // 6. Insere novas
+    const recommendationsToInsert = selected.map((movie) => ({
       user_id: userId,
-      movie_id: rec.movie_id,
-      score: rec.score,
-      rank: index + 1,
-      created_at: new Date().toISOString(),
+      movie_id: movie.id,
     }));
 
     const { error: insertError } = await supabase
       .from("user_recommendations")
       .insert(recommendationsToInsert);
 
-    if (insertError) {
-      throw insertError;
-    }
+    if (insertError) throw insertError;
 
-    console.log(`✅ Successfully inserted ${topRecommendations.length} recommendations`);
+    console.log(
+      `✅ Generated ${selected.length} recommendations for user: ${userId}`
+    );
 
     return new Response(
       JSON.stringify({
         success: true,
-        user_id: userId,
-        recommendations_count: topRecommendations.length,
-        message: "Recommendations generated successfully",
+        needsMoreRatings: false,
+        recommendationCount: selected.length,
+        message: `Successfully generated ${selected.length} recommendations`,
       }),
       {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       }
     );
   } catch (error) {
-    console.error("❌ Error:", error);
+    console.error("❌ Error in generate-recommendations:", error);
     return new Response(
-      JSON.stringify({
-        error: error.message || "Internal server error",
-      }),
+      JSON.stringify({ error: error.message || "Internal server error" }),
       {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
       }
     );
   }
 });
-
-// Helper function to calculate genre preferences based on user ratings
-function calculateGenrePreferences(
-  userRatings: UserRating[],
-  allMovies: any[]
-): Record<string, number> {
-  const genreScores: Record<string, number> = {};
-  const genreCounts: Record<string, number> = {};
-
-  for (const rating of userRatings) {
-    const movie = allMovies.find((m) => m.id === rating.movie_id);
-    if (!movie || !movie.genre) continue;
-
-    const genres = movie.genre.split(",").map((g: string) => g.trim());
-
-    for (const genre of genres) {
-      if (!genreScores[genre]) {
-        genreScores[genre] = 0;
-        genreCounts[genre] = 0;
-      }
-      // Normalize rating to 0-1 scale
-      genreScores[genre] += rating.rating / 10;
-      genreCounts[genre]++;
-    }
-  }
-
-  // Calculate average score for each genre
-  const preferences: Record<string, number> = {};
-  for (const genre in genreScores) {
-    preferences[genre] = genreScores[genre] / genreCounts[genre];
-  }
-
-  return preferences;
-}
