@@ -11,23 +11,17 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: corsHeaders,
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("❌ Missing Authorization Header");
       return new Response(
-        JSON.stringify({
-          error: "Missing Authorization Header",
-        }),
+        JSON.stringify({ error: "Missing Authorization Header" }),
         {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 401,
         }
       );
@@ -37,15 +31,11 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!supabaseUrl || !serviceRoleKey) {
+      console.error("❌ Server configuration error");
       return new Response(
-        JSON.stringify({
-          error: "Server configuration error",
-        }),
+        JSON.stringify({ error: "Server configuration error" }),
         {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
         }
       );
@@ -53,18 +43,23 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Extrai o user_id do token
+    // Extrai userId do token JWT (igual ao get-user-movies)
     const token = authHeader.replace("Bearer ", "");
     const payload = JSON.parse(atob(token.split(".")[1]));
     const userId = payload.sub;
 
     console.log("✅ User ID from token:", userId);
 
-    const url = new URL(req.url);
-    const searchQuery = url.searchParams.get("searchQuery");
-    const page = parseInt(url.searchParams.get("page") || "0", 10);
+    // Lê page do body (mantém compatível com o hook atual)
+    const body = await req.json();
+    const page = parseInt(body.page || "0", 10);
+    const searchQuery = body.searchQuery || null;
 
-    console.log(`📄 Fetching recommendations - Page: ${page}, Search: ${searchQuery || 'none'}`);
+    console.log(
+      `📄 Fetching recommendations - Page: ${page}, Search: ${
+        searchQuery || "none"
+      }`
+    );
 
     // Busca recomendações paginadas
     const { data: recommendationData, error: recommendationError } =
@@ -72,7 +67,7 @@ Deno.serve(async (req) => {
         .from("user_recommendations")
         .select("movie_id")
         .eq("user_id", userId)
-        .order("created_at", { ascending: false })
+        .order("generated_at", { ascending: false })
         .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
 
     if (recommendationError) {
@@ -89,10 +84,7 @@ Deno.serve(async (req) => {
           hasMore: false,
         }),
         {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         }
       );
@@ -133,7 +125,9 @@ Deno.serve(async (req) => {
       synopsis: movie.overview || "Synopsis not available",
     }));
 
-    console.log(`✅ Returning ${recommendations.length} recommendations for page ${page}`);
+    console.log(
+      `✅ Returning ${recommendations.length} recommendations for page ${page}`
+    );
 
     return new Response(
       JSON.stringify({
@@ -142,10 +136,7 @@ Deno.serve(async (req) => {
         hasMore: recommendations.length === ITEMS_PER_PAGE,
       }),
       {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       }
     );
@@ -156,10 +147,7 @@ Deno.serve(async (req) => {
         error: error.message || "Internal server error",
       }),
       {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json",
-        },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
       }
     );
