@@ -3,8 +3,8 @@ import { useSupabase } from "./useSupabase";
 import { useAuth } from "@clerk/clerk-react";
 import type { Item } from "./useMovies";
 
-const ITEMS_PER_PAGE = 10;
 const MINIMUM_RATED_MOVIES = 5;
+const ITEMS_PER_PAGE = 10;
 
 interface RecommendedMoviesResponse {
   items: Item[];
@@ -32,79 +32,97 @@ export const useRecommendedMovies = () => {
       .eq("user_id", userId);
 
     if (error) {
-      console.error("Erro ao contar filmes avaliados:", error);
+      console.error("❌ Erro ao contar filmes avaliados:", error);
       return 0;
     }
 
+    console.log(`📊 Usuário avaliou ${count || 0} filmes`);
     return count || 0;
   }, [supabase, userId]);
 
   const loadRecommendations = useCallback(
     async (page: number): Promise<RecommendedMoviesResponse> => {
       if (!userId || !supabase) {
+        console.log("⚠️ Sem userId ou supabase");
         return { items: [], hasMore: false, needsMoreRatings: false };
       }
 
-      const ratedCount = await getUserRatedCount();
-      console.log(`Usuário avaliou ${ratedCount} filmes`);
+      console.log(`🎬 Loading Recommendations - Page ${page}`);
 
-      // Se menos de 5 → gera recomendações (mesmo que não tenha nenhuma)
-      if (ratedCount < MINIMUM_RATED_MOVIES) {
-        console.log("Menos de 5 filmes → chamando generate-recommendations");
+      try {
+        const ratedCount = await getUserRatedCount();
 
-        const { error: genError } = await supabase.functions.invoke("generate-recommendations");
-        if (genError) {
-          console.error("Falha ao gerar recomendações:", genError);
-          return { items: [], hasMore: false, needsMoreRatings: true };
+        // Se menos de 5 → gera recomendações primeiro
+        if (ratedCount < MINIMUM_RATED_MOVIES) {
+          console.log(
+            "⚠️ Menos de 5 filmes → chamando generate-recommendations"
+          );
+
+          const { error: genError } = await supabase.functions.invoke(
+            "generate-recommendations",
+            {
+              body: { userId: userId },
+            }
+          );
+
+          if (genError) {
+            console.error("❌ Falha ao gerar recomendações:", genError);
+            return { items: [], hasMore: false, needsMoreRatings: true };
+          }
+
+          console.log("✅ Recomendações geradas com sucesso");
         }
 
-        // Após gerar, tenta carregar
-        const { data, error } = await supabase.functions.invoke("get-recommendations", {
-          queryString: { page: "0" },
-        });
+        // Agora carrega as recomendações (método correto usando body)
+        console.log(
+          `📡 Calling get-recommendations with userId: ${userId}, page: ${page}`
+        );
+
+        const { data, error } = await supabase.functions.invoke(
+          "get-recommendations",
+          {
+            body: {
+              userId: userId,
+              page: page,
+            },
+          }
+        );
 
         if (error) {
-          console.error("Erro ao carregar após gerar:", error);
-          return { items: [], hasMore: false, needsMoreRatings: true };
+          console.error("❌ Erro ao carregar recomendações:", error);
+          return { items: [], hasMore: false, needsMoreRatings: false };
         }
 
+        console.log("✅ Edge Function returned:", data);
+
+        // Verifica se precisa de mais avaliações
+        if (data.needsMoreRatings) {
+          console.log("⚠️ Necessário avaliar mais filmes");
+          return {
+            items: [],
+            hasMore: false,
+            needsMoreRatings: true,
+          };
+        }
+
+        const recommendations = data.recommendations || [];
+        console.log(`✅ ${recommendations.length} recomendações carregadas`);
+
         return {
-          items: data.recommendations || [],
+          items: recommendations,
           hasMore: data.hasMore ?? false,
           needsMoreRatings: false,
         };
-      }
-
-      // Se 5 ou mais → carrega normalmente
-      console.log("5 ou mais filmes → chamando get-recommendations");
-
-      const { data, error } = await supabase.functions.invoke("get-recommendations", {
-        queryString: { page: page.toString() },
-      });
-
-      if (error) {
-        console.error("Erro ao carregar recomendações:", error);
+      } catch (error) {
+        console.error("❌ Erro inesperado:", error);
         return { items: [], hasMore: false, needsMoreRatings: false };
       }
-
-      if (data.needsMoreRatings) {
-        return {
-          items: [],
-          hasMore: false,
-          needsMoreRatings: true,
-        };
-      }
-
-      return {
-        items: data.recommendations || [],
-        hasMore: data.hasMore ?? false,
-        needsMoreRatings: false,
-      };
     },
     [supabase, userId, getUserRatedCount]
   );
 
   const initialize = useCallback(async () => {
+    console.log("🔄 Inicializando recomendações...");
     setIsLoading(true);
     const result = await loadRecommendations(0);
     setItems(result.items);
@@ -112,11 +130,22 @@ export const useRecommendedMovies = () => {
     setNeedsMoreRatings(result.needsMoreRatings);
     setCurrentPage(0);
     setIsLoading(false);
+    console.log(
+      `✅ Inicialização completa. ${result.items.length} items carregados.`
+    );
   }, [loadRecommendations]);
 
   const loadMore = async () => {
-    if (!hasMore || isLoading || needsMoreRatings) return;
+    if (!hasMore || isLoading || needsMoreRatings) {
+      console.log("⏹️ LoadMore bloqueado:", {
+        hasMore,
+        isLoading,
+        needsMoreRatings,
+      });
+      return;
+    }
 
+    console.log("📄 Carregando mais recomendações...");
     setIsLoading(true);
     const nextPage = currentPage + 1;
     const result = await loadRecommendations(nextPage);
@@ -126,13 +155,16 @@ export const useRecommendedMovies = () => {
       setCurrentPage(nextPage);
       setHasMore(result.hasMore);
       setNeedsMoreRatings(result.needsMoreRatings);
+      console.log(`✅ ${result.items.length} novos items adicionados`);
     } else {
       setHasMore(false);
+      console.log("⏹️ Sem mais recomendações");
     }
     setIsLoading(false);
   };
 
   const refresh = async () => {
+    console.log("🔄 Refresh solicitado");
     setCurrentPage(0);
     setItems([]);
     await initialize();
@@ -140,8 +172,10 @@ export const useRecommendedMovies = () => {
 
   useEffect(() => {
     if (userId) {
+      console.log("👤 UserId detectado:", userId);
       initialize();
     } else {
+      console.log("⚠️ Sem userId");
       setItems([]);
       setHasMore(false);
       setNeedsMoreRatings(false);
