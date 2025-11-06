@@ -1,241 +1,160 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSupabase } from "./useSupabase";
 import { useAuth } from "@clerk/clerk-react";
 import type { Item } from "./useMovies";
 
-const ITEMS_PER_PAGE = 20;
-const INITIAL_LOAD = 20;
+const ITEMS_PER_PAGE = 10;
+const MINIMUM_RATED_MOVIES = 5;
+
+interface RecommendedMoviesResponse {
+  items: Item[];
+  hasMore: boolean;
+  needsMoreRatings: boolean;
+}
 
 export const useRecommendedMovies = () => {
   const supabase = useSupabase();
-  const { userId, getToken } = useAuth();
+  const { userId } = useAuth();
+
   const [items, setItems] = useState<Item[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [needsRecommendations, setNeedsRecommendations] = useState(false);
+  const [needsMoreRatings, setNeedsMoreRatings] = useState(false);
 
-  // Get Supabase URL from environment
-  const getSupabaseUrl = () => {
-    return import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
-  };
+  // Conta quantos filmes o usuário avaliou
+  const getUserRatedCount = useCallback(async (): Promise<number> => {
+    if (!userId || !supabase) return 0;
 
-  const triggerRecommendationGeneration = async () => {
-    if (!userId) return;
-
-    console.log("🚀 Triggering recommendation generation for user:", userId);
-
-    try {
-      const supabaseUrl = getSupabaseUrl();
-      const token = await getToken({ template: "supabase" });
-
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/generate-recommendations`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to generate recommendations");
-      }
-
-      const result = await response.json();
-      console.log("✅ Recommendation generation successful:", result);
-
-      return result;
-    } catch (error) {
-      console.error("❌ Error triggering recommendation generation:", error);
-      throw error;
-    }
-  };
-
-  const loadRecommendations = async (page: number) => {
-    if (!userId) return [];
-
-    try {
-      const supabaseUrl = getSupabaseUrl();
-      const token = await getToken({ template: "supabase" });
-
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/get-recommendations?page=${page}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error fetching recommendations:", errorData);
-        return [];
-      }
-
-      const result = await response.json();
-      return result.movies || [];
-    } catch (error) {
-      console.error("❌ Error loading recommendations:", error);
-      return [];
-    }
-  };
-
-  const checkAndGenerateRecommendations = async () => {
-    if (!userId) return;
-
-    // Step 1: Verify user exists and has completed onboarding
-    const { data: userData, error: userError } = await supabase
-      .from("User")
-      .select("onboarding_status")
-      .eq("id", userId)
-      .single();
-
-    if (userError) {
-      console.error("❌ Error fetching user data:", userError);
-      return;
-    }
-
-    // Only generate if onboarding is completed
-    if (
-      userData?.onboarding_status !== "completed" &&
-      userData?.onboarding_status !== "skipped"
-    ) {
-      console.log("⚠️ User has not completed onboarding");
-      return;
-    }
-
-    // Step 2: Check if user has at least 5 rated movies
-    const { data: userMovies, error: userMoviesError } = await supabase
+    const { count, error } = await supabase
       .from("user_movies")
-      .select("movie_id", { count: "exact" })
-      .eq("user_id", userId)
-      .not("rating", "is", null);
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
 
-    if (userMoviesError) {
-      console.error("❌ Error fetching user movies count:", userMoviesError);
-      return;
+    if (error) {
+      console.error("Erro ao contar filmes avaliados:", error);
+      return 0;
     }
 
-    if (userMovies && userMovies.length >= 5) {
-      // User has enough rated movies, trigger generation
-      console.log(`✅ User has ${userMovies.length} rated movies, generating recommendations...`);
-      try {
-        await triggerRecommendationGeneration();
-        setNeedsRecommendations(false);
+    return count || 0;
+  }, [supabase, userId]);
 
-        // Wait a bit for recommendations to be generated, then reload
-        setTimeout(async () => {
-          const movies = await loadRecommendations(0);
-          if (movies.length > 0) {
-            setItems(movies);
-            setHasMore(movies.length === ITEMS_PER_PAGE);
-            setIsLoading(false);
-          }
-        }, 2000);
-      } catch (error) {
-        console.error("❌ Failed to generate recommendations:", error);
-        setIsLoading(false);
+  const loadRecommendations = useCallback(
+    async (page: number): Promise<RecommendedMoviesResponse> => {
+      if (!userId || !supabase) {
+        return { items: [], hasMore: false, needsMoreRatings: false };
       }
-    } else {
-      // User needs to rate more movies
-      setNeedsRecommendations(true);
-      setIsLoading(false);
-      console.log(
-        `⚠️ User has only ${userMovies?.length || 0} rated movies, needs 5`
-      );
-    }
-  };
 
-  const initializeRecommendations = async () => {
-    if (!userId) return;
+      const ratedCount = await getUserRatedCount();
+      console.log(`Usuário avaliou ${ratedCount} filmes`);
 
+      // Se menos de 5 → gera recomendações (mesmo que não tenha nenhuma)
+      if (ratedCount < MINIMUM_RATED_MOVIES) {
+        console.log("Menos de 5 filmes → chamando generate-recommendations");
+
+        const { error: genError } = await supabase.functions.invoke("generate-recommendations");
+        if (genError) {
+          console.error("Falha ao gerar recomendações:", genError);
+          return { items: [], hasMore: false, needsMoreRatings: true };
+        }
+
+        // Após gerar, tenta carregar
+        const { data, error } = await supabase.functions.invoke("get-recommendations", {
+          queryString: { page: "0" },
+        });
+
+        if (error) {
+          console.error("Erro ao carregar após gerar:", error);
+          return { items: [], hasMore: false, needsMoreRatings: true };
+        }
+
+        return {
+          items: data.recommendations || [],
+          hasMore: data.hasMore ?? false,
+          needsMoreRatings: false,
+        };
+      }
+
+      // Se 5 ou mais → carrega normalmente
+      console.log("5 ou mais filmes → chamando get-recommendations");
+
+      const { data, error } = await supabase.functions.invoke("get-recommendations", {
+        queryString: { page: page.toString() },
+      });
+
+      if (error) {
+        console.error("Erro ao carregar recomendações:", error);
+        return { items: [], hasMore: false, needsMoreRatings: false };
+      }
+
+      if (data.needsMoreRatings) {
+        return {
+          items: [],
+          hasMore: false,
+          needsMoreRatings: true,
+        };
+      }
+
+      return {
+        items: data.recommendations || [],
+        hasMore: data.hasMore ?? false,
+        needsMoreRatings: false,
+      };
+    },
+    [supabase, userId, getUserRatedCount]
+  );
+
+  const initialize = useCallback(async () => {
     setIsLoading(true);
-
-    // Step 1: Verify user exists and check onboarding status
-    const { data: userData, error: userError } = await supabase
-      .from("User")
-      .select("onboarding_status")
-      .eq("id", userId)
-      .single();
-
-    if (userError || !userData) {
-      console.error("❌ Error fetching user data:", userError);
-      setIsLoading(false);
-      return;
-    }
-
-    // Step 2: Only proceed if onboarding is completed
-    if (
-      userData.onboarding_status !== "completed" &&
-      userData.onboarding_status !== "skipped"
-    ) {
-      console.log("⚠️ User has not completed onboarding, skipping recommendations");
-      setIsLoading(false);
-      return;
-    }
-
-    // Step 3: Try to load existing recommendations
-    const movies = await loadRecommendations(0);
-
-    if (movies.length > 0) {
-      // We have recommendations, show them
-      console.log(`✅ Loaded ${movies.length} recommendations`);
-      setItems(movies);
-      setHasMore(movies.length === ITEMS_PER_PAGE);
-      setNeedsRecommendations(false);
-      setIsLoading(false);
-    } else {
-      // No recommendations exist, check if we should generate them
-      console.log("⚠️ No recommendations found, checking if we should generate...");
-      await checkAndGenerateRecommendations();
-    }
-  };
+    const result = await loadRecommendations(0);
+    setItems(result.items);
+    setHasMore(result.hasMore);
+    setNeedsMoreRatings(result.needsMoreRatings);
+    setCurrentPage(0);
+    setIsLoading(false);
+  }, [loadRecommendations]);
 
   const loadMore = async () => {
-    if (!hasMore || isLoading || !userId) return;
+    if (!hasMore || isLoading || needsMoreRatings) return;
 
     setIsLoading(true);
     const nextPage = currentPage + 1;
+    const result = await loadRecommendations(nextPage);
 
-    console.log(`📄 Loading more recommendations (page ${nextPage})...`);
-
-    const newMovies = await loadRecommendations(nextPage);
-
-    if (newMovies.length > 0) {
-      setItems((prev) => {
-        const existingIds = new Set(prev.map((item) => item.id));
-        const filteredNewMovies = newMovies.filter(
-          (item) => !existingIds.has(item.id)
-        );
-        return [...prev, ...filteredNewMovies];
-      });
+    if (result.items.length > 0) {
+      setItems((prev) => [...prev, ...result.items]);
       setCurrentPage(nextPage);
-      setHasMore(newMovies.length === ITEMS_PER_PAGE);
-      console.log(`✅ Loaded ${newMovies.length} more movies`);
+      setHasMore(result.hasMore);
+      setNeedsMoreRatings(result.needsMoreRatings);
     } else {
       setHasMore(false);
-      console.log("⚠️ No more recommendations available");
     }
-
     setIsLoading(false);
   };
 
+  const refresh = async () => {
+    setCurrentPage(0);
+    setItems([]);
+    await initialize();
+  };
+
   useEffect(() => {
-    initializeRecommendations();
-  }, [userId]);
+    if (userId) {
+      initialize();
+    } else {
+      setItems([]);
+      setHasMore(false);
+      setNeedsMoreRatings(false);
+      setIsLoading(false);
+    }
+  }, [userId, initialize]);
 
   return {
     items,
     isLoading,
     hasMore,
     loadMore,
-    needsRecommendations,
+    needsMoreRatings,
+    refresh,
   };
 };

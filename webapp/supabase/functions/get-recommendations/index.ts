@@ -1,9 +1,6 @@
-// Supabase Edge Function: get-recommendations
-// Path: C:\Users\win11\Documents\GitHub\CinemaWebApp\webapp\supabase\functions\get-recommendations\index.ts
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +10,6 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: corsHeaders,
@@ -21,7 +17,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Check Authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -38,7 +33,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get Supabase credentials
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -57,40 +51,40 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Supabase client with service role
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Extract user_id from JWT token
+    // Extrai o user_id do token
     const token = authHeader.replace("Bearer ", "");
     const payload = JSON.parse(atob(token.split(".")[1]));
     const userId = payload.sub;
 
     console.log("✅ User ID from token:", userId);
 
-    // Get pagination parameter
     const url = new URL(req.url);
+    const searchQuery = url.searchParams.get("searchQuery");
     const page = parseInt(url.searchParams.get("page") || "0", 10);
 
-    console.log(`📄 Fetching page ${page} for user ${userId}`);
+    console.log(`📄 Fetching recommendations - Page: ${page}, Search: ${searchQuery || 'none'}`);
 
-    // Step 1: Get user recommendations with pagination
+    // Busca recomendações paginadas
     const { data: recommendationData, error: recommendationError } =
       await supabase
         .from("user_recommendations")
         .select("movie_id")
         .eq("user_id", userId)
-        .order("rank", { ascending: true })
+        .order("created_at", { ascending: false })
         .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
 
     if (recommendationError) {
+      console.error("❌ Error fetching recommendations:", recommendationError);
       throw recommendationError;
     }
 
     if (!recommendationData || recommendationData.length === 0) {
-      console.log("⚠️ No recommendations found for user");
+      console.log("⚠️ No recommendations found");
       return new Response(
         JSON.stringify({
-          movies: [],
+          recommendations: [],
           page,
           hasMore: false,
         }),
@@ -104,45 +98,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`✅ Found ${recommendationData.length} recommendations`);
-
-    // Step 2: Get movie details
     const movieIds = recommendationData.map((r) => r.movie_id);
-    const { data: moviesData, error: moviesError } = await supabase
+    console.log(`🎬 Found ${movieIds.length} recommendation IDs`);
+
+    // Busca detalhes dos filmes
+    let moviesQuery = supabase
       .from("movies")
       .select(
-        "id, series_title, poster_url, runtime, genre, imdb_rating, overview, released_year"
+        "id, series_title, poster_url, runtime, genre, imdb_rating, overview"
       )
       .in("id", movieIds);
 
+    if (searchQuery) {
+      moviesQuery = moviesQuery.ilike("series_title", `%${searchQuery}%`);
+    }
+
+    const { data: moviesData, error: moviesError } = await moviesQuery;
+
     if (moviesError) {
+      console.error("❌ Error fetching movies:", moviesError);
       throw moviesError;
     }
 
-    if (!moviesData) {
-      return new Response(
-        JSON.stringify({
-          movies: [],
-          page,
-          hasMore: false,
-        }),
-        {
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-          },
-          status: 200,
-        }
-      );
-    }
-
-    // Step 3: Maintain order from recommendations and format response
-    const movieMap = new Map(moviesData.map((m) => [m.id, m]));
-    const orderedMovies = movieIds
-      .map((id) => movieMap.get(id))
-      .filter((m) => m !== undefined);
-
-    const formattedMovies = orderedMovies.map((movie, index) => ({
+    const recommendations = (moviesData || []).map((movie, index) => ({
       id: movie.id.toString(),
       img: movie.poster_url || "",
       url: "#",
@@ -150,18 +128,18 @@ Deno.serve(async (req) => {
       title: movie.series_title || "Untitled",
       time: movie.runtime || "",
       category: movie.genre || "Uncategorized",
-      year: movie.released_year?.toString() || "N/A",
+      year: "N/A",
       rating: movie.imdb_rating || 0,
       synopsis: movie.overview || "Synopsis not available",
     }));
 
-    console.log(`✅ Returning ${formattedMovies.length} movies`);
+    console.log(`✅ Returning ${recommendations.length} recommendations for page ${page}`);
 
     return new Response(
       JSON.stringify({
-        movies: formattedMovies,
+        recommendations,
         page,
-        hasMore: formattedMovies.length === ITEMS_PER_PAGE,
+        hasMore: recommendations.length === ITEMS_PER_PAGE,
       }),
       {
         headers: {
