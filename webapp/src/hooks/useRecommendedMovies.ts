@@ -3,7 +3,8 @@ import { useSupabase } from "./useSupabase";
 import { useAuth } from "@clerk/clerk-react";
 import type { Item } from "./useMovies";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
+const INITIAL_LOAD = 20;
 
 export const useRecommendedMovies = () => {
   const supabase = useSupabase();
@@ -14,72 +15,42 @@ export const useRecommendedMovies = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [needsRecommendations, setNeedsRecommendations] = useState(false);
 
+  // Get Supabase URL from environment
+  const getSupabaseUrl = () => {
+    return import.meta.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
+  };
+
   const triggerRecommendationGeneration = async () => {
-    if (!userId) {
-      console.error("No userId available");
-      return;
-    }
-    
-    console.log("=== TRIGGERING RECOMMENDATION GENERATION ===");
-    console.log("User ID:", userId);
-    
+    if (!userId) return;
+
+    console.log("🚀 Triggering recommendation generation for user:", userId);
+
     try {
-      // Get authentication token
+      const supabaseUrl = getSupabaseUrl();
       const token = await getToken({ template: "supabase" });
-      console.log("Token exists:", !!token);
-      console.log("Token preview:", token?.substring(0, 50) + "...");
-      
-      if (!token) {
-        console.error("Authentication token not found");
-        return;
-      }
 
-      // Get Supabase URL and anon key from environment
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      console.log("Supabase URL:", supabaseUrl);
-      console.log("Anon Key exists:", !!supabaseAnonKey);
-
-      const url = `${supabaseUrl}/functions/v1/get-recommendations`;
-      console.log("Calling edge function at:", url);
-
-      // Call edge function
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          apikey: supabaseAnonKey,
-        },
-      });
-
-      console.log("Response status:", response.status);
-      console.log("Response statusText:", response.statusText);
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
-
-      const responseText = await response.text();
-      console.log("Response text:", responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log("Parsed response data:", data);
-      } catch (e) {
-        console.error("Failed to parse response as JSON:", e);
-        throw new Error(`Server returned invalid response: ${responseText.substring(0, 100)}`);
-      }
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/generate-recommendations`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
-        console.error("Edge function returned error:", data);
-        throw new Error(data?.error || `Server error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate recommendations");
       }
 
-      console.log("✅ Recommendation generation triggered successfully:", data);
-      console.log("===========================================");
+      const result = await response.json();
+      console.log("✅ Recommendation generation successful:", result);
+
+      return result;
     } catch (error) {
       console.error("❌ Error triggering recommendation generation:", error);
-      console.log("===========================================");
       throw error;
     }
   };
@@ -87,72 +58,98 @@ export const useRecommendedMovies = () => {
   const loadRecommendations = async (page: number) => {
     if (!userId) return [];
 
-    const { data: recommendationData, error: recommendationError } =
-      await supabase
-        .from("user_recommendations")
-        .select("movie_id")
-        .eq("user_id", userId)
-        .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
+    try {
+      const supabaseUrl = getSupabaseUrl();
+      const token = await getToken({ template: "supabase" });
 
-    if (recommendationError) {
-      console.error("Error fetching recommendations:", recommendationError);
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/get-recommendations?page=${page}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error fetching recommendations:", errorData);
+        return [];
+      }
+
+      const result = await response.json();
+      return result.movies || [];
+    } catch (error) {
+      console.error("❌ Error loading recommendations:", error);
       return [];
     }
-
-    if (!recommendationData || recommendationData.length === 0) {
-      return [];
-    }
-
-    const movieIds = recommendationData.map((r) => r.movie_id);
-    const { data: movieData, error: movieError } = await supabase
-      .from("movies")
-      .select(
-        "id, series_title, poster_url, runtime, genre, imdb_rating, overview"
-      )
-      .in("id", movieIds);
-
-    if (movieError) {
-      console.error("Error fetching recommended movies:", movieError);
-      return [];
-    }
-
-    return movieData.map((movie, index) => ({
-      id: movie.id.toString(),
-      img: movie.poster_url,
-      url: "#",
-      height: [600, 700, 800, 850, 900, 950, 1000][index % 7],
-      title: movie.series_title,
-      time: movie.runtime,
-      category: movie.genre,
-      year: movie.runtime
-        ? new Date(movie.runtime).getFullYear().toString()
-        : "2024",
-      rating: movie.imdb_rating,
-      synopsis: movie.overview || "Synopsis not available",
-    }));
   };
 
   const checkAndGenerateRecommendations = async () => {
     if (!userId) return;
 
-    // Check if user has at least 5 rated movies
+    // Step 1: Verify user exists and has completed onboarding
+    const { data: userData, error: userError } = await supabase
+      .from("User")
+      .select("onboarding_status")
+      .eq("id", userId)
+      .single();
+
+    if (userError) {
+      console.error("❌ Error fetching user data:", userError);
+      return;
+    }
+
+    // Only generate if onboarding is completed
+    if (
+      userData?.onboarding_status !== "completed" &&
+      userData?.onboarding_status !== "skipped"
+    ) {
+      console.log("⚠️ User has not completed onboarding");
+      return;
+    }
+
+    // Step 2: Check if user has at least 5 rated movies
     const { data: userMovies, error: userMoviesError } = await supabase
       .from("user_movies")
       .select("movie_id", { count: "exact" })
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .not("rating", "is", null);
 
     if (userMoviesError) {
-      console.error("Error fetching user movies count:", userMoviesError);
+      console.error("❌ Error fetching user movies count:", userMoviesError);
       return;
     }
 
     if (userMovies && userMovies.length >= 5) {
       // User has enough rated movies, trigger generation
-      await triggerRecommendationGeneration();
-      setNeedsRecommendations(false);
+      console.log(`✅ User has ${userMovies.length} rated movies, generating recommendations...`);
+      try {
+        await triggerRecommendationGeneration();
+        setNeedsRecommendations(false);
+
+        // Wait a bit for recommendations to be generated, then reload
+        setTimeout(async () => {
+          const movies = await loadRecommendations(0);
+          if (movies.length > 0) {
+            setItems(movies);
+            setHasMore(movies.length === ITEMS_PER_PAGE);
+            setIsLoading(false);
+          }
+        }, 2000);
+      } catch (error) {
+        console.error("❌ Failed to generate recommendations:", error);
+        setIsLoading(false);
+      }
     } else {
       // User needs to rate more movies
       setNeedsRecommendations(true);
+      setIsLoading(false);
+      console.log(
+        `⚠️ User has only ${userMovies?.length || 0} rated movies, needs 5`
+      );
     }
   };
 
@@ -161,22 +158,44 @@ export const useRecommendedMovies = () => {
 
     setIsLoading(true);
 
-    // Step 1: Check if recommendations exist
+    // Step 1: Verify user exists and check onboarding status
+    const { data: userData, error: userError } = await supabase
+      .from("User")
+      .select("onboarding_status")
+      .eq("id", userId)
+      .single();
+
+    if (userError || !userData) {
+      console.error("❌ Error fetching user data:", userError);
+      setIsLoading(false);
+      return;
+    }
+
+    // Step 2: Only proceed if onboarding is completed
+    if (
+      userData.onboarding_status !== "completed" &&
+      userData.onboarding_status !== "skipped"
+    ) {
+      console.log("⚠️ User has not completed onboarding, skipping recommendations");
+      setIsLoading(false);
+      return;
+    }
+
+    // Step 3: Try to load existing recommendations
     const movies = await loadRecommendations(0);
 
     if (movies.length > 0) {
       // We have recommendations, show them
+      console.log(`✅ Loaded ${movies.length} recommendations`);
       setItems(movies);
       setHasMore(movies.length === ITEMS_PER_PAGE);
       setNeedsRecommendations(false);
+      setIsLoading(false);
     } else {
       // No recommendations exist, check if we should generate them
+      console.log("⚠️ No recommendations found, checking if we should generate...");
       await checkAndGenerateRecommendations();
-      setItems([]);
-      setHasMore(false);
     }
-
-    setIsLoading(false);
   };
 
   const loadMore = async () => {
@@ -184,6 +203,8 @@ export const useRecommendedMovies = () => {
 
     setIsLoading(true);
     const nextPage = currentPage + 1;
+
+    console.log(`📄 Loading more recommendations (page ${nextPage})...`);
 
     const newMovies = await loadRecommendations(nextPage);
 
@@ -197,8 +218,10 @@ export const useRecommendedMovies = () => {
       });
       setCurrentPage(nextPage);
       setHasMore(newMovies.length === ITEMS_PER_PAGE);
+      console.log(`✅ Loaded ${newMovies.length} more movies`);
     } else {
       setHasMore(false);
+      console.log("⚠️ No more recommendations available");
     }
 
     setIsLoading(false);
