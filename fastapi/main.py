@@ -11,7 +11,7 @@ load_dotenv()
 # Adicionar caminho para importar o sistema de recomendação
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from AI.recommendation_system import SistemaRecomendacaoKNN
+from recommendation_system import SistemaRecomendacaoKNN
 
 app = FastAPI()
 
