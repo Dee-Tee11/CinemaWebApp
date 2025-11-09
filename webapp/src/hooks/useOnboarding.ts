@@ -264,7 +264,7 @@ export const useOnboarding = () => {
       // 3. Chamar a API para gerar recomendações
       try {
         await fetch(
-          `http://127.0.0.1:8000/generate-recommendations/${userId}`,
+          `${import.meta.env.VITE_API_BASE_URL}/generate-recommendations/${userId}`,
           {
             method: "POST",
           }
