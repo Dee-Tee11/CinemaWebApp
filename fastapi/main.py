@@ -16,7 +16,12 @@ from AI.recommendation_system import SistemaRecomendacaoKNN
 app = FastAPI()
 
 # CORS Middleware
-origins = ["http://localhost:5173"]
+# Ler origens do environment variable, separado por vírgulas
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+origins = [url.strip() for url in frontend_url.split(",")]
+
+print(f"✅ Configurando CORS para as origens: {origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
