@@ -1,0 +1,23 @@
+name: 🎓 AI Code Review
+
+on:
+  push:
+    branches: ["**"] # Todas as branches
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: AI Code Mentor
+        uses: Dee-Tee11/ai-code-reviewer # ⚠️ MUDAR AQUI
+        with:
+          huggingface_token: ${{ secrets.HUGGINGFACE_TOKEN }}
