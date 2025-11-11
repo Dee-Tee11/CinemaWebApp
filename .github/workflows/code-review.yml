@@ -2,25 +2,21 @@ name: 🎓 AI Code Review
 
 on:
   push:
-    branches: ["**"] # Todas as branches
+    branches: ["**"]
 
 jobs:
   review:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read # ✅ Ler o código
-      pull-requests: write # ✅ Comentar em PRs
-      issues: write # ✅ Comentar em issues
-      statuses: write # ✅ Atualizar status checks
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: AI Code Mentor
-        uses: Dee-Tee11/ai-code-reviewer@main # ⚠️ MUDAR AQUI
+        uses: Dee-Tee11/ai-code-reviewer@main
         with:
           huggingface_token: ${{ secrets.HUGGINGFACE_TOKEN }}
-          github_token: ${{ secrets.GH_PAT }}
+          github_token: ${{ secrets.GH_TOKEN }}
