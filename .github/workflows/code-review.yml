@@ -8,8 +8,10 @@ jobs:
   review:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write
+      contents: read # ✅ Ler o código
+      pull-requests: write # ✅ Comentar em PRs
+      issues: write # ✅ Comentar em issues
+      statuses: write # ✅ Atualizar status checks
 
     steps:
       - name: Checkout

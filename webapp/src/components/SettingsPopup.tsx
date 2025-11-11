@@ -2,7 +2,7 @@ import React from "react";
 import { X, LogOut } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 
-interface settingsPopupProps {
+interface SettingsPopupProps {
   isOpen: boolean;
   onClose: () => void;
 }
