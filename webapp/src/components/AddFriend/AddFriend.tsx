@@ -27,7 +27,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-  // Loads the authenticated user ID from Clerk
+  // Loads the authenticated user ID from Clerk simples cometario
   useEffect(() => {
     const getUserId = async () => {
       if (!clerkUser) {
