@@ -18,6 +18,6 @@ jobs:
           fetch-depth: 2
 
       - name: AI Code Mentor
-        uses: Dee-Tee11/ai-code-reviewer # ⚠️ MUDAR AQUI
+        uses: Dee-Tee11/ai-code-reviewer@main # ⚠️ MUDAR AQUI
         with:
           huggingface_token: ${{ secrets.HUGGINGFACE_TOKEN }}
