@@ -23,3 +23,4 @@ jobs:
         uses: Dee-Tee11/ai-code-reviewer@main # ⚠️ MUDAR AQUI
         with:
           huggingface_token: ${{ secrets.HUGGINGFACE_TOKEN }}
+          github_token: ${{ secrets.GH_PAT }}
