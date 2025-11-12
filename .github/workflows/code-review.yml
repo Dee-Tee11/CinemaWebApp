@@ -1,22 +1,80 @@
-name: 🎓 AI Code Review
+name: 🎓 AI Code Review (with RAG)
 
 on:
   push:
     branches: ["**"]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   review:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write # Necessário para commitar (se for o caso)
+      pull-requests: write # Necessário para comentar em PRs
+      issues: write # Necessário para comentários
+
     steps:
-      - name: Checkout
+      # ═══════════════════════════════════════════════════════
+      # 📥 CHECKOUT
+      # ═══════════════════════════════════════════════════════
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0 # ← Mudado de 2 para 0 (necessário para RAG)
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: AI Code Mentor
+      # ═══════════════════════════════════════════════════════
+      # 🧠 VERIFICAR SE RAG ESTÁ DISPONÍVEL
+      # ═══════════════════════════════════════════════════════
+      - name: 🧠 Check RAG database
+        id: check-rag
+        run: |
+          if [ -d "./chroma_db" ]; then
+            echo "rag_available=true" >> $GITHUB_OUTPUT
+            echo "✅ RAG database found - reviews will have full context!"
+            
+            # Mostrar stats da BD
+            if [ -f "chroma_db/dependencies.json" ]; then
+              FILE_COUNT=$(cat chroma_db/dependencies.json | grep -o '"' | wc -l)
+              echo "📊 Database contains indexed codebase"
+            fi
+          else
+            echo "rag_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ RAG database not found - running without context"
+            echo "💡 Run 'Update RAG Index' workflow to enable context-aware reviews"
+          fi
+
+      # ═══════════════════════════════════════════════════════
+      # 🤖 AI CODE REVIEW (COM RAG!)
+      # ═══════════════════════════════════════════════════════
+      - name: 🎓 AI Code Mentor (with RAG Context)
         uses: Dee-Tee11/ai-code-reviewer@main
         with:
           huggingface_token: ${{ secrets.HUGGINGFACE_TOKEN }}
           github_token: ${{ secrets.GH_TOKEN }}
+          # ↓ NOVO: Configurações RAG
+          enable_rag: ${{ steps.check-rag.outputs.rag_available }}
+          rag_db_path: ./chroma_db
+
+      # ═══════════════════════════════════════════════════════
+      # 📊 ESTATÍSTICAS (OPCIONAL)
+      # ═══════════════════════════════════════════════════════
+      - name: 📊 Review Statistics
+        if: always()
+        run: |
+          echo "### 📊 Review Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **RAG Enabled:** ${{ steps.check-rag.outputs.rag_available }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.check-rag.outputs.rag_available }}" == "true" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Reviews include context from your entire codebase!**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Reviews without RAG context**" >> $GITHUB_STEP_SUMMARY
+            echo "Run the 'Update RAG Index' workflow to enable smart reviews." >> $GITHUB_STEP_SUMMARY
+          fi
