@@ -14,7 +14,7 @@ interface AddFriendPopupProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
+//rag teste
 const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const supabase = useSupabase();
   const { user: clerkUser } = useUser();
