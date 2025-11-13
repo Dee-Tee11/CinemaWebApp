@@ -170,19 +170,32 @@ jobs:
 
           python -c "
           from codebase_rag import CodebaseRAG
-          rag = CodebaseRAG(persist_directory='./chroma_db')
-          stats = rag.get_stats()
-
-          print(f'**Total files indexed:** {stats[\"total_files\"]}')
-          print(f'**Total functions/components:** {stats[\"total_functions\"]}')
-          print(f'**Total dependencies tracked:** {stats[\"total_dependencies\"]}')
-
           import os
-          total_size = sum(os.path.getsize(os.path.join(dirpath, filename))
-                          for dirpath, _, filenames in os.walk('./chroma_db')
-                          for filename in filenames)
-          size_mb = total_size / (1024 * 1024)
-          print(f'**Database size:** {size_mb:.2f} MB')
+
+          try:
+              rag = CodebaseRAG(persist_directory='./chroma_db')
+              stats = rag.get_stats()
+              
+              # Usar .get() para evitar KeyError se chaves não existirem
+              print(f'**Total files indexed:** {stats.get(\"total_files\", 0)}')
+              print(f'**Total functions/components:** {stats.get(\"total_functions\", 0)}')
+              
+              # Só mostrar dependencies se a chave existir
+              if 'total_dependencies' in stats:
+                  print(f'**Total dependencies tracked:** {stats[\"total_dependencies\"]}')
+              
+              # Calcular tamanho da base de dados
+              total_size = sum(
+                  os.path.getsize(os.path.join(dirpath, filename))
+                  for dirpath, _, filenames in os.walk('./chroma_db')
+                  for filename in filenames
+              )
+              size_mb = total_size / (1024 * 1024)
+              print(f'**Database size:** {size_mb:.2f} MB')
+              
+          except Exception as e:
+              print(f'⚠️ Error collecting statistics: {str(e)}')
+              print('Index may still be valid, but stats unavailable.')
           " >> $GITHUB_STEP_SUMMARY
 
           echo "" >> $GITHUB_STEP_SUMMARY
