@@ -176,22 +176,29 @@ jobs:
               rag = CodebaseRAG(persist_directory='./chroma_db')
               stats = rag.get_stats()
               
-              # Usar .get() para evitar KeyError se chaves não existirem
-              print(f'**Total files indexed:** {stats.get(\"total_files\", 0)}')
-              print(f'**Total functions/components:** {stats.get(\"total_functions\", 0)}')
+              # Usar .get() com valor padrão para evitar KeyError
+              total_files = stats.get('total_files', 0)
+              total_functions = stats.get('total_functions', 0)
+              total_deps = stats.get('total_dependencies', None)
               
-              # Só mostrar dependencies se a chave existir
-              if 'total_dependencies' in stats:
-                  print(f'**Total dependencies tracked:** {stats[\"total_dependencies\"]}')
+              print(f'**Total files indexed:** {total_files}')
+              print(f'**Total functions/components:** {total_functions}')
+              
+              # Só mostrar dependencies se disponível
+              if total_deps is not None:
+                  print(f'**Total dependencies tracked:** {total_deps}')
               
               # Calcular tamanho da base de dados
-              total_size = sum(
-                  os.path.getsize(os.path.join(dirpath, filename))
-                  for dirpath, _, filenames in os.walk('./chroma_db')
-                  for filename in filenames
-              )
-              size_mb = total_size / (1024 * 1024)
-              print(f'**Database size:** {size_mb:.2f} MB')
+              if os.path.exists('./chroma_db'):
+                  total_size = sum(
+                      os.path.getsize(os.path.join(dirpath, filename))
+                      for dirpath, _, filenames in os.walk('./chroma_db')
+                      for filename in filenames
+                  )
+                  size_mb = total_size / (1024 * 1024)
+                  print(f'**Database size:** {size_mb:.2f} MB')
+              else:
+                  print('**Database size:** N/A')
               
           except Exception as e:
               print(f'⚠️ Error collecting statistics: {str(e)}')
