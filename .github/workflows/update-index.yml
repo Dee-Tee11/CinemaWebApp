@@ -171,7 +171,7 @@ jobs:
           python -c "
           from codebase_rag import CodebaseRAG
           import os
-
+          
           try:
               rag = CodebaseRAG(persist_directory='./chroma_db')
               stats = rag.get_stats()
@@ -237,9 +237,33 @@ jobs:
             fi
             
             git commit -m "$COMMIT_MSG"
-            git push
             
-            echo "✅ RAG index committed and pushed"
+            # Pull com rebase antes de push para evitar conflitos
+            echo "Pulling latest changes..."
+            git pull --rebase origin main || {
+              echo "⚠️ Rebase conflict detected, attempting to resolve..."
+              # Em caso de conflito, favorecer as nossas mudanças (chroma_db)
+              git checkout --ours chroma_db/
+              git add chroma_db/
+              git rebase --continue || git rebase --skip
+            }
+            
+            # Tentar push com retry
+            for i in {1..3}; do
+              if git push; then
+                echo "✅ RAG index committed and pushed"
+                break
+              else
+                if [ $i -lt 3 ]; then
+                  echo "⚠️ Push failed, retrying in 5 seconds... (attempt $i/3)"
+                  sleep 5
+                  git pull --rebase origin main
+                else
+                  echo "❌ Failed to push after 3 attempts"
+                  exit 1
+                fi
+              fi
+            done
           fi
 
       # ═══════════════════════════════════════════════════════
