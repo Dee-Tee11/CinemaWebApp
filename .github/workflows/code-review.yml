@@ -25,6 +25,14 @@ jobs:
           fetch-depth: 0 # Necessário para histórico completo
           token: ${{ secrets.GH_TOKEN }}
 
+      - name: 🐞 Debug Workspace Contents
+        run: |
+          echo "Listing all files in the workspace..."
+          ls -laR
+          echo "---"
+          echo "Checking root .gitignore contents..."
+          cat .gitignore || echo "Root .gitignore not found"
+
       # ═══════════════════════════════════════════════════════
       # 🧠 VERIFICAR SE RAG DATABASE EXISTE
       # ═══════════════════════════════════════════════════════
