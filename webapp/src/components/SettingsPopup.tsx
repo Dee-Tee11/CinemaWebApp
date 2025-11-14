@@ -7,6 +7,7 @@ interface SettingsPopupProps {
   onClose: () => void;
 }
 
+//ragtest
 const SettingsPopup: React.FC<SettingsPopupProps> = ({ isOpen, onClose }) => {
   const { signOut } = useClerk();
 
