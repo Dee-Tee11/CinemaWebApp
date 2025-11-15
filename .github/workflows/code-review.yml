@@ -25,6 +25,19 @@ jobs:
           fetch-depth: 0 # Necessário para histórico completo
           token: ${{ secrets.GH_TOKEN }}
 
+      # ═══════════════════════════════════════════════════════
+      # 🔍 DEBUG GITHUB CONTEXT
+      # ═══════════════════════════════════════════════════════
+      - name: 🔍 Debug GitHub Context
+        run: |
+          echo "### 🔍 GitHub Context" >> $GITHUB_STEP_SUMMARY
+          echo "- Event: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Ref: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
+          echo "- SHA: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Actor: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
       - name: 🐞 Debug Workspace Contents
         run: |
           echo "Listing all files in the workspace..."
@@ -81,6 +94,40 @@ jobs:
           github_token: ${{ secrets.GH_TOKEN }}
           enable_rag: ${{ steps.check-rag.outputs.rag_available }}
           rag_db_path: ./chroma_db
+
+      # ═══════════════════════════════════════════════════════
+      # 🔍 TESTAR API DO GITHUB
+      # ═══════════════════════════════════════════════════════
+      - name: 🔍 Debug GitHub API Access
+        if: always()
+        run: |
+          echo "### 🔍 Testing GitHub API Access" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Test authentication
+          echo "Testing authentication..."
+          AUTH_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GH_TOKEN }}" https://api.github.com/user)
+          echo "✅ Authenticated as: $(echo $AUTH_RESPONSE | jq -r '.login')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Test comment posting
+          echo "Attempting to post test comment..."
+          COMMENT_RESPONSE=$(curl -s -X POST \
+               -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/comments \
+               -d '{"body":"🧪 Test comment from workflow - if you see this, API access works!","path":"webapp/src/components/SettingsPopup.tsx","position":1}')
+
+          if echo "$COMMENT_RESPONSE" | jq -e '.id' > /dev/null 2>&1; then
+            echo "✅ **Test comment posted successfully!**" >> $GITHUB_STEP_SUMMARY
+            echo "Comment ID: $(echo $COMMENT_RESPONSE | jq -r '.id')" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Failed to post test comment**" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            echo "$COMMENT_RESPONSE" | jq '.' >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
 
       # ═══════════════════════════════════════════════════════
       # 📊 ESTATÍSTICAS
