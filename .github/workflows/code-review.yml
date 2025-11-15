@@ -26,27 +26,6 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       # ═══════════════════════════════════════════════════════
-      # 🔍 DEBUG GITHUB CONTEXT
-      # ═══════════════════════════════════════════════════════
-      - name: 🔍 Debug GitHub Context
-        run: |
-          echo "### 🔍 GitHub Context" >> $GITHUB_STEP_SUMMARY
-          echo "- Event: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Ref: ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
-          echo "- SHA: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Actor: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-      - name: 🐞 Debug Workspace Contents
-        run: |
-          echo "Listing all files in the workspace..."
-          ls -laR
-          echo "---"
-          echo "Checking root .gitignore contents..."
-          cat .gitignore || echo "Root .gitignore not found"
-
-      # ═══════════════════════════════════════════════════════
       # 🧠 VERIFICAR SE RAG DATABASE EXISTE
       # ═══════════════════════════════════════════════════════
       - name: 🧠 Check RAG Database
@@ -62,13 +41,7 @@ jobs:
             fi
           else
             echo "rag_available=false" >> $GITHUB_OUTPUT
-            echo "⚠️ RAG database not found"
-            echo "💡 To enable RAG context:"
-            echo "   1. Run locally: python .rag/build.py"
-            echo "   2. Commit: git add chroma_db/ && git commit -m '🧠 Add RAG database'"
-            echo "   3. Push: git push"
-            echo ""
-            echo "⚡ Review will proceed without RAG context"
+            echo "⚠️ RAG database not found - review will proceed without context"
           fi
 
       # ═══════════════════════════════════════════════════════
@@ -95,73 +68,19 @@ jobs:
           rag_db_path: ./chroma_db
 
       # ═══════════════════════════════════════════════════════
-      # 🔍 TESTAR API DO GITHUB (COMENTÁRIO GERAL)
-      # ═══════════════════════════════════════════════════════
-      - name: 🔍 Test General Comment API
-        if: always()
-        run: |
-          echo "### 🔍 Testing GitHub API - General Comments" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Test authentication
-          echo "Testing authentication..."
-          AUTH_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GH_TOKEN }}" https://api.github.com/user)
-          USERNAME=$(echo $AUTH_RESPONSE | jq -r '.login')
-          echo "✅ Authenticated as: **$USERNAME**" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Test GENERAL comment (no path/position - appears in Conversation)
-          echo "📝 Posting general comment (Conversation tab)..."
-          GENERAL_COMMENT=$(curl -s -w "\n%{http_code}" -X POST \
-               -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-               -H "Accept: application/vnd.github.v3+json" \
-               https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/comments \
-               -d '{"body":"🧪 **Test Comment (General)** - This should appear in the Conversation tab!\n\nIf you see this, the API is working correctly for general comments."}')
-          
-          HTTP_CODE=$(echo "$GENERAL_COMMENT" | tail -n1)
-          RESPONSE_BODY=$(echo "$GENERAL_COMMENT" | sed '$d')
-          
-          if [ "$HTTP_CODE" = "201" ]; then
-            COMMENT_ID=$(echo "$RESPONSE_BODY" | jq -r '.id')
-            COMMENT_URL=$(echo "$RESPONSE_BODY" | jq -r '.html_url')
-            echo "✅ **General comment posted successfully!**" >> $GITHUB_STEP_SUMMARY
-            echo "- Comment ID: \`$COMMENT_ID\`" >> $GITHUB_STEP_SUMMARY
-            echo "- URL: $COMMENT_URL" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Failed to post general comment (HTTP $HTTP_CODE)**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
-            echo "$RESPONSE_BODY" | jq '.' >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-      # ═══════════════════════════════════════════════════════
       # 📊 ESTATÍSTICAS
       # ═══════════════════════════════════════════════════════
       - name: 📊 Review Statistics
         if: always()
         run: |
-          echo "### 📊 Review Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Review Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **RAG Enabled:** ${{ steps.check-rag.outputs.rag_available }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **RAG Context:** ${{ steps.check-rag.outputs.rag_available == 'true' && '✅ Enabled' || '⚠️ Disabled' }}" >> $GITHUB_STEP_SUMMARY
 
           if [ "${{ steps.check-rag.outputs.rag_available }}" == "true" ]; then
             if [ -d "./chroma_db" ]; then
               DB_SIZE=$(du -sh chroma_db 2>/dev/null | cut -f1 || echo "unknown")
-              echo "- **RAG Database:** $DB_SIZE" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "✅ **Reviews include context from your entire codebase!**" >> $GITHUB_STEP_SUMMARY
+              echo "- **Database Size:** $DB_SIZE" >> $GITHUB_STEP_SUMMARY
             fi
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "⚠️ **Review completed without RAG context**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "To enable RAG and get better reviews:" >> $GITHUB_STEP_SUMMARY
-            echo "1. Run: \`python .rag/build.py\`" >> $GITHUB_STEP_SUMMARY
-            echo "2. Commit: \`git add chroma_db/ && git commit -m '🧠 Add RAG database'\`" >> $GITHUB_STEP_SUMMARY
-            echo "3. Push: \`git push\`" >> $GITHUB_STEP_SUMMARY
           fi
