@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write # Necessário para commitar (se for o caso)
-      pull-requests: write # Necessário para comentar em PRs
-      issues: write # Necessário para comentários
+      contents: write
+      pull-requests: write
+      issues: write
 
     steps:
       # ═══════════════════════════════════════════════════════
@@ -22,7 +22,7 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Necessário para histórico completo
+          fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
 
       # ═══════════════════════════════════════════════════════
@@ -56,7 +56,6 @@ jobs:
             echo "rag_available=true" >> $GITHUB_OUTPUT
             echo "✅ RAG database found - reviews will have full context!"
             
-            # Mostrar stats da BD
             if [ -f "chroma_db/chroma.sqlite3" ]; then
               DB_SIZE=$(du -sh chroma_db | cut -f1)
               echo "📊 Database size: $DB_SIZE"
@@ -73,7 +72,7 @@ jobs:
           fi
 
       # ═══════════════════════════════════════════════════════
-      # 💾 CACHE DA RAG DATABASE (RESTAURAR SE EXISTIR)
+      # 💾 CACHE DA RAG DATABASE
       # ═══════════════════════════════════════════════════════
       - name: 💾 Restore RAG Database Cache
         if: steps.check-rag.outputs.rag_available == 'true'
@@ -85,7 +84,7 @@ jobs:
             rag-db-${{ github.repository }}-
 
       # ═══════════════════════════════════════════════════════
-      # 🤖 AI CODE REVIEW (COM OU SEM RAG)
+      # 🤖 AI CODE REVIEW
       # ═══════════════════════════════════════════════════════
       - name: 🎓 AI Code Mentor
         uses: Dee-Tee11/ai-code-reviewer@main
@@ -96,35 +95,43 @@ jobs:
           rag_db_path: ./chroma_db
 
       # ═══════════════════════════════════════════════════════
-      # 🔍 TESTAR API DO GITHUB
+      # 🔍 TESTAR API DO GITHUB (COMENTÁRIO GERAL)
       # ═══════════════════════════════════════════════════════
-      - name: 🔍 Debug GitHub API Access
+      - name: 🔍 Test General Comment API
         if: always()
         run: |
-          echo "### 🔍 Testing GitHub API Access" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔍 Testing GitHub API - General Comments" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
+          
           # Test authentication
           echo "Testing authentication..."
           AUTH_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GH_TOKEN }}" https://api.github.com/user)
-          echo "✅ Authenticated as: $(echo $AUTH_RESPONSE | jq -r '.login')" >> $GITHUB_STEP_SUMMARY
+          USERNAME=$(echo $AUTH_RESPONSE | jq -r '.login')
+          echo "✅ Authenticated as: **$USERNAME**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Test comment posting
-          echo "Attempting to post test comment..."
-          COMMENT_RESPONSE=$(curl -s -X POST \
+          
+          # Test GENERAL comment (no path/position - appears in Conversation)
+          echo "📝 Posting general comment (Conversation tab)..."
+          GENERAL_COMMENT=$(curl -s -w "\n%{http_code}" -X POST \
                -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                -H "Accept: application/vnd.github.v3+json" \
                https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/comments \
-               -d '{"body":"🧪 Test comment from workflow - if you see this, API access works!","path":"webapp/src/components/SettingsPopup.tsx","position":1}')
-
-          if echo "$COMMENT_RESPONSE" | jq -e '.id' > /dev/null 2>&1; then
-            echo "✅ **Test comment posted successfully!**" >> $GITHUB_STEP_SUMMARY
-            echo "Comment ID: $(echo $COMMENT_RESPONSE | jq -r '.id')" >> $GITHUB_STEP_SUMMARY
+               -d '{"body":"🧪 **Test Comment (General)** - This should appear in the Conversation tab!\n\nIf you see this, the API is working correctly for general comments."}')
+          
+          HTTP_CODE=$(echo "$GENERAL_COMMENT" | tail -n1)
+          RESPONSE_BODY=$(echo "$GENERAL_COMMENT" | sed '$d')
+          
+          if [ "$HTTP_CODE" = "201" ]; then
+            COMMENT_ID=$(echo "$RESPONSE_BODY" | jq -r '.id')
+            COMMENT_URL=$(echo "$RESPONSE_BODY" | jq -r '.html_url')
+            echo "✅ **General comment posted successfully!**" >> $GITHUB_STEP_SUMMARY
+            echo "- Comment ID: \`$COMMENT_ID\`" >> $GITHUB_STEP_SUMMARY
+            echo "- URL: $COMMENT_URL" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Failed to post test comment**" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Failed to post general comment (HTTP $HTTP_CODE)**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
-            echo "$COMMENT_RESPONSE" | jq '.' >> $GITHUB_STEP_SUMMARY
+            echo "$RESPONSE_BODY" | jq '.' >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
