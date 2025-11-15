@@ -38,6 +38,7 @@ export default function Home() {
   );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState("Loading films");
 
   // Update activeView based on route
   useEffect(() => {
@@ -102,15 +103,52 @@ export default function Home() {
   if (activeView === "forYou") {
     currentData = recommendedMovies;
   } else if (activeView === "friends") {
-    currentData = { ...friendsMovies, needsRecommendations: false };
+    currentData = { ...friendsMovies, needsRecommendations: false, isGeneratingRecommendations: false };
   } else if (activeView === "myMovies") {
-    currentData = { ...myMoviesData, needsRecommendations: false };
+    currentData = { ...myMoviesData, needsRecommendations: false, isGeneratingRecommendations: false };
   } else {
-    currentData = { ...exploreMovies, needsRecommendations: false };
+    currentData = { ...exploreMovies, needsRecommendations: false, isGeneratingRecommendations: false };
   }
 
-  const { items, isLoading, hasMore, loadMore, needsRecommendations } =
+  const { items, isLoading, hasMore, loadMore, needsRecommendations, isGeneratingRecommendations } =
     currentData;
+
+  // Debug - ver estados em tempo real
+  useEffect(() => {
+    if (activeView === "forYou") {
+      console.log("🔍 Home States:", {
+        isLoading,
+        isGeneratingRecommendations,
+        itemsLength: items.length,
+        needsRecommendations,
+        showLoading: items.length === 0 && !needsRecommendations && (isLoading || isGeneratingRecommendations)
+      });
+    }
+  }, [activeView, isLoading, isGeneratingRecommendations, items.length, needsRecommendations]);
+
+  // Alternar mensagens de loading
+  useEffect(() => {
+    if (activeView === "forYou" && (isLoading || isGeneratingRecommendations) && items.length === 0) {
+      const messages = ["Loading films", "Please wait"];
+      let index = 0;
+
+      const interval = setInterval(() => {
+        index = (index + 1) % messages.length;
+        setLoadingMessage(messages[index]);
+      }, 2000); // Alterna a cada 2 segundos
+
+      return () => clearInterval(interval);
+    }
+  }, [activeView, isLoading, isGeneratingRecommendations, items.length]);
+
+  // Debug
+  console.log("🔍 Home Debug:", {
+    activeView,
+    isLoading,
+    isGeneratingRecommendations,
+    needsRecommendations,
+    itemsLength: items.length,
+  });
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
 
@@ -231,8 +269,21 @@ export default function Home() {
             )}
           </div>
 
+          {/* LOADING INICIAL - Enquanto carrega os filmes pela primeira vez */}
+          {activeView === "forYou" && 
+            items.length === 0 && 
+            !needsRecommendations && 
+            (isLoading || isGeneratingRecommendations) && (
+            <div className="loading-films-container">
+              <div className="loading-films-spinner"></div>
+              <p className="loading-films-text">
+                {loadingMessage}<span className="loading-dots"></span>
+              </p>
+            </div>
+          )}
+
           {/* For You - Needs Recommendations */}
-          {activeView === "forYou" && needsRecommendations && (
+          {activeView === "forYou" && needsRecommendations && !isLoading && !isGeneratingRecommendations && (
             <div className="no-movies-container">
               <p>
                 Rate at least 5 movies to get personalized recommendations. 🎬
@@ -310,8 +361,8 @@ export default function Home() {
               </div>
             )}
 
-          {/* Loading */}
-          {isLoading && (
+          {/* Loading MORE (quando já tem filmes) */}
+          {isLoading && items.length > 0 && !isGeneratingRecommendations && (
             <div className="loading-container">Loading more movies...</div>
           )}
 
