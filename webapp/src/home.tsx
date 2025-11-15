@@ -38,7 +38,7 @@ export default function Home() {
   );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState("Loading films");
+  const [loadingMessage, setLoadingMessage] = useState("Loading movies");
 
   // Update activeView based on route
   useEffect(() => {
