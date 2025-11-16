@@ -1,0 +1,357 @@
+/* ===== ESTILOS ORIGINAIS (NÃO ALTERADOS) ===== */
+
+.sidebar-container {
+  position: fixed;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.5rem 0;
+  background: #991b1b;
+  border-radius: 35px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+}
+
+.sidebar-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+}
+
+.sidebar-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.sidebar-button-settings:hover {
+  transform: scale(1.1) rotate(90deg);
+}
+
+/* ========================================
+   MOBILE SLIDE MENU (SUPERIOR ESQUERDO)
+   ======================================== */
+
+/* Hamburger Button - Canto Superior Esquerdo */
+.sidebar-mobile-toggle {
+  display: none;
+  position: fixed;
+  left: 0.5rem;
+  top: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #991b1b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.sidebar-mobile-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Backdrop do slide menu */
+.sidebar-mobile-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1002;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.sidebar-mobile-backdrop.open {
+  display: block;
+}
+
+/* Slide Menu Mobile */
+.sidebar-mobile-menu {
+  position: fixed;
+  left: -100%;
+  top: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 80vw;
+  background: linear-gradient(135deg, #991b1b 0%, #7c1616 100%);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  z-index: 1003;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.sidebar-mobile-menu.open {
+  left: 0;
+}
+
+/* Header do menu mobile */
+.sidebar-mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-mobile-title {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.sidebar-mobile-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.sidebar-mobile-close:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
+}
+
+/* Botões do menu mobile */
+.sidebar-mobile-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sidebar-mobile-button {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  cursor: pointer;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.sidebar-mobile-button:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.98);
+}
+
+.sidebar-mobile-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========================================
+   MEDIA QUERIES RESPONSIVAS
+   ======================================== */
+
+/* TABLET (max-width: 1024px) */
+@media screen and (max-width: 1024px) {
+  .sidebar-container {
+    left: 1rem;
+    width: 65px;
+    gap: 1.5rem;
+    padding: 1.25rem 0;
+  }
+
+  .sidebar-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* MOBILE - Esconder sidebar desktop, mostrar hamburger no topo (max-width: 768px) */
+@media screen and (max-width: 768px) {
+  .sidebar-container {
+    display: none !important;
+  }
+
+  .sidebar-mobile-toggle {
+    display: flex;
+  }
+}
+
+/* MOBILE PEQUENO (max-width: 480px) */
+@media screen and (max-width: 480px) {
+  .sidebar-mobile-toggle {
+    width: 32px;
+    height: 32px;
+    left: 0.5rem;
+  }
+
+  .sidebar-mobile-menu {
+    width: 260px;
+    padding: 1.75rem 1.25rem;
+  }
+
+  .sidebar-mobile-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .sidebar-mobile-title {
+    font-size: 1.3rem;
+  }
+
+  .sidebar-mobile-button {
+    padding: 0.9rem 1.25rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* MOBILE EXTRA PEQUENO (max-width: 390px) */
+@media screen and (max-width: 390px) {
+  .sidebar-mobile-toggle {
+    width:  32px;
+    height: 32px;
+    left: 0.45rem;
+  }
+}
+
+/* SAFE AREAS (iPhone notch, etc) */
+@supports (padding: max(0px)) {
+  @media screen and (max-width: 768px) {
+    .sidebar-mobile-toggle {
+      left: max(0.5rem, env(safe-area-inset-left));
+      top: max(10px, env(safe-area-inset-top));
+    }
+
+    .sidebar-mobile-menu {
+      padding-left: max(1.5rem, env(safe-area-inset-left));
+      padding-top: max(2rem, env(safe-area-inset-top));
+      padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .sidebar-mobile-toggle {
+      left: max(0.5rem, env(safe-area-inset-left));
+    }
+  }
+
+  @media screen and (max-width: 390px) {
+    .sidebar-mobile-toggle {
+      left: max(0.45rem, env(safe-area-inset-left));
+    }
+  }
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* TOUCH DEVICES */
+@media (hover: none) and (pointer: coarse) {
+  .sidebar-button:hover {
+    transform: none;
+  }
+
+  .sidebar-button-settings:hover {
+    transform: none;
+  }
+
+  .sidebar-button:active {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(0.95);
+  }
+
+  .sidebar-button-settings:active {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(0.95) rotate(90deg);
+  }
+}
+
+/* REDUZIR ANIMAÇÕES para quem prefere */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-button,
+  .sidebar-mobile-menu,
+  .sidebar-mobile-backdrop {
+    transition: none;
+  }
+
+  .sidebar-button:hover,
+  .sidebar-button-settings:hover {
+    transform: none;
+  }
+}
+
+/* Header do menu mobile */
+.sidebar-mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.sidebar-mobile-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sidebar-mobile-logo-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #991b1b;
+}

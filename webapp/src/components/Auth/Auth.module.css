@@ -190,3 +190,104 @@
     transform: translateY(0);
   }
 }
+
+/**
+ * Container wrapper for the auth section
+ */
+.authContainer {
+  width: 50%;
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.backgroundWrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background-color: #8b0000;
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: white;
+  font-size: 1.2rem;
+}
+
+/* ========================================
+   RESPONSIVE STYLES
+   ======================================== */
+
+/* Tablet - 768px and below */
+@media (max-width: 768px) {
+  .authContainer {
+    width: 100%;
+  }
+
+  .button {
+    padding: 16px 40px;
+    font-size: 15px;
+    min-width: 160px;
+  }
+
+  .buttonsWrapper {
+    gap: 14px;
+  }
+
+  .loadingState {
+    font-size: 1.1rem;
+  }
+}
+
+/* Mobile - 600px and below */
+@media (max-width: 600px) {
+  .authContainer {
+    width: 100%;
+    height: 100vh;
+  }
+
+  .button {
+    padding: 14px 36px;
+    font-size: 14px;
+    min-width: 140px;
+    border-radius: 40px;
+  }
+
+  .button::before {
+    border-radius: 12px 12px 0 0;
+  }
+
+  .buttonsWrapper {
+    gap: 12px;
+    padding: 0 20px;
+  }
+
+  .loadingState {
+    font-size: 1rem;
+    padding: 0 20px;
+    text-align: center;
+  }
+}
+
+/* Extra small mobile - 400px and below */
+@media (max-width: 400px) {
+  .button {
+    padding: 12px 32px;
+    font-size: 13px;
+    min-width: 120px;
+  }
+
+  .buttonsWrapper {
+    gap: 10px;
+  }
+
+  .loadingState {
+    font-size: 0.9rem;
+  }
+}

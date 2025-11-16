@@ -538,3 +538,337 @@
     font-size: 14px;
   }
 }
+
+
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    border-radius: 16px;
+    max-height: 95vh;
+  }
+
+  .close-button {
+    width: 36px;
+    height: 36px;
+    top: 10px;
+    right: 10px;
+  }
+
+  .close-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .modal-image {
+    height: 220px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .modal-image::after {
+    height: 80px;
+  }
+
+  .modal-info {
+    padding: 14px;
+  }
+
+  .modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .modal-category {
+    font-size: 9px;
+    padding: 7px 12px;
+    letter-spacing: 1px;
+    border-radius: 8px;
+  }
+
+  .modal-rating {
+    padding: 7px 10px;
+    border-radius: 8px;
+    gap: 4px;
+  }
+
+  .rating-text {
+    font-size: 12px;
+  }
+
+  .modal-rating svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .modal-title {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .modal-runtime {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+
+  .user-rating-display {
+    padding: 9px 16px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+  }
+
+  .user-rating-display svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .tab-navigation {
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .tab-button {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .tab-content {
+    min-height: 100px;
+    margin-bottom: 14px;
+  }
+
+  .synopsis-container {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .synopsis-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  .synopsis-text,
+  .friends-text {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .friend-text {
+    padding: 7px;
+    font-size: 12px;
+  }
+
+  /* Botões na horizontal - 3 colunas */
+  .modal-status-actions {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .modal-status-button {
+    padding: 9px 6px;
+    font-size: 11px;
+    border-radius: 8px;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .modal-status-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Rating Selector Responsivo - SUPER Compacto */
+  .modal-rating-selector {
+    padding: 14px 12px;
+    max-width: 240px;
+    border-radius: 10px;
+  }
+
+  .modal-rating-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .modal-rating-display {
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  .modal-rating-slider {
+    height: 5px;
+    margin-bottom: 5px;
+  }
+
+  .modal-rating-slider::-webkit-slider-thumb {
+    width: 18px;
+    height: 18px;
+  }
+
+  .modal-rating-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+  }
+
+  .modal-rating-range {
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+
+  .modal-rating-actions {
+    gap: 6px;
+  }
+
+  .modal-rating-confirm,
+  .modal-rating-cancel {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 7px;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-image {
+    height: 200px;
+  }
+
+  .modal-title {
+    font-size: 18px;
+  }
+
+  .modal-info {
+    padding: 12px;
+  }
+
+  .synopsis-container {
+    padding: 10px;
+  }
+
+  .tab-button {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .modal-status-button {
+    padding: 8px 5px;
+    font-size: 10px;
+  }
+
+  .modal-status-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.friends-text {
+  color: #4a4a4a;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.friend-text {
+  margin: 5px 0;
+  padding: 10px;
+  background: #fff0f0;
+  border-radius: 8px;
+}
+
+/* Friends Activities Container */
+.friends-activities {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.friend-activity-item {
+  padding: 12px 16px;
+  background: rgba(153, 27, 27, 0.05);
+  border-radius: 10px;
+  border-left: 3px solid #991b1b;
+}
+
+.friend-activity-text {
+  color: #4a4a4a;
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* No Friends Activity State */
+.no-friends-activity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 16px;
+}
+
+.no-friends-activity svg {
+  opacity: 0.3;
+}
+
+.no-friends-activity p {
+  margin: 0;
+  color: #7c1616;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.no-friends-subtitle {
+  color: rgba(124, 22, 22, 0.6) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+/* Friends Loading State */
+.friends-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(153, 27, 27, 0.1);
+  border-top-color: #991b1b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.friends-loading p {
+  color: #7c1616;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Friends Count Badge */
+.friends-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  background: #991b1b;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+}
