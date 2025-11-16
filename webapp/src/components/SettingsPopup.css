@@ -1,0 +1,296 @@
+/* ===== ESTILOS ORIGINAIS (NÃO ALTERADOS) ===== */
+
+/* Backdrop */
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Modal */
+.settings-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  background: linear-gradient(135deg, #fff9f0 0%, #ffe8cc 100%);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(153, 27, 27, 0.2);
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
+  color: #000;
+}
+
+/* Header */
+.settings-header {
+  background: #991b1b;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-title {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.settings-close-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.settings-close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+/* Content */
+.settings-content {
+  padding: 2rem;
+}
+
+/* Logout Button */
+.settings-logout-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  color: #ef4444;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.settings-logout-button:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-2px);
+}
+
+.settings-logout-icon {
+  margin-right: 8px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* ========================================
+   MEDIA QUERIES RESPONSIVAS (ADICIONADAS)
+   ======================================== */
+
+/* TABLET (max-width: 768px) */
+@media screen and (max-width: 768px) {
+  .settings-modal {
+    width: 85%;
+    max-width: 450px;
+  }
+
+  .settings-header {
+    padding: 1.3rem;
+  }
+
+  .settings-title {
+    font-size: 1.4rem;
+  }
+
+  .settings-close-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .settings-content {
+    padding: 1.75rem;
+  }
+
+  .settings-logout-button {
+    padding: 0.95rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* MOBILE (max-width: 480px) */
+@media screen and (max-width: 480px) {
+  .settings-modal {
+    width: 92%;
+    max-width: none;
+    border-radius: 20px;
+  }
+
+  .settings-header {
+    padding: 1.2rem;
+  }
+
+  .settings-title {
+    font-size: 1.3rem;
+  }
+
+  .settings-close-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .settings-content {
+    padding: 1.5rem;
+  }
+
+  .settings-logout-button {
+    padding: 0.9rem;
+    font-size: 0.9rem;
+    border-radius: 10px;
+  }
+}
+
+/* MOBILE PEQUENO (max-width: 360px) */
+@media screen and (max-width: 360px) {
+  .settings-modal {
+    width: 95%;
+    border-radius: 18px;
+  }
+
+  .settings-header {
+    padding: 1rem;
+  }
+
+  .settings-title {
+    font-size: 1.2rem;
+  }
+
+  .settings-close-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .settings-content {
+    padding: 1.25rem;
+  }
+
+  .settings-logout-button {
+    padding: 0.85rem;
+    font-size: 0.85rem;
+  }
+
+  .settings-logout-icon {
+    margin-right: 6px;
+  }
+}
+
+/* LANDSCAPE MODE (altura pequena) */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .settings-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .settings-header {
+    padding: 1rem;
+  }
+
+  .settings-title {
+    font-size: 1.2rem;
+  }
+
+  .settings-content {
+    padding: 1.25rem;
+  }
+
+  .settings-logout-button {
+    padding: 0.8rem;
+  }
+}
+
+/* SAFE AREAS (iPhone notch, etc) */
+@supports (padding: max(0px)) {
+  @media screen and (max-width: 768px) {
+    .settings-content {
+      padding-left: max(1.75rem, env(safe-area-inset-left));
+      padding-right: max(1.75rem, env(safe-area-inset-right));
+      padding-bottom: max(1.75rem, env(safe-area-inset-bottom));
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    .settings-content {
+      padding-left: max(1.5rem, env(safe-area-inset-left));
+      padding-right: max(1.5rem, env(safe-area-inset-right));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* TOUCH DEVICES */
+@media (hover: none) and (pointer: coarse) {
+  .settings-logout-button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .settings-close-button:hover,
+  .settings-logout-button:hover {
+    transform: none;
+  }
+
+  .settings-close-button:active {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(0.95);
+  }
+
+  .settings-logout-button:active {
+    background: rgba(239, 68, 68, 0.25);
+    transform: scale(0.98);
+  }
+}
+
+/* REDUZIR ANIMAÇÕES para quem prefere */
+@media (prefers-reduced-motion: reduce) {
+  .settings-backdrop,
+  .settings-modal {
+    animation: none;
+  }
+
+  .settings-close-button:hover,
+  .settings-logout-button:hover {
+    transform: none;
+  }
+}

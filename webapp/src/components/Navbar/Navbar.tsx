@@ -65,7 +65,9 @@ export default function Navbar({ onSearch }: NavbarProps) {
       } ${searchExpanded ? styles.expanded : ""}`}
     >
       {/* Logo */}
-      <Logo width={28} height={28}  />
+       <div className={styles.logoContainer}>
+        <Logo width={28} height={28} />
+      </div>
 
       {/* Tabs */}
       <div

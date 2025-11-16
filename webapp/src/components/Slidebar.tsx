@@ -1,14 +1,34 @@
 import React, { useState } from "react";
-import { Settings, User, Compass, UserPlus } from "lucide-react";
+import { Settings, User, Compass, UserPlus, Menu, X } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 import SettingsPopup from "./SettingsPopup";
-import AddFriendPopup from "./AddFriend/AddFriend"; // Ajuste o caminho conforme necessário
+import AddFriendPopup from "./AddFriend/AddFriend";
+import "./Slidebar.css";
 
 interface SidebarProps {
   onSettingsClick?: () => void;
   onProfileClick?: () => void;
 }
+  
+const Logo: React.FC<LogoProps> = ({ width = 48, height = 48, className }) => {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      style={{ width, height }}
+      className={className}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"
+      />
+    </svg>
+  );
+};
 
 const Sidebar: React.FC<SidebarProps> = ({
   onSettingsClick,
@@ -17,182 +37,151 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { signOut } = useClerk();
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleProfileClick = () => {
+    if (onProfileClick) onProfileClick();
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleSettingsClick = () => {
+    setShowSettingsPopup(true);
+    if (onSettingsClick) onSettingsClick();
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleAddFriendClick = () => {
+    setShowAddFriendPopup(true);
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <div>
-      <aside
-        style={{
-          position: "fixed",
-          left: "1.5rem",
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: "70px",
-          height: "auto",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "2rem",
-          padding: "1.5rem 0",
-          background: "#991b1b",
-          borderRadius: "35px",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          boxShadow: `
-          0 8px 32px rgba(0, 0, 0, 0.3),
-          0 2px 8px rgba(0, 0, 0, 0.2),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1)
-        `,
-          zIndex: 1000,
-        }}
-      >
-        {/* Profile Button */}
+      {/* SIDEBAR DESKTOP */}
+      <aside className="sidebar-container">
         <button
           onClick={onProfileClick}
-          style={{
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            color: "rgba(255, 255, 255, 0.8)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 1)";
-            e.currentTarget.style.transform = "scale(1.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 0.8)";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
+          className="sidebar-button"
           aria-label="Profile"
         >
           <User size={22} />
         </button>
 
-        {/* Explore Button */}
         <Link
           to="/explore"
-          style={{
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            color: "rgba(255, 255, 255, 0.8)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 1)";
-            e.currentTarget.style.transform = "scale(1.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 0.8)";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
+          className="sidebar-button"
           aria-label="Explore"
         >
           <Compass size={22} />
         </Link>
 
-        {/* Adicionar Amigo Button */}
         <button
           onClick={() => setShowAddFriendPopup(true)}
-          style={{
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            color: "rgba(255, 255, 255, 0.8)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 1)";
-            e.currentTarget.style.transform = "scale(1.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 0.8)";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
+          className="sidebar-button"
           aria-label="Adicionar Amigo"
         >
           <UserPlus size={22} />
         </button>
 
-        {/* Settings Button */}
         <button
           onClick={() => {
             setShowSettingsPopup(true);
             if (onSettingsClick) onSettingsClick();
           }}
-          style={{
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            color: "rgba(255, 255, 255, 0.8)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 1)";
-            e.currentTarget.style.transform = "scale(1.1) rotate(90deg)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-            e.currentTarget.style.color = "rgba(255, 255, 255, 0.8)";
-            e.currentTarget.style.transform = "scale(1) rotate(0deg)";
-          }}
+          className="sidebar-button sidebar-button-settings"
           aria-label="Settings"
         >
           <Settings size={22} />
         </button>
       </aside>
 
-      {/* Popup de Configurações */}
+      {/* MOBILE HAMBURGER BUTTON */}
+      <button
+        className="sidebar-mobile-toggle"
+        onClick={() => setIsMobileMenuOpen(true)}
+        aria-label="Open menu"
+      >
+        <Menu size={24} />
+      </button>
+
+      {/* MOBILE BACKDROP */}
+      <div
+        className={`sidebar-mobile-backdrop ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+      {/* MOBILE SLIDE MENU */}
+
+     <div className={`sidebar-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+        <div className="sidebar-mobile-header">
+          <div className="sidebar-mobile-logo-container">
+            <div className="sidebar-mobile-logo-circle">
+              <Logo width={28} height={28} />
+            </div>
+            <h2 className="sidebar-mobile-title">Menu</h2>
+          </div>
+          <button
+            className="sidebar-mobile-close"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="sidebar-mobile-buttons">
+          <button
+            onClick={handleProfileClick}
+            className="sidebar-mobile-button"
+          >
+            <span className="sidebar-mobile-button-icon">
+              <User size={22} />
+            </span>
+            Profile
+          </button>
+
+          <Link
+            to="/explore"
+            className="sidebar-mobile-button"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <span className="sidebar-mobile-button-icon">
+              <Compass size={22} />
+            </span>
+            Explore
+          </Link>
+
+          <button
+            onClick={handleAddFriendClick}
+            className="sidebar-mobile-button"
+          >
+            <span className="sidebar-mobile-button-icon">
+              <UserPlus size={22} />
+            </span>
+            Add Friend
+          </button>
+
+          <button
+            onClick={handleSettingsClick}
+            className="sidebar-mobile-button"
+          >
+            <span className="sidebar-mobile-button-icon">
+              <Settings size={22} />
+            </span>
+            Settings
+          </button>
+        </div>
+      </div>
+
+      {/* POPUPS */}
       <SettingsPopup
         isOpen={showSettingsPopup}
         onClose={() => setShowSettingsPopup(false)}
       />
 
-      {/* Popup de Adicionar Amigo */}
       <AddFriendPopup
         isOpen={showAddFriendPopup}
         onClose={() => setShowAddFriendPopup(false)}
       />
-
-      {/* Mobile Version - Hide on small screens */}
-      <style>{`
-        @media (max-width: 768px) {
-          aside {
-            display: none !important;
-          }
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,3 +1,5 @@
+/* ===== ESTILOS ORIGINAIS (NÃO ALTERADOS) ===== */
+
 .status-filters {
   display: flex;
   gap: 12px;
@@ -61,5 +63,132 @@
   .status-filter-btn {
     padding: 10px 16px;
     font-size: 14px;
+  }
+}
+
+/* ========================================
+   MEDIA QUERIES RESPONSIVAS ADICIONAIS
+   ======================================== */
+
+/* TABLET (769px - 1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .status-filters {
+    gap: 10px;
+    margin: 20px 0;
+  }
+
+  .status-filter-btn {
+    padding: 11px 18px;
+    font-size: 14.5px;
+  }
+
+  .status-count {
+    font-size: 12.5px;
+  }
+}
+
+/* MOBILE PEQUENO (481px - 768px) */
+@media screen and (min-width: 481px) and (max-width: 768px) {
+  .status-count {
+    font-size: 12px;
+  }
+}
+
+/* MOBILE EXTRA PEQUENO (max-width: 480px) */
+@media screen and (max-width: 480px) {
+  .status-filters {
+    gap: 6px;
+    margin: 18px 0;
+  }
+
+  .status-filter-btn {
+    padding: 9px 14px;
+    font-size: 13px;
+    gap: 6px;
+    flex: 1;
+    min-width: calc(50% - 3px);
+    justify-content: center;
+  }
+
+  .status-count {
+    font-size: 11px;
+  }
+
+  .status-filter-btn:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* MOBILE MUITO PEQUENO (max-width: 360px) */
+@media screen and (max-width: 360px) {
+  .status-filters {
+    gap: 6px;
+    margin: 16px 0;
+  }
+
+  .status-filter-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 5px;
+    border-radius: 10px;
+  }
+
+  .status-label {
+    font-size: 12px;
+  }
+
+  .status-count {
+    font-size: 10px;
+  }
+}
+
+/* LANDSCAPE MODE (altura pequena) */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .status-filters {
+    margin: 12px 0;
+    gap: 8px;
+  }
+
+  .status-filter-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .status-count {
+    font-size: 11px;
+  }
+}
+
+/* TOUCH DEVICES - Melhorar áreas de toque */
+@media (hover: none) and (pointer: coarse) {
+  .status-filter-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  /* Remover hover em dispositivos touch */
+  .status-filter-btn:hover {
+    transform: none;
+  }
+
+  /* Active state para feedback visual */
+  .status-filter-btn:active:not(.active) {
+    background: rgba(153, 27, 27, 0.08);
+    transform: scale(0.98);
+  }
+}
+
+/* REDUZIR ANIMAÇÕES para quem prefere */
+@media (prefers-reduced-motion: reduce) {
+  .status-filter-btn {
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .status-filter-btn:hover {
+    transform: none;
+  }
+
+  .status-filter-btn:active {
+    transform: none;
   }
 }

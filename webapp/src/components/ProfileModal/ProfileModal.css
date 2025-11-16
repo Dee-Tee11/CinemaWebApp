@@ -1,3 +1,7 @@
+/* ============================================
+   PROFILE MODAL - CSS FINAL COMPLETO
+   ============================================ */
+
 /* Backdrop */
 .backdrop {
   position: fixed;
@@ -515,20 +519,174 @@
   }
 }
 
-/* Responsive */
+/* ============================================
+   RESPONSIVE - MOBILE
+   ============================================ */
 @media (max-width: 768px) {
+  .modal {
+    width: 95%;
+    max-width: 380px;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .header-title {
+    font-size: 1.15rem;
+  }
+
+  .icon-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .icon-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .content {
+    padding: 1.25rem;
+  }
+
+  .user-info {
+    margin-bottom: 1.25rem;
+  }
+
+  .avatar-container {
+    width: 80px;
+    height: 80px;
+    border: 2px solid white;
+  }
+
+  .user-name {
+    font-size: 1.2rem;
+  }
+
+  .user-email {
+    font-size: 0.8rem;
+  }
+
+  .copy-tag-button {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    margin: 0.5rem 0;
+  }
+
+  .friends-toggle {
+    font-size: 0.9rem;
+  }
+
+  /* Stats sempre em horizontal e compactos */
   .stats-grid {
-    flex-direction: column !important;
+    gap: 0.35rem;
+    padding: 0.5rem;
+    flex-direction: row !important;
   }
 
+  .stat-item {
+    padding: 0.6rem 0.3rem;
+    border-radius: 8px;
+  }
+
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+  }
+
+  /* Friend items - LAYOUT HORIZONTAL (igual ao PC) */
   .friend-item {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
+    padding: 0.85rem;
+    margin-bottom: 0.6rem;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
   }
 
-  .remove-friend-button {
-    width: 100%;
-    justify-content: center;
+  .friend-info {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .friend-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .friend-name {
+    font-size: 0.95rem;
+  }
+
+  .remove-friend-button,
+  .accept-friend-button {
+    padding: 0.4rem 0.75rem;
+    font-size: 11px;
+    width: auto;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  /* List container */
+  .list-container {
+    max-height: 220px;
+  }
+
+  .list-item,
+  .request-item {
+    padding: 0.75rem 0;
+  }
+
+  .list-item span,
+  .request-item span {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .modal {
+    max-width: 340px;
+  }
+
+  .avatar-container {
+    width: 70px;
+    height: 70px;
+  }
+
+  .stat-item {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .stat-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .stat-label {
+    font-size: 0.55rem;
   }
 }
