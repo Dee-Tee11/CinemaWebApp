@@ -1,4 +1,4 @@
-name: 🎓 AI Code Review (with RAG + Groq)
+name: AI Code Review (with RAG + Groq)
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       # ═══════════════════════════════════════════════════════
       # 📥 CHECKOUT
       # ═══════════════════════════════════════════════════════
-      - name: 📥 Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -28,7 +28,7 @@ jobs:
       # ═══════════════════════════════════════════════════════
       # 🧠 VERIFICAR SE RAG DATABASE EXISTE
       # ═══════════════════════════════════════════════════════
-      - name: 🧠 Check RAG Database
+      - name: Check RAG Database
         id: check-rag
         run: |
           if [ -d "./chroma_db" ] && [ -n "$(ls -A ./chroma_db 2>/dev/null)" ]; then
@@ -47,7 +47,7 @@ jobs:
       # ═══════════════════════════════════════════════════════
       # 💾 CACHE DA RAG DATABASE
       # ═══════════════════════════════════════════════════════
-      - name: 💾 Restore RAG Database Cache
+      - name: Restore RAG Database Cache
         if: steps.check-rag.outputs.rag_available == 'true'
         uses: actions/cache@v3
         with:
@@ -59,7 +59,7 @@ jobs:
       # ═══════════════════════════════════════════════════════
       # 🤖 AI CODE REVIEW (GROQ)
       # ═══════════════════════════════════════════════════════
-      - name: 🎓 AI Code Mentor (Groq)
+      - name: AI Code Mentor
         uses: Dee-Tee11/ai-code-reviewer@main
         with:
           groq: ${{ secrets.GROQ }}
@@ -70,10 +70,10 @@ jobs:
       # ═══════════════════════════════════════════════════════
       # 📊 ESTATÍSTICAS
       # ═══════════════════════════════════════════════════════
-      - name: 📊 Review Statistics
+      - name: Review Statistics
         if: always()
         run: |
-          echo "### 📊 Review Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Review Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **AI Provider:** ⚡ Groq (ultra-fast)" >> $GITHUB_STEP_SUMMARY
