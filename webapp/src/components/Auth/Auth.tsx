@@ -21,7 +21,7 @@ const Auth = () => {
         overflow: "hidden",
       }}
     >
-      {/* GridMotion Background with movie posters */}
+      {/* GridMotion Background with movie posters test*/}
       <div
         style={{
           position: "absolute",
