@@ -62,7 +62,7 @@ jobs:
       - name: 🎓 AI Code Mentor (Groq)
         uses: Dee-Tee11/ai-code-reviewer@main
         with:
-          groq_api_key: ${{ secrets.GROQ_API_KEY }}
+          groq_api_key: ${{ secrets.GROQ }}
           github_token: ${{ secrets.GH_TOKEN }}
           enable_rag: ${{ steps.check-rag.outputs.rag_available }}
           rag_db_path: ./chroma_db
