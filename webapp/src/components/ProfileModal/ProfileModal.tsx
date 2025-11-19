@@ -89,7 +89,7 @@ export default function ProfileModal({
   const fetchMovieStats = useCallback(async () => {
     if (!currentUserId) return;
 
-    console.log("🔄 Fetching movie stats for user:", currentUserId);
+
 
     const { data, error } = await supabase
       .from("user_movies")
@@ -97,12 +97,11 @@ export default function ProfileModal({
       .eq("user_id", currentUserId);
 
     if (error) {
-      console.error("Error fetching movie stats:", error);
+
       return;
     }
 
-    console.log("📊 Raw data from DB:", data);
-    console.log("📊 Unique statuses:", [...new Set(data.map((m) => m.status))]);
+
 
     const stats: MovieStats = {
       saved: data.filter((m) => m.status === "saved").length,
@@ -110,7 +109,7 @@ export default function ProfileModal({
       seen: data.filter((m) => m.status === "seen").length,
     };
 
-    console.log("✅ Calculated stats:", stats);
+
     setMovieStats(stats);
   }, [currentUserId, supabase]);
 
@@ -130,7 +129,7 @@ export default function ProfileModal({
       .or(`user_id_a.eq.${currentUserId},user_id_b.eq.${currentUserId}`);
 
     if (error) {
-      console.error("Error fetching friends:", error);
+
       return;
     }
 
@@ -169,7 +168,7 @@ export default function ProfileModal({
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching friend requests:", error);
+
       setFriendRequests([]);
       return;
     }
@@ -210,7 +209,6 @@ export default function ProfileModal({
 
   useEffect(() => {
     if (refreshTrigger !== undefined && currentUserId) {
-      console.log("🔔 refreshTrigger changed:", refreshTrigger);
       fetchMovieStats();
     }
   }, [refreshTrigger, currentUserId, fetchMovieStats]);
@@ -223,7 +221,7 @@ export default function ProfileModal({
       setTagCopied(true);
       setTimeout(() => setTagCopied(false), 2000);
     } catch (error) {
-      console.error("Error copying tag:", error);
+
       alert("Failed to copy tag. Please try again.");
     }
   };
@@ -317,15 +315,14 @@ export default function ProfileModal({
             </button>
           )}
           <h2
-            className={`header-title ${
-              showFriends || showFriendRequests ? "centered" : ""
-            }`}
+            className={`header-title ${showFriends || showFriendRequests ? "centered" : ""
+              }`}
           >
             {showFriendRequests
               ? "Friend Requests"
               : showFriends
-              ? "My Friends"
-              : "My Profile"}
+                ? "My Friends"
+                : "My Profile"}
           </h2>
           <div className="header-buttons">
             <button

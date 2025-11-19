@@ -55,7 +55,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
       friendship.user_id_a === userId ? friendship.user_id_b : friendship.user_id_a
     );
 
-    console.log('📱 Friends found:', friendIds);
+
     setFriendsCount(friendIds.length);
     setHasFriends(friendIds.length > 0);
 
@@ -76,13 +76,13 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
       const friendIds = await getFriendsIds();
 
       if (friendIds.length === 0) {
-        console.log('⚠️ No friends found for user:', userId);
+
         setFriendsActivity([]);
         setIsLoading(false);
         return;
       }
 
-      console.log('🔍 Searching activities for movieId:', movieId, 'with friendIds:', friendIds);
+
 
       const { data, error } = await supabase
         .from('user_movies')
@@ -100,10 +100,10 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching friends activities:', error.message);
+
         setFriendsActivity([]);
       } else {
-        console.log('📊 Activities fetched:', data);
+
         const activities: FriendActivity[] = data?.map((activity: any) => ({
           friend_id: activity.user_id,
           friend_name: activity.user?.name || 'Anonymous Friend',
@@ -116,7 +116,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
         setFriendsActivity(activities);
       }
     } catch (err) {
-      console.error('Unexpected error in fetchFriendsActivity:', err);
+
       setFriendsActivity([]);
     }
 
@@ -130,11 +130,11 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
     const friendIds = await getFriendsIds();
 
     if (friendIds.length === 0) {
-      console.log('⚠️ No friends to load movies from');
+
       return [];
     }
 
-    console.log(`🎬 Loading friends movies - Page ${page}`);
+
 
     // Buscar atividades dos amigos (seen, Watch Later)
     const { data: friendsActivities, error: activitiesError } = await supabase
@@ -158,16 +158,12 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
     }
 
     if (!friendsActivities || friendsActivities.length === 0) {
-      console.log('⚠️ No activities found from friends');
       return [];
     }
 
-    console.log(`✅ Found ${friendsActivities.length} activities from friends`);
 
     // Extrair IDs únicos dos filmes
     const movieIds = [...new Set(friendsActivities.map((a: any) => a.movie_id))];
-
-    console.log(`🎥 Fetching ${movieIds.length} unique movies`);
 
     // Buscar informações dos filmes
     const { data: moviesData, error: moviesError } = await supabase
@@ -180,7 +176,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
       return [];
     }
 
-    console.log(`✅ Movies data fetched:`, moviesData?.length);
+
 
     // Formatar filmes para o formato esperado pelo Masonry
     const formattedMovies = moviesData.map((movie: any, index: number) => ({
@@ -228,7 +224,6 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
     setIsLoading(true);
     const nextPage = currentPage + 1;
 
-    console.log(`📄 Loading more - Page ${nextPage}`);
 
     const newMovies = await loadFriendsMovies(nextPage);
 

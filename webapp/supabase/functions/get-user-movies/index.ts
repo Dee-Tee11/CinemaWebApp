@@ -51,7 +51,6 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const payload = JSON.parse(atob(token.split(".")[1]));
     const userId = payload.sub;
-    console.log("✅ User ID from token:", userId);
     const url = new URL(req.url);
     const statusFilter = url.searchParams.get("statusFilter");
     const searchQuery = url.searchParams.get("searchQuery");

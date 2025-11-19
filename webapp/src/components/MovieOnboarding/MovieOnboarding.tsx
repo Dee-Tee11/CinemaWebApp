@@ -28,13 +28,13 @@ const MovieOnboardingSlider = () => {
 
     fetch("http://127.0.0.1:8000/onboarding")
       .then((response) => {
-        console.log("Response received, status:", response.status);
+
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
       })
       .then((data) => {
-        console.log("Data received:", data);
+
         if (data.movies && Array.isArray(data.movies)) {
           setMovies(data.movies);
           setError(null);
@@ -43,11 +43,9 @@ const MovieOnboardingSlider = () => {
         }
       })
       .catch((error) => {
-        console.error("Error loading movies:", error);
         setError("Error loading movies");
       })
       .finally(() => {
-        console.log("Loading completed");
         setLoading(false);
       });
   }, []);
@@ -181,13 +179,12 @@ const MovieOnboardingSlider = () => {
           {movies.map((_, idx) => (
             <div
               key={`progress-${idx}`}
-              className={`progress-bar-item ${
-                idx < currentIndex
-                  ? "completed"
-                  : idx === currentIndex
+              className={`progress-bar-item ${idx < currentIndex
+                ? "completed"
+                : idx === currentIndex
                   ? "active"
                   : "inactive"
-              }`}
+                }`}
             />
           ))}
         </div>
@@ -325,7 +322,7 @@ const MovieOnboardingSlider = () => {
           }}
           isWatched={false}
           onClose={handleCloseModal}
-          onToggleWatched={() => {}}
+          onToggleWatched={() => { }}
         />
       )}
     </div>

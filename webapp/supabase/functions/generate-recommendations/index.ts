@@ -65,7 +65,6 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    console.log("🎬 Generating recommendations for user:", userId);
 
     // 1. Verifica se tem ≥5 filmes
     const { count: userMoviesCount, error: countError } = await supabase
@@ -75,7 +74,6 @@ Deno.serve(async (req) => {
 
     if (countError) throw countError;
 
-    console.log(`📊 User has ${userMoviesCount || 0} rated movies`);
 
     if (!userMoviesCount || userMoviesCount < MINIMUM_RATED_MOVIES) {
       return new Response(
@@ -123,7 +121,6 @@ Deno.serve(async (req) => {
       .slice(0, 3)
       .map(([genre]) => genre);
 
-    console.log("🎭 Top genres:", topGenres);
 
     if (topGenres.length === 0) {
       return new Response(
@@ -161,7 +158,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`🎯 Found ${candidateMovies.length} candidate movies`);
 
     // 4. Embaralha e pega 50
     const shuffled = candidateMovies.sort(() => Math.random() - 0.5);
@@ -187,9 +183,7 @@ Deno.serve(async (req) => {
 
     if (insertError) throw insertError;
 
-    console.log(
-      `✅ Generated ${selected.length} recommendations for user: ${userId}`
-    );
+
 
     return new Response(
       JSON.stringify({
