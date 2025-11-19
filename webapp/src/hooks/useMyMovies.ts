@@ -34,7 +34,6 @@ export const useMyMovies = (
   const loadMovies = useCallback(async (page: number) => {
     if (!userId || !supabase) return { movies: [], counts: counts };
 
-    console.log(`🎬 Loading My Movies via Edge Function - Page ${page}, Filter: ${statusFilter || 'all'}`);
 
     try {
       const { data, error } = await supabase.functions.invoke('get-user-movies', {
@@ -46,15 +45,12 @@ export const useMyMovies = (
       });
 
       if (error) {
-        console.error('❌ Error invoking Edge Function:', error);
         return { movies: [], counts: counts };
       }
 
-      console.log('✅ Edge Function returned:', data);
       return data;
 
     } catch (error) {
-      console.error('❌ Unexpected error calling Edge Function:', error);
       return { movies: [], counts: counts };
     }
   }, [userId, supabase, statusFilter, searchQuery]);
@@ -68,7 +64,6 @@ export const useMyMovies = (
     setCurrentPage(0);
     setHasMore(movies.length === ITEMS_PER_PAGE);
     setIsLoading(false);
-    console.log(`✅ Init complete. ${movies.length} movies loaded.`);
   }, [loadMovies]);
 
   const loadMore = async () => {
