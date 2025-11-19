@@ -34,7 +34,10 @@ export const useMyMovies = (
   const loadMovies = useCallback(async (page: number) => {
     if (!userId || !supabase) return { movies: [], counts: counts };
 
+<<<<<<< HEAD
     console.log('🎬 Carregando filmes...');
+=======
+>>>>>>> dd3031106770ec50534d3ae2a81f886dd3c96e52
 
     try {
       const { data, error } = await supabase.functions.invoke('get-user-movies', {
@@ -46,6 +49,7 @@ export const useMyMovies = (
       });
 
       if (error) {
+<<<<<<< HEAD
         console.error('❌ Erro ao carregar filmes');
         return { movies: [], counts: counts };
       }
@@ -55,6 +59,14 @@ export const useMyMovies = (
 
     } catch (error) {
       console.error('❌ Erro inesperado ao carregar filmes');
+=======
+        return { movies: [], counts: counts };
+      }
+
+      return data;
+
+    } catch (error) {
+>>>>>>> dd3031106770ec50534d3ae2a81f886dd3c96e52
       return { movies: [], counts: counts };
     }
   }, [userId, supabase, statusFilter, searchQuery]);
@@ -68,7 +80,10 @@ export const useMyMovies = (
     setCurrentPage(0);
     setHasMore(movies.length === ITEMS_PER_PAGE);
     setIsLoading(false);
+<<<<<<< HEAD
     console.log('✅ Inicialização completa');
+=======
+>>>>>>> dd3031106770ec50534d3ae2a81f886dd3c96e52
   }, [loadMovies]);
 
   const loadMore = async () => {
