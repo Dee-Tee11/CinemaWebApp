@@ -63,7 +63,6 @@ export const useOnboarding = () => {
         if (error) throw error;
 
         if (data) {
-          console.log(`✅ Loaded ${data.length} movies ordered by rating`);
           setAvailableMovies(data);
         }
       } catch (err) {
@@ -138,7 +137,6 @@ export const useOnboarding = () => {
 
       if (data && data.length > 0) {
         const topMovies = data.slice(0, 25);
-        console.log(`✅ Selected ${topMovies.length} top-rated related movies`);
         setRelatedMovies(topMovies);
         setCurrentPhase("rate-related");
       } else {
@@ -165,7 +163,6 @@ export const useOnboarding = () => {
 
       if (error) throw error;
 
-      console.log("✅ Onboarding skipped and status saved.");
       navigate("/", { replace: true });
     } catch (err) {
       console.error("Error skipping onboarding:", err);
@@ -269,7 +266,6 @@ export const useOnboarding = () => {
             method: "POST",
           }
         );
-        console.log("✅ Recommendations generation triggered");
       } catch (apiError) {
         console.warn("⚠️ Could not trigger recommendations API:", apiError);
         // Não bloquear o fluxo se a API falhar
@@ -286,7 +282,6 @@ export const useOnboarding = () => {
         throw updateError;
       }
 
-      console.log("✅ Onboarding completed successfully!");
 
       // Aguardar 2 segundos antes de redirecionar
       setTimeout(() => {
