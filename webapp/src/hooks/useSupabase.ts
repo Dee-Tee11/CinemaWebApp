@@ -13,7 +13,7 @@ export function useSupabase(): SupabaseClient {
       try {
         return await getToken({ template: "supabase" });
       } catch (error) {
-        console.error("Erro ao obter token:", error);
+        console.error("Falha na autenticação");
         return null;
       }
     };
