@@ -48,18 +48,13 @@ Deno.serve(async (req) => {
     const payload = JSON.parse(atob(token.split(".")[1]));
     const userId = payload.sub;
 
-    console.log("✅ User ID from token:", userId);
 
     // Lê page do body (mantém compatível com o hook atual)
     const body = await req.json();
     const page = parseInt(body.page || "0", 10);
     const searchQuery = body.searchQuery || null;
 
-    console.log(
-      `📄 Fetching recommendations - Page: ${page}, Search: ${
-        searchQuery || "none"
-      }`
-    );
+
 
     // Busca recomendações paginadas
     const { data: recommendationData, error: recommendationError } =
@@ -76,7 +71,6 @@ Deno.serve(async (req) => {
     }
 
     if (!recommendationData || recommendationData.length === 0) {
-      console.log("⚠️ No recommendations found");
       return new Response(
         JSON.stringify({
           recommendations: [],
@@ -91,7 +85,6 @@ Deno.serve(async (req) => {
     }
 
     const movieIds = recommendationData.map((r) => r.movie_id);
-    console.log(`🎬 Found ${movieIds.length} recommendation IDs`);
 
     // Busca detalhes dos filmes
     let moviesQuery = supabase
@@ -125,9 +118,7 @@ Deno.serve(async (req) => {
       synopsis: movie.overview || "Synopsis not available",
     }));
 
-    console.log(
-      `✅ Returning ${recommendations.length} recommendations for page ${page}`
-    );
+
 
     return new Response(
       JSON.stringify({

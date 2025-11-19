@@ -31,12 +31,11 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     const getUserId = async () => {
       if (!clerkUser) {
-        console.log("User not authenticated in Clerk");
+
         return;
       }
 
       const userId = clerkUser.id;
-      console.log("Clerk User ID:", userId);
       setCurrentUserId(userId);
 
       // Verify user exists in Supabase

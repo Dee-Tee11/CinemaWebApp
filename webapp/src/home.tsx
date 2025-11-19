@@ -83,7 +83,7 @@ export default function Home() {
           navigate("/onboarding");
         }
       } catch (error) {
-        console.error("Error checking onboarding status:", error);
+
         setIsCheckingOnboarding(false);
       }
     };
@@ -116,13 +116,7 @@ export default function Home() {
   // Debug - ver estados em tempo real
   useEffect(() => {
     if (activeView === "forYou") {
-      console.log("🔍 Home States:", {
-        isLoading,
-        isGeneratingRecommendations,
-        itemsLength: items.length,
-        needsRecommendations,
-        showLoading: items.length === 0 && !needsRecommendations && (isLoading || isGeneratingRecommendations)
-      });
+
     }
   }, [activeView, isLoading, isGeneratingRecommendations, items.length, needsRecommendations]);
 
@@ -141,14 +135,6 @@ export default function Home() {
     }
   }, [activeView, isLoading, isGeneratingRecommendations, items.length]);
 
-  // Debug
-  console.log("🔍 Home Debug:", {
-    activeView,
-    isLoading,
-    isGeneratingRecommendations,
-    needsRecommendations,
-    itemsLength: items.length,
-  });
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
 
@@ -161,7 +147,7 @@ export default function Home() {
   };
 
   const handleSearch = (query: string) => {
-    console.log("Searching for:", query);
+
     setSearchQuery(query);
     setSelectedCategory(undefined);
     setSelectedStatus(undefined);
@@ -221,25 +207,24 @@ export default function Home() {
               {searchQuery
                 ? `Results for "${searchQuery}"`
                 : activeView === "forYou"
-                ? "For You"
-                : activeView === "friends"
-                ? "Friend's Suggestions"
-                : activeView === "myMovies"
-                ? "My Movies"
-                : "Explore"}
+                  ? "For You"
+                  : activeView === "friends"
+                    ? "Friend's Suggestions"
+                    : activeView === "myMovies"
+                      ? "My Movies"
+                      : "Explore"}
             </h2>
             <p className="page-subtitle">
               {searchQuery
-                ? `${items.length} ${
-                    items.length === 1 ? "movie found" : "movies found"
-                  }`
+                ? `${items.length} ${items.length === 1 ? "movie found" : "movies found"
+                }`
                 : activeView === "forYou"
-                ? "Recommended movies based on your taste"
-                : activeView === "friends"
-                ? "See what your friends are watching"
-                : activeView === "myMovies"
-                ? `You have ${getTotalCount()} movies in your collection`
-                : "Filter by category and explore movies"}
+                  ? "Recommended movies based on your taste"
+                  : activeView === "friends"
+                    ? "See what your friends are watching"
+                    : activeView === "myMovies"
+                      ? `You have ${getTotalCount()} movies in your collection`
+                      : "Filter by category and explore movies"}
             </p>
 
             {/* Category Filters for Explore */}
@@ -270,17 +255,17 @@ export default function Home() {
           </div>
 
           {/* LOADING INICIAL - Enquanto carrega os filmes pela primeira vez */}
-          {activeView === "forYou" && 
-            items.length === 0 && 
-            !needsRecommendations && 
+          {activeView === "forYou" &&
+            items.length === 0 &&
+            !needsRecommendations &&
             (isLoading || isGeneratingRecommendations) && (
-            <div className="loading-films-container">
-              <div className="loading-films-spinner"></div>
-              <p className="loading-films-text">
-                {loadingMessage}<span className="loading-dots"></span>
-              </p>
-            </div>
-          )}
+              <div className="loading-films-container">
+                <div className="loading-films-spinner"></div>
+                <p className="loading-films-text">
+                  {loadingMessage}<span className="loading-dots"></span>
+                </p>
+              </div>
+            )}
 
           {/* For You - Needs Recommendations */}
           {activeView === "forYou" && needsRecommendations && !isLoading && !isGeneratingRecommendations && (
@@ -318,8 +303,8 @@ export default function Home() {
                 {searchQuery
                   ? `No movies found for "${searchQuery}"`
                   : selectedStatus
-                  ? `You don't have any ${selectedStatus} movies yet`
-                  : "Start adding movies to your collection!"}
+                    ? `You don't have any ${selectedStatus} movies yet`
+                    : "Start adding movies to your collection!"}
               </p>
               {(searchQuery || selectedStatus) && (
                 <button
