@@ -1,6 +1,7 @@
 import { useUser } from "@clerk/clerk-react";
 import { useSupabase } from "./hooks/useSupabase";
 import { useEffect, useState } from "react";
+import type { User } from "@/types";
 import Auth from "./components/Auth/Auth";
 import Info from "./components/Info/Info";
 import AppRouter from "./router";
@@ -8,7 +9,7 @@ import AppRouter from "./router";
 function App() {
   const { user, isLoaded } = useUser();
   const supabase = useSupabase();
-  const [, setUserData] = useState<any[] | null>(null);
+  const [, setUserData] = useState<User[] | null>(null);
   const [synced, setSynced] = useState(false);
 
   useEffect(() => {
@@ -85,4 +86,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
