@@ -2,8 +2,14 @@ import { useState, useEffect } from 'react';
 import { useSupabase } from './useSupabase';
 import { useAuth } from '@clerk/clerk-react';
 import type { Item } from './useMovies';
+import type { UserMovieWithUserArray, Movie } from '@/types';
 
 const ITEMS_PER_PAGE = 20;
+
+interface FriendshipIds {
+  user_id_a: string;
+  user_id_b: string;
+}
 
 interface FriendActivity {
   friend_id: string;
@@ -51,7 +57,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
       return [];
     }
 
-    const friendIds = data.map((friendship: any) =>
+    const friendIds = data.map((friendship: FriendshipIds) =>
       friendship.user_id_a === userId ? friendship.user_id_b : friendship.user_id_a
     );
 
@@ -104,9 +110,9 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
         setFriendsActivity([]);
       } else {
 
-        const activities: FriendActivity[] = data?.map((activity: any) => ({
+        const activities: FriendActivity[] = data?.map((activity: UserMovieWithUserArray) => ({
           friend_id: activity.user_id,
-          friend_name: activity.user?.name || 'Anonymous Friend',
+          friend_name: activity.user?.[0]?.name || 'Anonymous Friend',
           movie_id: activity.movie_id.toString(),
           status: activity.status || 'Unknown',
           rating: activity.rating || null,
@@ -163,7 +169,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
 
 
     // Extrair IDs únicos dos filmes
-    const movieIds = [...new Set(friendsActivities.map((a: any) => a.movie_id))];
+    const movieIds = [...new Set(friendsActivities.map((a: UserMovieWithUserArray) => a.movie_id))];
 
     // Buscar informações dos filmes
     const { data: moviesData, error: moviesError } = await supabase
@@ -179,7 +185,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
 
 
     // Formatar filmes para o formato esperado pelo Masonry
-    const formattedMovies = moviesData.map((movie: any, index: number) => ({
+    const formattedMovies = moviesData.map((movie: Movie, index: number) => ({
       id: movie.id.toString(),
       img: movie.poster_url || '',
       url: '#',
@@ -228,9 +234,9 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
     const newMovies = await loadFriendsMovies(nextPage);
 
     if (newMovies.length > 0) {
-      setItems((prev) => {
-        const existingIds = new Set(prev.map((item) => item.id));
-        const filteredNewMovies = newMovies.filter((item) => !existingIds.has(item.id));
+      setItems((prev: Item[]) => {
+        const existingIds = new Set(prev.map((item: Item) => item.id));
+        const filteredNewMovies = newMovies.filter((item: Item) => !existingIds.has(item.id));
         return [...prev, ...filteredNewMovies];
       });
       setCurrentPage(nextPage);

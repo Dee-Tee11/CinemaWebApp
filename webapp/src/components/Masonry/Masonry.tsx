@@ -10,7 +10,6 @@ import { gsap } from "gsap";
 import MovieCard, {
   type GridItem,
   type Item,
-  type MovieStatus,
 } from "../MovieCard/MovieCard";
 import MovieModal from "../MovieModal/MovieModal";
 import { useUserMovies } from "../../hooks/useUserMovies";
@@ -116,7 +115,6 @@ const Masonry: React.FC<MasonryProps> = ({
   const {
     userMovies,
     updateMovieStatus,
-    isLoading: loadingUserMovies,
   } = useUserMovies();
 
   const getInitialPosition = useCallback(
