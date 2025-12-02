@@ -143,23 +143,26 @@ def generate_and_save_recommendations(user_id: str):
             'position': i + 1,
         })
 
-    # 5. Usar upsert para inserir ou atualizar recomendações
+    # 5. Deletar recomendações antigas do usuário
     try:
-        # Usar upsert que insere ou atualiza automaticamente
         supabase.table('user_recommendations')\
-            .upsert(recs_to_insert, on_conflict='user_id,movie_id')\
+            .delete()\
+            .eq('user_id', user_id)\
             .execute()
-        
-        print(f"✅ {len(recs_to_insert)} recomendações salvas no Supabase!")
-        print(f"   Top 3 recomendações:")
-        for i, rec in enumerate(recommendations[:3], 1):
-            print(f"   {i}. {rec['titulo']} (score: {rec['score']:.2f})")
-        
+        print(f"🗑️  Recomendações antigas deletadas para usuário {user_id}")
     except Exception as e:
-        print(f"❌ Erro ao salvar recomendações no Supabase: {e}")
-    
-    print(f"{'='*60}\n")
+        print(f"⚠️  Erro ao deletar recomendações antigas: {e}")
+        # Continuar mesmo se falhar
 
+    # 6. Inserir novas recomendações
+    try:
+        supabase.table('user_recommendations')\
+            .insert(recs_to_insert)\
+            .execute()
+        print(f"✅ {len(recs_to_insert)} recomendações salvas com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao inserir recomendações: {e}")
+        return
 
 @app.post("/generate-recommendations/{user_id}")
 def trigger_recommendation_generation(user_id: str, background_tasks: BackgroundTasks):
