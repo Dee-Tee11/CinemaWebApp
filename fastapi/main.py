@@ -61,15 +61,21 @@ except Exception as e:
 
 # Recommendation System Initialization
 import numpy as np
+import json
 print("⚙️  Extraindo embeddings do DataFrame...")
 
 try:
-    # A coluna de embedding pode vir como uma string, ex: '[0.1, 0.2, ...]'.
-    # A função 'eval' converte a string de uma lista para uma lista de verdade.
-    embeddings_list = df_movies['embedding'].apply(eval).tolist()
+    # Os embeddings podem vir como strings do Supabase
+    embeddings_list = []
+    for emb in df_movies['embedding']:
+        if isinstance(emb, str):
+            # Converter string para lista
+            emb = json.loads(emb)
+        embeddings_list.append(emb)
+    
+    print(f"✅ Convertidos {len(embeddings_list)} embeddings de string para lista")
 except Exception as e:
-    print(f"⚠️  Falha ao converter embeddings com 'eval', tentando conversão direta. Erro: {e}")
-    # Fallback se os dados já estiverem no formato correto (lista de listas)
+    print(f"⚠️  Falha ao converter embeddings: {e}")
     embeddings_list = df_movies['embedding'].tolist()
 
 movie_embeddings = np.array(embeddings_list, dtype=np.float32)
