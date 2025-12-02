@@ -91,112 +91,58 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 2. Pega gêneros mais frequentes
-    const { data: userMovies, error: moviesError } = await supabase
-      .from("user_movies")
-      .select("movie_id")
-      .eq("user_id", userId);
+    // 2. Chamar FastAPI para gerar recomendações KNN
+    const FASTAPI_URL = Deno.env.get("FASTAPI_URL") || "https://movienight-ai.onrender.com";
 
-    if (moviesError) throw moviesError;
+    try {
+      console.log(`🚀 Calling FastAPI: ${FASTAPI_URL}/generate-recommendations/${userId}`);
 
-    const movieIds = userMovies.map((m) => m.movie_id);
+      const response = await fetch(
+        `${FASTAPI_URL}/generate-recommendations/${userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    const { data: genresData, error: genresError } = await supabase
-      .from("movies")
-      .select("id, genre")
-      .in("id", movieIds);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ FastAPI error (${response.status}):`, errorText);
+        throw new Error(`FastAPI returned ${response.status}: ${errorText}`);
+      }
 
-    if (genresError) throw genresError;
+      const result = await response.json();
+      console.log("✅ FastAPI response:", result);
 
-    const genreCount: Record<string, number> = {};
-    genresData.forEach((movie) => {
-      const genres = movie.genre?.split(", ") || [];
-      genres.forEach((g) => {
-        genreCount[g] = (genreCount[g] || 0) + 1;
-      });
-    });
-
-    const topGenres = Object.entries(genreCount)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([genre]) => genre);
-
-
-    if (topGenres.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No genres found in user movies" }),
+        JSON.stringify({
+          success: true,
+          needsMoreRatings: false,
+          message: result.message || "Recommendations generated successfully",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    } catch (apiError) {
+      console.error("❌ Error calling FastAPI:", apiError);
+
+      // Fallback: retornar erro mas não bloquear
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Failed to generate recommendations via FastAPI",
+          details: apiError.message,
+        }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 500,
         }
       );
     }
-
-    // 3. Busca filmes NÃO vistos nos top genres
-    let candidateQuery = supabase
-      .from("movies")
-      .select("id")
-      .not("id", "in", `(${movieIds.join(",")})`)
-      .limit(200);
-
-    // Adiciona filtro de gêneros (usando OR para qualquer dos top genres)
-    const genreFilters = topGenres.map((g) => `genre.ilike.%${g}%`).join(",");
-    candidateQuery = candidateQuery.or(genreFilters);
-
-    const { data: candidateMovies, error: candidateError } =
-      await candidateQuery;
-
-    if (candidateError) throw candidateError;
-
-    if (!candidateMovies || candidateMovies.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No candidate movies found" }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 404,
-        }
-      );
-    }
-
-
-    // 4. Embaralha e pega 50
-    const shuffled = candidateMovies.sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, 50);
-
-    // 5. Apaga recomendações antigas
-    const { error: deleteError } = await supabase
-      .from("user_recommendations")
-      .delete()
-      .eq("user_id", userId);
-
-    if (deleteError) throw deleteError;
-
-    // 6. Insere novas
-    const recommendationsToInsert = selected.map((movie) => ({
-      user_id: userId,
-      movie_id: movie.id,
-    }));
-
-    const { error: insertError } = await supabase
-      .from("user_recommendations")
-      .insert(recommendationsToInsert);
-
-    if (insertError) throw insertError;
-
-
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        needsMoreRatings: false,
-        recommendationCount: selected.length,
-        message: `Successfully generated ${selected.length} recommendations`,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
   } catch (error) {
     console.error("❌ Error in generate-recommendations:", error);
     return new Response(

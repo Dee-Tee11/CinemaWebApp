@@ -11,7 +11,7 @@ load_dotenv()
 # Adicionar caminho para importar o sistema de recomendação
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from recommendation_system import SistemaRecomendacaoKNN
+from recommendation_system import SistemaRecomendacaoSimilaridade
 
 app = FastAPI()
 
@@ -81,9 +81,8 @@ except Exception as e:
 movie_embeddings = np.array(embeddings_list, dtype=np.float32)
 print(f"✅ Embeddings extraídos. Shape: {movie_embeddings.shape}")
 
-rec_system = SistemaRecomendacaoKNN(movie_embeddings, df_movies)
+rec_system = SistemaRecomendacaoSimilaridade(movie_embeddings, df_movies)
 
-#usa só gerar_recomendacoes falta integrar o resto dos métodos
 def generate_and_save_recommendations(user_id: str):
     """
     Gera e salva recomendações para um usuário específico
