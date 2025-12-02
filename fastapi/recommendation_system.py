@@ -3,25 +3,19 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Dict, List, Union
 
-class SistemaRecomendacaoKNN:
+class SistemaRecomendacaoSimilaridade:
     def __init__(self, embeddings: np.ndarray, dataset_source: Union[str, pd.DataFrame]):
         """
-        Inicializa o sistema de recomendação
-        
-        Args:
-            embeddings: Array NumPy com os embeddings dos filmes
-            dataset_source: Caminho para CSV OU DataFrame com dados dos filmes
+        Sistema de recomendação baseado em similaridade pura
+        Para cada filme avaliado, encontra os K mais similares
         """
-        print("Carregando sistema de recomendação...")
+        print("Carregando sistema de recomendação por similaridade...")
         self.embeddings = embeddings
         
-        # Aceitar tanto CSV quanto DataFrame
         if isinstance(dataset_source, pd.DataFrame):
             self.bd = dataset_source
-            print("   Dados carregados do DataFrame")
         else:
             self.bd = pd.read_csv(dataset_source)
-            print(f"   Dados carregados de: {dataset_source}")
         
         # Verificar coluna 'id'
         if 'id' not in self.bd.columns:
@@ -34,13 +28,10 @@ class SistemaRecomendacaoKNN:
                     break
             
             if id_col_found:
-                print(f"⚠️  Usando '{id_col_found}' como coluna de ID")
                 self.bd['id'] = self.bd[id_col_found]
             else:
-                print("⚠️  Criando IDs sequenciais (0, 1, 2, ...)")
                 self.bd['id'] = range(len(self.bd))
         
-        # Garantir que IDs são inteiros
         self.bd['id'] = self.bd['id'].astype(int)
         
         # Criar mapeamento movie_id -> índice do array
@@ -53,24 +44,16 @@ class SistemaRecomendacaoKNN:
         self.avaliacoes = {}
         self.filmes_vistos_ids = set()
         
-        # Configurações KNN
-        self.k_vizinhos = 10
-        self.min_avaliacoes_knn = 5
+        # Configurações
+        self.k_por_filme = 3  # Top 3 similares por filme avaliado
         
         print(f"✅ Sistema carregado!")
         print(f"   Total de filmes: {len(self.bd)}")
-        print(f"   Dimensões embedding: {self.embeddings.shape[1]}")
-        print(f"   Colunas: {list(self.bd.columns[:5])}...\n")
+        print(f"   Dimensões embedding: {self.embeddings.shape[1]}\n")
     
     def set_user_data(self, avaliacoes_por_movie_id: Dict[int, float], 
                      filmes_vistos_ids: List[int]):
-        """
-        Define os dados do usuário para gerar recomendações
-        
-        Args:
-            avaliacoes_por_movie_id: {movie_id: rating}
-            filmes_vistos_ids: [movie_id, ...]
-        """
+        """Define os dados do usuário"""
         self.avaliacoes = {}
         for movie_id, rating in avaliacoes_por_movie_id.items():
             movie_id = int(movie_id)
@@ -84,96 +67,116 @@ class SistemaRecomendacaoKNN:
         print(f"   Avaliações: {len(self.avaliacoes)}")
         print(f"   Filmes vistos: {len(self.filmes_vistos_ids)}")
     
-    def _calcular_score_knn(self, idx_filme: int) -> float:
-        """Calcula score usando KNN com ponderação por distância"""
-        if len(self.avaliacoes) < self.min_avaliacoes_knn:
-            return None
+    def _calcular_similaridades(self, idx_filme_avaliado: int) -> List[tuple]:
+        """
+        Para um filme avaliado, calcula similaridade com todos os não-vistos
+        Retorna lista de (idx_filme, similaridade, titulo)
+        """
+        emb_avaliado = self.embeddings[idx_filme_avaliado]
         
-        emb_filme = self.embeddings[idx_filme]
-        distancias_avaliados = []
-        
-        for idx_avaliado, nota in self.avaliacoes.items():
-            emb_avaliado = self.embeddings[idx_avaliado]
-            sim = cosine_similarity([emb_filme], [emb_avaliado])[0][0]
-            distancia = 1 - sim
+        similaridades = []
+        for idx in range(len(self.bd)):
+            movie_id = int(self.bd.iloc[idx]['id'])
             
-            distancias_avaliados.append({
-                'idx': idx_avaliado,
-                'distancia': distancia,
-                'nota': nota
+            # Pular filmes já vistos
+            if movie_id in self.filmes_vistos_ids:
+                continue
+            
+            emb_candidato = self.embeddings[idx]
+            sim = cosine_similarity([emb_avaliado], [emb_candidato])[0][0]
+            
+            titulo = self.bd.iloc[idx].get('series_title', 'Unknown')
+            genero = self.bd.iloc[idx].get('genre', 'Unknown')
+            imdb = float(self.bd.iloc[idx].get('imdb_rating', 0.0))
+            
+            similaridades.append({
+                'idx': idx,
+                'movie_id': movie_id,
+                'similaridade': float(sim),
+                'titulo': titulo,
+                'genero': genero,
+                'imdb_rating': imdb
             })
         
-        distancias_avaliados.sort(key=lambda x: x['distancia'])
-        k = min(self.k_vizinhos, len(distancias_avaliados))
-        vizinhos = distancias_avaliados[:k]
+        # Ordenar por similaridade (maior primeiro)
+        similaridades.sort(key=lambda x: x['similaridade'], reverse=True)
         
-        peso_total = 0
-        score_ponderado = 0
-        
-        for v in vizinhos:
-            peso = 1.0 / (1.0 + v['distancia'])
-            score_ponderado += peso * v['nota']
-            peso_total += peso
-        
-        if peso_total > 0:
-            return score_ponderado / peso_total
-        
-        return None
-    
-    def _calcular_score_similaridade(self, idx_filme: int) -> float:
-        """Fallback: calcula score por similaridade com perfil médio"""
-        indices_avaliados = list(self.avaliacoes.keys())
-        embeddings_avaliados = self.embeddings[indices_avaliados]
-        
-        perfil_usuario = np.mean(embeddings_avaliados, axis=0)
-        emb_filme = self.embeddings[idx_filme]
-        similaridade = cosine_similarity([perfil_usuario], [emb_filme])[0][0]
-        
-        score = max(0, min(20, similaridade * 20))
-        return score
+        return similaridades
     
     def gerar_recomendacoes(self, n: int = 25) -> List[Dict]:
-        """Gera top N recomendações para o usuário"""
+        """
+        Gera recomendações encontrando os top K similares para cada filme avaliado
+        """
         if len(self.avaliacoes) == 0:
             print("⚠️  Nenhuma avaliação fornecida.")
             return []
         
-        usar_knn = len(self.avaliacoes) >= self.min_avaliacoes_knn
-        
         print(f"\n🧮 Gerando recomendações...")
-        print(f"   Método: {'KNN' if usar_knn else 'Similaridade'}")
-        print(f"   Avaliações base: {len(self.avaliacoes)}")
+        print(f"   Método: Top-{self.k_por_filme} similares por filme avaliado")
+        print(f"   Filmes base: {len(self.avaliacoes)}")
         
+        # Dicionário para acumular scores por filme
+        # filme_id -> {similaridade_maxima, lista_de_similaridades, info}
+        candidatos = {}
+        
+        for idx_avaliado in self.avaliacoes.keys():
+            titulo_avaliado = self.bd.iloc[idx_avaliado].get('series_title', 'Unknown')
+            print(f"   Buscando similares a: {titulo_avaliado}")
+            
+            similaridades = self._calcular_similaridades(idx_avaliado)
+            
+            # Pegar top K
+            top_k = similaridades[:self.k_por_filme]
+            
+            for rec in top_k:
+                movie_id = rec['movie_id']
+                
+                if movie_id not in candidatos:
+                    candidatos[movie_id] = {
+                        'movie_id': movie_id,
+                        'titulo': rec['titulo'],
+                        'genero': rec['genero'],
+                        'imdb_rating': rec['imdb_rating'],
+                        'similaridades': [],
+                        'max_sim': 0.0
+                    }
+                
+                candidatos[movie_id]['similaridades'].append(rec['similaridade'])
+                candidatos[movie_id]['max_sim'] = max(
+                    candidatos[movie_id]['max_sim'], 
+                    rec['similaridade']
+                )
+        
+        # Converter para lista e calcular score final
         recomendacoes = []
-        
-        for idx in range(len(self.bd)):
-            movie_id = int(self.bd.iloc[idx]['id'])
+        for movie_id, info in candidatos.items():
+            # Score = média das similaridades (se apareceu múltiplas vezes, é muito relevante)
+            avg_sim = np.mean(info['similaridades'])
+            max_sim = info['max_sim']
+            count = len(info['similaridades'])
             
-            if movie_id in self.filmes_vistos_ids:
-                continue
-            
-            filme = self.bd.iloc[idx]
-            
-            if usar_knn:
-                score = self._calcular_score_knn(idx)
-                if score is None:
-                    score = self._calcular_score_similaridade(idx)
-            else:
-                score = self._calcular_score_similaridade(idx)
+            # Score final: combina média, máxima e contagem
+            # Filmes que aparecem múltiplas vezes (similares a vários filmes avaliados) são preferidos
+            score = (avg_sim * 0.5 + max_sim * 0.3) * (1 + count * 0.1)
             
             recomendacoes.append({
                 'movie_id': movie_id,
                 'score': float(score),
-                'titulo': filme.get('series_title', 'Unknown'),
-                'genero': filme.get('genre', 'Unknown'),
-                'imdb_rating': float(filme.get('imdb_rating', 0.0))
+                'avg_similarity': float(avg_sim),
+                'max_similarity': float(max_sim),
+                'appears_for': count,  # Quantos filmes avaliados têm este como similar
+                'titulo': info['titulo'],
+                'genero': info['genero'],
+                'imdb_rating': info['imdb_rating']
             })
         
+        # Ordenar por score
         recomendacoes.sort(key=lambda x: x['score'], reverse=True)
         
         print(f"✅ {len(recomendacoes)} recomendações geradas")
         if recomendacoes:
-            print(f"   Top score: {recomendacoes[0]['score']:.2f}")
+            print(f"   Top score: {recomendacoes[0]['score']:.4f}")
+            print(f"   Top título: {recomendacoes[0]['titulo']}")
         print(f"   Retornando top {n}\n")
         
         return recomendacoes[:n]
