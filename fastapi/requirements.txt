@@ -5,3 +5,7 @@ python-dotenv
 pandas
 numpy
 scikit-learn
+requests
+torch>=2.0.0
+transformers>=4.35.0
+sentence-transformers>=2.2.0
