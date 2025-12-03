@@ -355,6 +355,11 @@ verify_jwt = false
 import_map = "./functions/get-recommendations/deno.json"
 entrypoint = "./functions/get-recommendations/index.ts"
 
+[functions.delete-account]
+enabled = true
+verify_jwt = false
+import_map = "./functions/delete-account/deno.json"
+entrypoint = "./functions/delete-account/index.ts"
 
 
 
@@ -363,6 +368,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/send-friend-request/deno.json"
 entrypoint = "./functions/send-friend-request/index.ts"
+
+
+
 
 
 [functions.get-friends-activity]
@@ -394,3 +402,4 @@ entrypoint = "./functions/get-user-movies/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/get-user-movies/*.html" ]
+
