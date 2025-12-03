@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronRight, Star, Sparkles, ChevronLeft } from "lucide-react";
+import { ChevronRight, Star, Sparkles, ChevronLeft, Search } from "lucide-react";
 import MovieModal from "./MovieOnboardingModal";
 import { useOnboarding } from "../../hooks/useOnboarding";
 import "./MovieOnboardingNewVersion.css";
@@ -29,6 +29,12 @@ const OnboardingFlow: React.FC = () => {
     handlePrevious,
     handleOpenModal,
     handleComplete,
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    isSearching,
+    searchMovies,
+    addSearchedMovie,
   } = useOnboarding();
 
   // ============================================
@@ -119,9 +125,7 @@ const OnboardingFlow: React.FC = () => {
         {availableMovies.map((movie) => (
           <div
             key={movie.id}
-            className={`onboarding-movie-card ${
-              selectedMovies.has(movie.id) ? "selected" : ""
-            }`}
+            className={`onboarding-movie-card ${selectedMovies.has(movie.id) ? "selected" : ""}`}
             onClick={() => handleMovieSelect(movie.id)}
           >
             <div
@@ -190,17 +194,137 @@ const OnboardingFlow: React.FC = () => {
           </p>
         </div>
 
+        {/* Search Bar */}
+        <div style={{
+          maxWidth: '600px',
+          margin: '20px auto 16px',
+          position: 'relative',
+          padding: '0 20px'
+        }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={20} style={{
+              position: 'absolute',
+              left: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#999',
+              pointerEvents: 'none'
+            }} />
+            <input
+              type="text"
+              placeholder="Search to replace current movie..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                searchMovies(e.target.value);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 12px 12px 40px',
+                fontSize: '14px',
+                border: '2px solid #333',
+                borderRadius: '8px',
+                backgroundColor: '#1a1a1a',
+                color: '#fff',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#991b1b'}
+              onBlur={(e) => e.target.style.borderColor = '#333'}
+            />
+          </div>
+
+          {searchResults.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: '20px',
+              right: '20px',
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #333',
+              borderRadius: '8px',
+              marginTop: '8px',
+              maxHeight: '300px',
+              overflowY: 'auto',
+              zIndex: 1000,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+            }}>
+              {searchResults.map((movie, index) => (
+                <div
+                  key={movie.id}
+                  onClick={() => addSearchedMovie(movie)}
+                  style={{
+                    padding: '12px',
+                    borderBottom: index < searchResults.length - 1 ? '1px solid #333' : 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'center',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#2a2a2a'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <img
+                    src={movie.poster_url}
+                    alt={movie.series_title}
+                    style={{
+                      width: '40px',
+                      height: '60px',
+                      objectFit: 'cover',
+                      borderRadius: '4px'
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 'bold', color: '#fff', marginBottom: '4px' }}>
+                      {movie.series_title}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#999' }}>
+                      {movie.genre} • ⭐ {movie.imdb_rating}
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#991b1b',
+                    fontWeight: '600',
+                    textAlign: 'right'
+                  }}>
+                    Replace
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {isSearching && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: '20px',
+              right: '20px',
+              backgroundColor: '#1a1a1a',
+              border: '2px solid #333',
+              borderRadius: '8px',
+              marginTop: '8px',
+              padding: '20px',
+              textAlign: 'center',
+              color: '#999'
+            }}>
+              Searching...
+            </div>
+          )}
+        </div>
+
         <div className="progress-bar-container">
           {relatedMovies.map((_, idx) => (
             <div
               key={`progress-${idx}`}
-              className={`progress-bar-item ${
-                idx < currentIndex
+              className={`progress-bar-item ${idx < currentIndex
                   ? "completed"
                   : idx === currentIndex
-                  ? "active"
-                  : "inactive"
-              }`}
+                    ? "active"
+                    : "inactive"
+                }`}
             />
           ))}
         </div>
@@ -319,7 +443,7 @@ const OnboardingFlow: React.FC = () => {
             }}
             isWatched={false}
             onClose={() => setIsModalOpen(false)}
-            onToggleWatched={() => {}}
+            onToggleWatched={() => { }}
           />
         )}
       </div>

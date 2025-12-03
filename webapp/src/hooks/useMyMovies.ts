@@ -36,20 +36,22 @@ export const useMyMovies = (
 
     try {
       const { data, error } = await supabase.functions.invoke('get-user-movies', {
-        queryString: {
-          page: page.toString(),
-          ...(statusFilter && { statusFilter }),
-          ...(searchQuery && { searchQuery }),
+        body: {
+          page: page,
+          statusFilter: statusFilter || null,
+          searchQuery: searchQuery || null,
         },
       });
 
       if (error) {
+        console.error('Error loading movies:', error);
         return { movies: [], counts: counts };
       }
 
       return data;
 
     } catch (error) {
+      console.error('Exception loading movies:', error);
       return { movies: [], counts: counts };
     }
   }, [userId, supabase, statusFilter, searchQuery]);

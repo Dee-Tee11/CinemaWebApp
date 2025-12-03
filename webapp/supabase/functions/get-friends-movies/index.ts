@@ -5,6 +5,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const CLERK_FRONTEND_API = Deno.env.get("CLERK_FRONTEND_API")!;
 
+const ITEMS_PER_PAGE = 20;
+
 // Remove protocol if present to avoid double https://
 const cleanClerkUrl = CLERK_FRONTEND_API.replace(/^https?:\/\//, "");
 const JWKS_URL = `https://${cleanClerkUrl}/.well-known/jwks.json`;
@@ -39,7 +41,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  let sender_id: string;
+  let userId: string;
 
   try {
     // 🔐 4. Autenticação Robusta (Clerk JWT)
@@ -53,9 +55,9 @@ Deno.serve(async (req) => {
 
     // Verifica assinatura, expiração e claims
     const payload = await verifyClerkJWT(token);
-    sender_id = payload.sub;
+    userId = payload.sub;
 
-    if (!sender_id) throw new Error("Invalid token: missing subject");
+    if (!userId) throw new Error("Invalid token: missing subject");
 
   } catch (err: any) {
     console.error("❌ Authentication failed:", err.message);
@@ -67,96 +69,99 @@ Deno.serve(async (req) => {
 
   // 🚀 5. Lógica de Negócio
   try {
-    // Get request body
-    const { receiver_id } = await req.json();
-    if (!receiver_id || typeof receiver_id !== "string" || receiver_id.trim() === "") {
-      return new Response(
-        JSON.stringify({ error: "receiver_id is required and must be a valid string." }),
-        { headers, status: 400 }
-      );
-    }
+    const { page = 0 } = await req.json();
 
-    // Create Supabase client with service_role_key
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
       auth: { persistSession: false },
     });
 
-    // Validate: Cannot send a request to yourself
-    if (sender_id === receiver_id) {
-      return new Response(
-        JSON.stringify({ error: "You cannot send a friend request to yourself." }),
-        { headers, status: 400 }
-      );
-    }
+    console.log("Loading friends movies - Page:", page, "User:", userId);
 
-    // Validate: Receiver must exist in the 'User' table
-    const { data: receiverExists, error: receiverError } = await supabase
-      .from("User")
-      .select("id")
-      .eq("id", receiver_id)
-      .maybeSingle();
-
-    if (receiverError) throw receiverError;
-    if (!receiverExists) {
-      return new Response(
-        JSON.stringify({ error: "User not found. Please check the user ID." }),
-        { headers, status: 404 }
-      );
-    }
-
-    // Validate: Not already friends
-    const { data: existingFriendship, error: friendshipError } = await supabase
+    // 1. Pega amigos
+    const { data: friendships, error: friendsError } = await supabase
       .from("friendships")
       .select("user_id_a, user_id_b")
-      .or(`and(user_id_a.eq.${sender_id},user_id_b.eq.${receiver_id}),and(user_id_a.eq.${receiver_id},user_id_b.eq.${sender_id})`)
-      .maybeSingle();
+      .or(`user_id_a.eq.${userId},user_id_b.eq.${userId}`);
 
-    if (friendshipError) throw friendshipError;
-    if (existingFriendship) {
+    if (friendsError) throw friendsError;
+
+    if (!friendships || friendships.length === 0) {
       return new Response(
-        JSON.stringify({ error: "You are already friends with this user." }),
-        { headers, status: 409 }
+        JSON.stringify({
+          movies: [],
+          hasMore: false,
+          friendsCount: 0,
+        }),
+        { headers, status: 200 }
       );
     }
 
-    // Validate: No pending request in either direction
-    const { data: existingRequest, error: requestError } = await supabase
-      .from("friend_request")
-      .select("id, sender_id")
-      .or(`and(sender_id.eq.${sender_id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${sender_id})`)
-      .eq("status", "pending")
-      .maybeSingle();
-
-    if (requestError) throw requestError;
-    if (existingRequest) {
-      const error = existingRequest.sender_id === receiver_id
-        ? "This user has already sent you a friend request. Please accept it instead."
-        : "You already have a pending friend request with this user.";
-      return new Response(
-        JSON.stringify({ error }),
-        { headers, status: 409 }
-      );
-    }
-
-    // Insert new friend request
-    const { data, error } = await supabase
-      .from("friend_request")
-      .insert({ sender_id, receiver_id, status: "pending" })
-      .select("id, sender_id, receiver_id, status, created_at")
-      .single();
-
-    if (error) throw error;
-
-    // Success
-    return new Response(
-      JSON.stringify({ success: true, data }),
-      { headers, status: 201 }
+    const friendIds = friendships.map(f =>
+      f.user_id_a === userId ? f.user_id_b : f.user_id_a
     );
 
-  } catch (error) {
-    console.error("❌ Error in send-friend-request:", error);
+    console.log("Friends count:", friendIds.length);
+
+    // 2. Pega atividades
+    const { data: activities, error: actError } = await supabase
+      .from("user_movies")
+      .select("movie_id, created_at")
+      .in("user_id", friendIds)
+      .in("status", ["seen", "saved"])
+      .order("created_at", { ascending: false })
+      .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
+
+    if (actError) throw actError;
+
+    if (!activities || activities.length === 0) {
+      return new Response(
+        JSON.stringify({
+          movies: [],
+          hasMore: false,
+          friendsCount: friendIds.length,
+        }),
+        { headers, status: 200 }
+      );
+    }
+
+    const movieIds = [...new Set(activities.map(a => a.movie_id))];
+
+    console.log(`Found ${movieIds.length} unique movies`);
+
+    // 3. Pega detalhes
+    const { data: movies, error: moviesError } = await supabase
+      .from("movies")
+      .select("id, series_title, poster_url, runtime, genre, imdb_rating, overview")
+      .in("id", movieIds);
+
+    if (moviesError) throw moviesError;
+
+    const formatted = (movies || []).map((m, i) => ({
+      id: m.id.toString(),
+      img: m.poster_url || "",
+      url: "#",
+      height: [600, 700, 800, 850, 900, 950, 1000][i % 7],
+      title: m.series_title || "Untitled",
+      time: m.runtime || "",
+      category: m.genre || "Uncategorized",
+      year: "N/A",
+      rating: m.imdb_rating || 0,
+      synopsis: m.overview || "Synopsis not available",
+    }));
+
     return new Response(
-      JSON.stringify({ error: error.message || "Internal Server Error" }),
+      JSON.stringify({
+        movies: formatted,
+        hasMore: activities.length === ITEMS_PER_PAGE,
+        friendsCount: friendIds.length,
+      }),
+      { headers, status: 200 }
+    );
+
+  } catch (error: any) {
+    console.error("❌ Error in get-friends-movies:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Internal server error" }),
       { headers, status: 500 }
     );
   }
