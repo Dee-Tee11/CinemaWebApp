@@ -1,0 +1,592 @@
+/* ==================== MAIN CONTAINER ==================== */
+.onboarding-final-page {
+    background: white;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Prevent body scroll */
+}
+
+.onboarding-final-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+/* ==================== BACK BUTTON ==================== */
+.back-button {
+    background: transparent;
+    border: 1px solid rgba(153, 27, 27, 0.3);
+    color: #991b1b;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    z-index: 10;
+}
+
+.back-button:hover {
+    background: #991b1b;
+    border-color: white;
+    color: white;
+}
+
+/* ==================== WELCOME PHASE (Preserved) ==================== */
+.welcome-phase {
+    text-align: center;
+    max-width: 800px;
+}
+
+.welcome-icon {
+    margin-bottom: 30px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.welcome-title {
+    font-size: 48px;
+    font-weight: 800;
+    color: #0a0a0a;
+    margin-bottom: 15px;
+}
+
+.welcome-subtitle {
+    font-size: 20px;
+    color: rgba(10, 10, 10, 0.7);
+    margin-bottom: 50px;
+}
+
+.welcome-steps {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 50px;
+    justify-content: center;
+}
+
+.welcome-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.step-number {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #991b1b, #dc2626);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+}
+
+.step-text {
+    color: rgba(10, 10, 10, 0.8);
+    font-size: 16px;
+    max-width: 150px;
+}
+
+/* ==================== SELECTION PHASE (Preserved but Scrollable) ==================== */
+.selection-phase {
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.phase-header {
+    text-align: center;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+}
+
+.phase-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #991b1b;
+    margin-bottom: 10px;
+}
+
+.phase-progress {
+    display: inline-block;
+    background: rgba(153, 27, 27, 0.1);
+    color: #991b1b;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.movies-grid-scrollable {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Custom Scrollbar */
+.movies-grid-scrollable::-webkit-scrollbar {
+    width: 8px;
+}
+
+.movies-grid-scrollable::-webkit-scrollbar-track {
+    background: rgba(153, 27, 27, 0.05);
+}
+
+.movies-grid-scrollable::-webkit-scrollbar-thumb {
+    background: rgba(153, 27, 27, 0.3);
+    border-radius: 4px;
+}
+
+.movies-grid-scrollable::-webkit-scrollbar-thumb:hover {
+    background: #991b1b;
+}
+
+.onboarding-movie-card {
+    background: #991b1b;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+    height: 280px;
+    /* Fixed height for grid items */
+}
+
+.onboarding-movie-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(153, 27, 27, 0.3);
+}
+
+.onboarding-movie-card.selected {
+    border-color: #991b1b;
+    box-shadow: 0 0 20px rgba(153, 27, 27, 0.4);
+}
+
+.card-image {
+    width: 100%;
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.selected-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: rgba(153, 27, 27, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rating-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 4px 8px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+}
+
+.card-info {
+    padding: 12px;
+}
+
+.card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-genre {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.phase-actions {
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+    flex-shrink: 0;
+}
+
+/* ==================== RATING PHASE (Horizontal Layout) ==================== */
+.rating-phase-container {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+.rating-header {
+    text-align: center;
+}
+
+.rating-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0a0a0a;
+    margin-bottom: 5px;
+}
+
+.rating-subtitle {
+    font-size: 14px;
+    color: rgba(10, 10, 10, 0.6);
+}
+
+.horizontal-card {
+    display: flex;
+    background: #991b1b;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    height: 450px;
+    /* Fixed height container */
+}
+
+.horizontal-card-poster {
+    width: 300px;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.horizontal-card-content {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to right, #991b1b, #7f1d1d);
+    color: white;
+    position: relative;
+}
+
+/* Search Bar Inside Card */
+.card-search-container {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.card-search-input {
+    width: 100%;
+    padding: 10px 10px 10px 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.card-search-input:focus {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.card-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Search Results Dropdown */
+.search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-top: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.search-result-item {
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+}
+
+.search-result-item:hover {
+    background: #2a2a2a;
+}
+
+.search-result-img {
+    width: 30px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* Movie Details */
+.movie-meta-info {
+    margin-bottom: 15px;
+}
+
+.movie-genre-badge {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.movie-title-large {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 8px;
+}
+
+.movie-runtime {
+    font-size: 13px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Rating Area */
+.rating-area {
+    margin-top: auto;
+    /* Push to bottom */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.rating-slider-container {
+    margin-bottom: 20px;
+}
+
+.rating-value-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 10px;
+}
+
+.rating-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.rating-number {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fbbf24;
+}
+
+.custom-range {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.custom-range::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+/* Action Buttons */
+.card-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-action {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-rate-confirm {
+    background: white;
+    color: #991b1b;
+}
+
+.btn-rate-confirm:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
+}
+
+.btn-skip {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.btn-skip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    gap: 4px;
+    margin-top: 20px;
+}
+
+.progress-segment {
+    flex: 1;
+    height: 4px;
+    background: rgba(153, 27, 27, 0.1);
+    border-radius: 2px;
+}
+
+.progress-segment.active {
+    background: #991b1b;
+}
+
+/* ==================== BUTTONS ==================== */
+.onboarding-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.onboarding-btn.primary {
+    background: linear-gradient(135deg, #991b1b, #dc2626);
+    color: white;
+}
+
+.onboarding-btn.primary:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 10px 25px rgba(153, 27, 27, 0.3);
+}
+
+.onboarding-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .horizontal-card {
+        flex-direction: column;
+        height: auto;
+        max-width: 400px;
+    }
+
+    .horizontal-card-poster {
+        width: 100%;
+        height: 250px;
+    }
+
+    .horizontal-card-content {
+        padding: 20px;
+    }
+
+    .movie-title-large {
+        font-size: 24px;
+    }
+
+    .movies-grid-scrollable {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}
