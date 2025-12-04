@@ -50,6 +50,9 @@
 .welcome-phase {
     text-align: center;
     max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .welcome-icon {
@@ -234,6 +237,13 @@
     color: white;
 }
 
+.rating-badge-large {
+    top: 16px;
+    left: 16px;
+    font-size: 14px;
+    padding: 6px 12px;
+}
+
 .card-info {
     padding: 12px;
 }
@@ -251,6 +261,34 @@
 .card-genre {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.8);
+}
+
+/* Error Message */
+.error-message {
+    background: #ef4444;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.error-message button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    line-height: 1;
+}
+
+.error-message button:hover {
+    opacity: 0.8;
 }
 
 .phase-actions {
@@ -375,6 +413,10 @@
     border-bottom: 1px solid #333;
 }
 
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
 .search-result-item:hover {
     background: #2a2a2a;
 }
@@ -384,6 +426,25 @@
     height: 45px;
     object-fit: cover;
     border-radius: 4px;
+}
+
+.search-result-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.search-result-title {
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-genre {
+    color: #999;
+    font-size: 12px;
 }
 
 /* Movie Details */
@@ -416,6 +477,10 @@
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.runtime-separator {
+    margin: 0 8px;
 }
 
 /* Rating Area */
