@@ -72,6 +72,7 @@ const SelectionPhase: React.FC<SelectionPhaseProps> = ({
                         <button
                             className="selection-search-clear"
                             onClick={onClearSearch}
+                            type="button"
                         >
                             ✕
                         </button>
