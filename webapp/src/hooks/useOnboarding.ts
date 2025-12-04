@@ -39,10 +39,15 @@ export const useOnboarding = () => {
   const [showRatingSelector, setShowRatingSelector] = useState(false);
   const [tempRating, setTempRating] = useState(10);
 
-  // Search state
+  // Search state for rating phase
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Search state for selection phase
+  const [selectionSearchQuery, setSelectionSearchQuery] = useState("");
+  const [selectionSearchResults, setSelectionSearchResults] = useState<Movie[]>([]);
+  const [isSelectionSearching, setIsSelectionSearching] = useState(false);
 
   // UI state
   const [loading, setLoading] = useState(false);
@@ -109,6 +114,34 @@ export const useOnboarding = () => {
       console.error("Error searching movies:", err);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Search movies for selection phase (searches ALL movies)
+  const searchMoviesForSelection = async (query: string) => {
+    if (!query.trim()) {
+      setSelectionSearchResults([]);
+      return;
+    }
+
+    setIsSelectionSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from("movies")
+        .select(
+          "id, series_title, genre, poster_url, imdb_rating, overview, runtime"
+        )
+        .not("poster_url", "is", null)
+        .or(`series_title.ilike.%${query}%,genre.ilike.%${query}%`)
+        .order("imdb_rating", { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      setSelectionSearchResults(data || []);
+    } catch (err) {
+      console.error("Error searching movies for selection:", err);
+    } finally {
+      setIsSelectionSearching(false);
     }
   };
 
@@ -362,6 +395,10 @@ export const useOnboarding = () => {
     setSearchQuery,
     searchResults,
     isSearching,
+    selectionSearchQuery,
+    setSelectionSearchQuery,
+    selectionSearchResults,
+    isSelectionSearching,
     handleMovieSelect,
     handlePhase1Complete,
     handleSkipOnboarding,
@@ -372,6 +409,7 @@ export const useOnboarding = () => {
     handleOpenModal,
     handleComplete,
     searchMovies,
+    searchMoviesForSelection,
     addSearchedMovie,
   };
 };

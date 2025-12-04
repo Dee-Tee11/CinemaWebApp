@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronRight, ChevronLeft, Star } from "lucide-react";
+import { ChevronRight, ChevronLeft, Star, Search } from "lucide-react";
 
 interface Movie {
     id: number;
@@ -7,6 +7,8 @@ interface Movie {
     genre: string;
     poster_url: string;
     imdb_rating: number;
+    overview?: string;
+    runtime?: string;
 }
 
 interface SelectionPhaseProps {
@@ -18,6 +20,12 @@ interface SelectionPhaseProps {
     onContinue: () => void;
     onBack: () => void;
     onClearError: () => void;
+    // Search functionality
+    searchQuery: string;
+    searchResults: Movie[];
+    isSearching: boolean;
+    onSearchChange: (query: string) => void;
+    onClearSearch: () => void;
 }
 
 const SelectionPhase: React.FC<SelectionPhaseProps> = ({
@@ -29,7 +37,15 @@ const SelectionPhase: React.FC<SelectionPhaseProps> = ({
     onContinue,
     onBack,
     onClearError,
+    searchQuery,
+    searchResults,
+    isSearching,
+    onSearchChange,
+    onClearSearch,
 }) => {
+    // Determine which movies to display - search results or available movies
+    const displayMovies = searchQuery.trim() ? searchResults : availableMovies;
+
     return (
         <div className="onboarding-final-content">
             <button className="back-button" onClick={onBack}>
@@ -42,6 +58,26 @@ const SelectionPhase: React.FC<SelectionPhaseProps> = ({
                     <div className="phase-progress">{selectedMovies.size} movies selected</div>
                 </div>
 
+                {/* Search Bar */}
+                <div className="selection-search-container">
+                    <Search size={18} className="selection-search-icon" />
+                    <input
+                        type="text"
+                        className="selection-search-input"
+                        placeholder="Search all movies..."
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                    />
+                    {searchQuery && (
+                        <button
+                            className="selection-search-clear"
+                            onClick={onClearSearch}
+                        >
+                            ✕
+                        </button>
+                    )}
+                </div>
+
                 {error && (
                     <div className="error-message">
                         {error}
@@ -50,32 +86,38 @@ const SelectionPhase: React.FC<SelectionPhaseProps> = ({
                 )}
 
                 <div className="movies-grid-scrollable">
-                    {availableMovies.map((movie) => (
-                        <div
-                            key={movie.id}
-                            className={`onboarding-movie-card ${selectedMovies.has(movie.id) ? "selected" : ""}`}
-                            onClick={() => onMovieSelect(movie.id)}
-                        >
+                    {displayMovies.length > 0 ? (
+                        displayMovies.map((movie) => (
                             <div
-                                className="card-image"
-                                style={{ backgroundImage: `url(${movie.poster_url})` }}
+                                key={movie.id}
+                                className={`onboarding-movie-card ${selectedMovies.has(movie.id) ? "selected" : ""}`}
+                                onClick={() => onMovieSelect(movie.id)}
                             >
-                                {selectedMovies.has(movie.id) && (
-                                    <div className="selected-badge">
-                                        <Star size={16} color="#FFD700" fill="#FFD700" />
+                                <div
+                                    className="card-image"
+                                    style={{ backgroundImage: `url(${movie.poster_url})` }}
+                                >
+                                    {selectedMovies.has(movie.id) && (
+                                        <div className="selected-badge">
+                                            <Star size={16} color="#FFD700" fill="#FFD700" />
+                                        </div>
+                                    )}
+                                    <div className="rating-badge">
+                                        <Star size={10} color="#FFD700" fill="#FFD700" />
+                                        <span>{movie.imdb_rating}</span>
                                     </div>
-                                )}
-                                <div className="rating-badge">
-                                    <Star size={10} color="#FFD700" fill="#FFD700" />
-                                    <span>{movie.imdb_rating}</span>
+                                </div>
+                                <div className="card-info">
+                                    <div className="card-title">{movie.series_title}</div>
+                                    <div className="card-genre">{movie.genre}</div>
                                 </div>
                             </div>
-                            <div className="card-info">
-                                <div className="card-title">{movie.series_title}</div>
-                                <div className="card-genre">{movie.genre}</div>
-                            </div>
+                        ))
+                    ) : searchQuery.trim() && !isSearching ? (
+                        <div className="no-results">
+                            No movies found for "{searchQuery}"
                         </div>
-                    ))}
+                    ) : null}
                 </div>
 
                 <div className="phase-actions">
