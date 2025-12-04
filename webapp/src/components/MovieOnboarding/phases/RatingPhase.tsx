@@ -26,6 +26,7 @@ interface RatingPhaseProps {
     onSetTempRating: (rating: number) => void;
     onConfirmRating: () => void;
     onNext: () => void;
+    onPrevious: () => void;
     onBack: () => void;
     onSearchChange: (query: string) => void;
     onAddSearchedMovie: (movie: Movie) => void;
@@ -42,6 +43,7 @@ const RatingPhase: React.FC<RatingPhaseProps> = ({
     onSetTempRating,
     onConfirmRating,
     onNext,
+    onPrevious,
     onBack,
     onSearchChange,
     onAddSearchedMovie,
@@ -51,6 +53,8 @@ const RatingPhase: React.FC<RatingPhaseProps> = ({
 
     const currentMovie = relatedMovies[currentIndex];
     const hasRating = ratings.some((r) => r.movieId === currentMovie.id);
+    const isFirstMovie = currentIndex === 0;
+    const isLastMovie = currentIndex === relatedMovies.length - 1;
 
     return (
         <div className="onboarding-final-content">
@@ -148,6 +152,25 @@ const RatingPhase: React.FC<RatingPhaseProps> = ({
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Navigation Buttons */}
+                <div className="rating-navigation">
+                    <button
+                        className="btn-nav btn-nav-prev"
+                        onClick={onPrevious}
+                        disabled={isFirstMovie}
+                        title="Previous"
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
+                    <button
+                        className="btn-nav btn-nav-next"
+                        onClick={onNext}
+                        title={isLastMovie ? "Complete" : "Next"}
+                    >
+                        <ChevronRight size={24} />
+                    </button>
                 </div>
 
                 {/* Progress Bar */}
