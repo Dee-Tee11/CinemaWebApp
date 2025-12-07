@@ -77,8 +77,49 @@ def get_genres_map() -> Dict[int, str]:
         print(f"⚠️ Erro ao buscar gêneros: {e}")
         return {}
 
+def get_movie_details(movie_id: int) -> Dict[str, Any]:
+    """Busca detalhes completos de um filme (keywords, runtime, director, cast)"""
+    try:
+        url = f"{BASE_URL}/movie/{movie_id}"
+        params = {
+            "api_key": TMDB_API_KEY,
+            "append_to_response": "keywords,credits"
+        }
+        response = requests.get(url, params=params)
+        data = response.json()
+        
+        # Extract keywords
+        keywords = [k['name'] for k in data.get('keywords', {}).get('keywords', [])]
+        
+        # Extract runtime
+        runtime = data.get('runtime', 0)
+        
+        # Extract director
+        director = None
+        for crew in data.get('credits', {}).get('crew', []):
+            if crew.get('job') == 'Director':
+                director = crew.get('name')
+                break
+        
+        # Extract top 4 cast members
+        cast = data.get('credits', {}).get('cast', [])
+        stars = [actor.get('name') for actor in cast[:4]]
+        
+        return {
+            'keywords': keywords,
+            'runtime': runtime,
+            'director': director,
+        }
+    except Exception as e:
+        # Silently fail to keep process running
+        return {
+            'keywords': [],
+            'runtime': None,
+            'director': None,
+        }
+
 def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]):
-    """Processa filmes, gera embeddings e envia para o Supabase"""
+    """Processa filmes, gera embeddings com METADADOS RICOS e envia para o Supabase"""
     processed_movies = []
     
     print(f"⚙️  Processando {len(raw_movies)} filmes...")
@@ -89,8 +130,8 @@ def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]
     
     for idx, movie in enumerate(unique_movies):
         try:
-            # Mostrar progresso a cada 100 filmes
-            if idx % 100 == 0:
+            # Mostrar progresso a cada 10 filmes (mais frequente pois é mais lento agora)
+            if idx % 10 == 0:
                 print(f"   Processando filme {idx}/{len(unique_movies)}: {movie.get('title', 'Unknown')}")
             
             # Pular se não tiver overview ou título
@@ -101,8 +142,27 @@ def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]
             genre_names = [genres_map.get(gid, "Unknown") for gid in movie.get('genre_ids', [])]
             genre_str = ", ".join(genre_names)
             
-            # Criar texto para embedding
-            text_for_embedding = f"{movie['title']}. {movie['overview']}. Genres: {genre_str}"
+            # 1. Buscar detalhes completos (keywords, runtime, director, cast)
+            details = get_movie_details(movie['id'])
+            keywords_str = ", ".join(details['keywords'][:10])  # Top 10 keywords
+            
+            # 2. Obter Idioma
+            lang = movie.get('original_language', 'unknown')
+            
+            # 3. Criar texto RICO para embedding (incluindo Director para capturar estilo de realização)
+            director_text = f"Director: {details['director']}" if details['director'] else ""
+            text_for_embedding = (
+                f"{movie['title']}. "
+                f"{movie['overview']} "
+                f"Genres: {genre_str}. "
+                f"Keywords: {keywords_str}. "
+                f"Language: {lang}. "
+                f"{director_text}"
+            ).strip()  # Remove trailing space if no director
+            
+            # Debug ocasional
+            if idx % 50 == 0:
+                print(f"   📝 Embedding: '{text_for_embedding[:100]}...'")
             
             # Gerar embedding
             embedding = model.encode(text_for_embedding).tolist()
@@ -110,15 +170,20 @@ def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]
             movie_data = {
                 "id": movie['id'],
                 "series_title": movie['title'],
+                "runtime": str(details['runtime']) if details['runtime'] else None,
                 "genre": genre_str,
-                "overview": movie['overview'],
                 "imdb_rating": movie.get('vote_average'),
+                "director": details['director'],
+                "no_of_votes": movie.get('vote_count', 0),
                 "poster_url": f"https://image.tmdb.org/t/p/w500{movie['poster_path']}" if movie.get('poster_path') else None,
                 "embedding": embedding,
-                "no_of_votes": movie.get('vote_count', 0)
+                "embedding_input": text_for_embedding 
             }
             
             processed_movies.append(movie_data)
+            
+            # Rate limit manual para não estourar a API com os requests extras de keywords
+            time.sleep(0.05) 
             
         except Exception as e:
             print(f"⚠️ Erro ao processar filme {movie.get('title', 'Unknown')}: {e}")
