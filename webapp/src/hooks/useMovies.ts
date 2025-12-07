@@ -47,7 +47,7 @@ export const useMovies = (activeView: string, selectedCategory?: string, searchQ
 
     let query = supabase
       .from('movies')
-      .select('id, series_title, poster_url, runtime, genre, imdb_rating, overview');
+      .select('id, series_title, poster_url, runtime, genre, imdb_rating');
 
     if (searchQuery && searchQuery.trim()) {
       const searchTerm = searchQuery.trim();
@@ -80,7 +80,6 @@ export const useMovies = (activeView: string, selectedCategory?: string, searchQ
         category: movie.genre,
         year: movie.runtime ? new Date(movie.runtime).getFullYear().toString() : '2024',
         rating: movie.imdb_rating,
-        synopsis: movie.overview || 'Synopsis not available',
       };
     });
 
