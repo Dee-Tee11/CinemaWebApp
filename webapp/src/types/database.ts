@@ -28,7 +28,6 @@ export interface Movie {
     runtime: string;
     genre: string;
     imdb_rating: number;
-    overview: string;
     released_year?: string;
 }
 

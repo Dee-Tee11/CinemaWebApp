@@ -3,30 +3,21 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from typing import Dict, List, Union
 
-class SistemaRecomendacaoKNN:
-    def __init__(self, embeddings: np.ndarray, dataset_source: Union[str, pd.DataFrame], 
-                 k_vizinhos: int = 10, min_avaliacoes_knn: int = 5):
+class SistemaRecomendacaoSimilaridade:
+    def __init__(self, embeddings: np.ndarray, dataset_source: Union[str, pd.DataFrame]):
         """
-        Inicializa o sistema de recomendação OTIMIZADO
-        
-        Args:
-            embeddings: Array NumPy com os embeddings dos filmes
-            dataset_source: Caminho para CSV OU DataFrame com dados dos filmes
-            k_vizinhos: Número de vizinhos para KNN (default: 10)
-            min_avaliacoes_knn: Mínimo de avaliações para usar KNN (default: 5)
+        Sistema de recomendação baseado em similaridade pura
+        Para cada filme avaliado, encontra os K mais similares
         """
-        print("Carregando sistema de recomendação...")
+        print("Carregando sistema de recomendação por similaridade...")
         self.embeddings = embeddings
         self.k_vizinhos = k_vizinhos
         self.min_avaliacoes_knn = min_avaliacoes_knn
         
-        # Aceitar tanto CSV quanto DataFrame
         if isinstance(dataset_source, pd.DataFrame):
             self.bd = dataset_source
-            print("   Dados carregados do DataFrame")
         else:
             self.bd = pd.read_csv(dataset_source)
-            print(f"   Dados carregados de: {dataset_source}")
         
         # Verificar coluna 'id'
         if 'id' not in self.bd.columns:
@@ -39,13 +30,10 @@ class SistemaRecomendacaoKNN:
                     break
             
             if id_col_found:
-                print(f"⚠️  Usando '{id_col_found}' como coluna de ID")
                 self.bd['id'] = self.bd[id_col_found]
             else:
-                print("⚠️  Criando IDs sequenciais (0, 1, 2, ...)")
                 self.bd['id'] = range(len(self.bd))
         
-        # Garantir que IDs são inteiros
         self.bd['id'] = self.bd['id'].astype(int)
         
         # Criar mapeamento movie_id -> índice do array
@@ -57,23 +45,17 @@ class SistemaRecomendacaoKNN:
         # Estado do usuário
         self.avaliacoes = {}
         self.filmes_vistos_ids = set()
-        self._perfil_usuario_cache = None
+        
+        # Configurações
+        self.k_por_filme = 3  # Top 3 similares por filme avaliado
         
         print(f"✅ Sistema carregado!")
         print(f"   Total de filmes: {len(self.bd)}")
-        print(f"   Dimensões embedding: {self.embeddings.shape[1]}")
-        print(f"   K vizinhos: {self.k_vizinhos}")
-        print(f"   Colunas: {list(self.bd.columns[:5])}...\n")
+        print(f"   Dimensões embedding: {self.embeddings.shape[1]}\n")
     
     def set_user_data(self, avaliacoes_por_movie_id: Dict[int, float], 
                      filmes_vistos_ids: List[int]):
-        """
-        Define os dados do usuário para gerar recomendações
-        
-        Args:
-            avaliacoes_por_movie_id: {movie_id: rating}
-            filmes_vistos_ids: [movie_id, ...]
-        """
+        """Define os dados do usuário"""
         self.avaliacoes = {}
         for movie_id, rating in avaliacoes_por_movie_id.items():
             movie_id = int(movie_id)
@@ -88,130 +70,116 @@ class SistemaRecomendacaoKNN:
         print(f"   Avaliações: {len(self.avaliacoes)}")
         print(f"   Filmes vistos: {len(self.filmes_vistos_ids)}")
     
-    def _get_perfil_usuario(self) -> np.ndarray:
-        """Cache do perfil médio do usuário"""
-        if self._perfil_usuario_cache is None:
-            indices = list(self.avaliacoes.keys())
-            self._perfil_usuario_cache = np.mean(self.embeddings[indices], axis=0)
-        return self._perfil_usuario_cache
-    
-    def _calcular_todos_scores_knn(self) -> np.ndarray:
+    def _calcular_similaridades(self, idx_filme_avaliado: int) -> List[tuple]:
         """
-        ✨ OTIMIZADO: Calcula scores KNN para TODOS os filmes usando vetorização
-        Ganho: ~100x mais rápido que loop filme por filme
+        Para um filme avaliado, calcula similaridade com todos os não-vistos
+        Retorna lista de (idx_filme, similaridade, titulo)
         """
-        n_filmes = len(self.bd)
-        indices_avaliados = np.array(list(self.avaliacoes.keys()))
-        embeddings_avaliados = self.embeddings[indices_avaliados]
-        notas_avaliadas = np.array([self.avaliacoes[idx] for idx in indices_avaliados])
+        emb_avaliado = self.embeddings[idx_filme_avaliado]
         
-        # Calcular matriz de similaridades (N × K) - UMA operação ao invés de N loops
-        sims = cosine_similarity(self.embeddings, embeddings_avaliados)
-        distancias = 1 - sims
-        
-        # Para cada filme, encontrar K vizinhos e calcular score ponderado
-        scores = np.zeros(n_filmes)
-        k = min(self.k_vizinhos, len(indices_avaliados))
-        
-        for i in range(n_filmes):
-            # Encontrar K vizinhos mais próximos
-            indices_vizinhos = np.argsort(distancias[i])[:k]
+        similaridades = []
+        for idx in range(len(self.bd)):
+            movie_id = int(self.bd.iloc[idx]['id'])
             
-            dists_viz = distancias[i, indices_vizinhos]
-            notas_viz = notas_avaliadas[indices_vizinhos]
+            # Pular filmes já vistos
+            if movie_id in self.filmes_vistos_ids:
+                continue
             
-            # Ponderação: quanto mais próximo E melhor avaliado, maior o peso
-            pesos_distancia = 1.0 / (1.0 + dists_viz)
-            pesos_nota = notas_viz / 20.0  # Normalizar notas para [0, 1]
-            pesos_total = pesos_distancia * pesos_nota
+            emb_candidato = self.embeddings[idx]
+            sim = cosine_similarity([emb_avaliado], [emb_candidato])[0][0]
             
-            if np.sum(pesos_total) > 0:
-                scores[i] = np.sum(pesos_total * notas_viz) / np.sum(pesos_total)
-            else:
-                scores[i] = 0
-        
-        return scores
-    
-    def _calcular_todos_scores_similaridade(self) -> np.ndarray:
-        """
-        ✨ OTIMIZADO: Calcula scores por similaridade para TODOS os filmes
-        Ganho: De N operações para 1 operação matricial
-        """
-        perfil_usuario = self._get_perfil_usuario().reshape(1, -1)
-        
-        # UMA operação para calcular similaridade com todos os filmes
-        similaridades = cosine_similarity(perfil_usuario, self.embeddings)[0]
-        scores = np.clip(similaridades * 20, 0, 20)
-        
-        return scores
-    
-    def _get_popular_movies(self, n: int) -> List[Dict]:
-        """
-        🆕 Cold start: retornar filmes mais populares por IMDB rating
-        Usado quando o usuário não tem avaliações suficientes
-        """
-        print("   💡 Cold start: Usando filmes populares")
-        top_movies = self.bd.nlargest(n, 'imdb_rating')
-        
-        recomendacoes = []
-        for _, row in top_movies.iterrows():
-            recomendacoes.append({
-                'movie_id': int(row['id']),
-                'score': float(row['imdb_rating']),
-                'titulo': row.get('series_title', 'Unknown'),
-                'genero': row.get('genre', 'Unknown'),
-                'imdb_rating': float(row.get('imdb_rating', 0.0))
+            titulo = self.bd.iloc[idx].get('series_title', 'Unknown')
+            genero = self.bd.iloc[idx].get('genre', 'Unknown')
+            imdb = float(self.bd.iloc[idx].get('imdb_rating', 0.0))
+            
+            similaridades.append({
+                'idx': idx,
+                'movie_id': movie_id,
+                'similaridade': float(sim),
+                'titulo': titulo,
+                'genero': genero,
+                'imdb_rating': imdb
             })
         
-        return recomendacoes
+        # Ordenar por similaridade (maior primeiro)
+        similaridades.sort(key=lambda x: x['similaridade'], reverse=True)
+        
+        return similaridades
     
     def gerar_recomendacoes(self, n: int = 25) -> List[Dict]:
         """
-        ✨ OTIMIZADO: Gera top N recomendações usando vetorização completa
+        Gera recomendações encontrando os top K similares para cada filme avaliado
         """
         if len(self.avaliacoes) == 0:
             print("⚠️  Nenhuma avaliação fornecida. Usando cold start.")
             return self._get_popular_movies(n)
         
-        usar_knn = len(self.avaliacoes) >= self.min_avaliacoes_knn
-        
         print(f"\n🧮 Gerando recomendações...")
-        print(f"   Método: {'KNN (Ponderado por Nota)' if usar_knn else 'Similaridade com Perfil'}")
-        print(f"   Avaliações base: {len(self.avaliacoes)}")
+        print(f"   Método: Top-{self.k_por_filme} similares por filme avaliado")
+        print(f"   Filmes base: {len(self.avaliacoes)}")
         
-        # ✨ VETORIZAÇÃO: calcular scores de TODOS os filmes de uma vez
-        if usar_knn:
-            scores = self._calcular_todos_scores_knn()
-        else:
-            scores = self._calcular_todos_scores_similaridade()
+        # Dicionário para acumular scores por filme
+        # filme_id -> {similaridade_maxima, lista_de_similaridades, info}
+        candidatos = {}
         
-        # Filtragem eficiente com máscaras NumPy
-        ids_array = self.bd['id'].values
-        mask_nao_vistos = ~np.isin(ids_array, list(self.filmes_vistos_ids))
+        for idx_avaliado in self.avaliacoes.keys():
+            titulo_avaliado = self.bd.iloc[idx_avaliado].get('series_title', 'Unknown')
+            print(f"   Buscando similares a: {titulo_avaliado}")
+            
+            similaridades = self._calcular_similaridades(idx_avaliado)
+            
+            # Pegar top K
+            top_k = similaridades[:self.k_por_filme]
+            
+            for rec in top_k:
+                movie_id = rec['movie_id']
+                
+                if movie_id not in candidatos:
+                    candidatos[movie_id] = {
+                        'movie_id': movie_id,
+                        'titulo': rec['titulo'],
+                        'genero': rec['genero'],
+                        'imdb_rating': rec['imdb_rating'],
+                        'similaridades': [],
+                        'max_sim': 0.0
+                    }
+                
+                candidatos[movie_id]['similaridades'].append(rec['similaridade'])
+                candidatos[movie_id]['max_sim'] = max(
+                    candidatos[movie_id]['max_sim'], 
+                    rec['similaridade']
+                )
         
-        # Aplicar máscara
-        indices_candidatos = np.where(mask_nao_vistos)[0]
-        scores_candidatos = scores[indices_candidatos]
-        
-        # Top N usando argsort (mais rápido que sort completo)
-        top_n_indices_rel = np.argsort(scores_candidatos)[-n:][::-1]
-        top_n_indices = indices_candidatos[top_n_indices_rel]
-        
-        # Construir lista de recomendações
+        # Converter para lista e calcular score final
         recomendacoes = []
-        for idx in top_n_indices:
-            filme = self.bd.iloc[idx]
+        for movie_id, info in candidatos.items():
+            # Score = média das similaridades (se apareceu múltiplas vezes, é muito relevante)
+            avg_sim = np.mean(info['similaridades'])
+            max_sim = info['max_sim']
+            count = len(info['similaridades'])
+            
+            # Score final: combina média, máxima e contagem
+            # Filmes que aparecem múltiplas vezes (similares a vários filmes avaliados) são preferidos
+            score = (avg_sim * 0.5 + max_sim * 0.3) * (1 + count * 0.1)
+            
             recomendacoes.append({
-                'movie_id': int(filme['id']),
-                'score': float(scores[idx]),
-                'titulo': filme.get('series_title', 'Unknown'),
-                'genero': filme.get('genre', 'Unknown'),
-                'imdb_rating': float(filme.get('imdb_rating', 0.0))
+                'movie_id': movie_id,
+                'score': float(score),
+                'avg_similarity': float(avg_sim),
+                'max_similarity': float(max_sim),
+                'appears_for': count,  # Quantos filmes avaliados têm este como similar
+                'titulo': info['titulo'],
+                'genero': info['genero'],
+                'imdb_rating': info['imdb_rating']
             })
+        
+        # Ordenar por score
+        recomendacoes.sort(key=lambda x: x['score'], reverse=True)
         
         print(f"✅ {len(recomendacoes)} recomendações geradas")
         if recomendacoes:
-            print(f"   Top score: {recomendacoes[0]['score']:.2f}")
+            print(f"   Top score: {recomendacoes[0]['score']:.4f}")
+            print(f"   Top título: {recomendacoes[0]['titulo']}")
         print(f"   Retornando top {n}\n")
         
-        return recomendacoes
+        return recomendacoes[:n]

@@ -9,8 +9,6 @@ const CLERK_FRONTEND_API = Deno.env.get("CLERK_FRONTEND_API")!;
 const cleanClerkUrl = CLERK_FRONTEND_API.replace(/^https?:\/\//, "");
 const JWKS_URL = `https://${cleanClerkUrl}/.well-known/jwks.json`;
 
-const ITEMS_PER_PAGE = 20;
-
 // Cache JWKS
 let jwksCache: any = null;
 let jwksExpiry = 0;
@@ -69,99 +67,80 @@ Deno.serve(async (req) => {
 
   // 🚀 5. Lógica de Negócio
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-
-    // Lê parâmetros do body
-    let statusFilter = null;
-    let searchQuery = null;
-    let page = 0;
-
-    try {
-      const body = await req.json();
-      statusFilter = body.statusFilter || null;
-      searchQuery = body.searchQuery || null;
-      page = parseInt(body.page || "0", 10);
-    } catch {
-      // Se falhar o parse do body, assume valores default
-      console.warn("⚠️ Failed to parse body, using defaults");
+    const { movie_id } = await req.json();
+    if (!movie_id || typeof movie_id !== "string") {
+      return new Response(
+        JSON.stringify({ error: "movie_id is required" }),
+        { headers, status: 400 }
+      );
     }
 
-    // Fetch data
-    const [countsResponse, moviesResponse] = await Promise.all([
-      supabase.from("user_movies").select("status").eq("user_id", userId),
-      (async () => {
-        let userMoviesQuery = supabase
-          .from("user_movies")
-          .select("movie_id, created_at")
-          .eq("user_id", userId);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+      auth: { persistSession: false },
+    });
 
-        if (statusFilter) {
-          userMoviesQuery = userMoviesQuery.eq("status", statusFilter);
-        }
+    console.log("Fetching friends activity for movie:", movie_id, "user:", userId);
 
-        const { data: userMoviesData, error: userMoviesError } =
-          await userMoviesQuery
-            .order("created_at", { ascending: false })
-            .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
+    // 1. Pega amigos
+    const { data: friendships, error: friendsError } = await supabase
+      .from("friendships")
+      .select("user_id_a, user_id_b")
+      .or(`user_id_a.eq.${userId},user_id_b.eq.${userId}`);
 
-        if (userMoviesError) throw userMoviesError;
-        if (!userMoviesData || userMoviesData.length === 0) return [];
+    if (friendsError) throw friendsError;
 
-        const movieIds = userMoviesData.map((um) => um.movie_id);
+    if (!friendships || friendships.length === 0) {
+      console.log("No friends found");
+      return new Response(
+        JSON.stringify({ activity: [] }),
+        { headers, status: 200 }
+      );
+    }
 
-        let moviesQuery = supabase
-          .from("movies")
-          .select(
-            "id, series_title, poster_url, runtime, genre, imdb_rating"
-          )
-          .in("id", movieIds);
-
-        if (searchQuery) {
-          moviesQuery = moviesQuery.ilike("series_title", `%${searchQuery}%`);
-        }
-
-        const { data: moviesData, error: moviesError } = await moviesQuery;
-        if (moviesError) throw moviesError;
-
-        return (moviesData || []).map((movie, index) => ({
-          id: movie.id.toString(),
-          img: movie.poster_url || "",
-          url: "#",
-          height: [600, 700, 800, 850, 900, 950, 1000][index % 7],
-          title: movie.series_title || "Untitled",
-          time: movie.runtime || "",
-          category: movie.genre || "Uncategorized",
-          year: "N/A",
-          rating: movie.imdb_rating || 0,
-        }));
-      })(),
-    ]);
-
-    if (countsResponse.error) throw countsResponse.error;
-
-    const counts = {
-      saved: countsResponse.data?.filter((m) => m.status === "saved").length || 0,
-      watching: countsResponse.data?.filter((m) => m.status === "watching").length || 0,
-      seen: countsResponse.data?.filter((m) => m.status === "seen").length || 0,
-    };
-
-    return new Response(
-      JSON.stringify({
-        movies: moviesResponse,
-        counts,
-        page,
-        hasMore: moviesResponse.length === ITEMS_PER_PAGE,
-      }),
-      { status: 200, headers }
+    const friendIds = friendships.map(f =>
+      f.user_id_a === userId ? f.user_id_b : f.user_id_a
     );
 
-  } catch (err: any) {
-    console.error("❌ Error:", err);
+    console.log("Friends IDs:", friendIds);
+
+    // 2. Pega atividades
+    const { data: activities, error: actError } = await supabase
+      .from("user_movies")
+      .select(`
+        user_id,
+        status,
+        rating,
+        review,
+        created_at,
+        user:User!user_movies_user_id_fkey (id, name)
+      `)
+      .eq("movie_id", movie_id)
+      .in("user_id", friendIds)
+      .order("created_at", { ascending: false });
+
+    if (actError) throw actError;
+
+    const formatted = (activities || []).map(a => ({
+      friend_id: a.user_id,
+      friend_name: a.user?.[0]?.name || a.user?.name || "Friend",
+      status: a.status || "unknown",
+      rating: a.rating,
+      review: a.review,
+      created_at: a.created_at,
+    }));
+
+    console.log(`Found ${formatted.length} activities`);
+
     return new Response(
-      JSON.stringify({
-        error: err.message || "Internal server error",
-      }),
-      { status: 500, headers }
+      JSON.stringify({ activity: formatted }),
+      { headers, status: 200 }
+    );
+
+  } catch (error: any) {
+    console.error("❌ Error in get-friends-activity:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Internal server error" }),
+      { headers, status: 500 }
     );
   }
 });
