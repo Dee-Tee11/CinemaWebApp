@@ -11,8 +11,6 @@ class SistemaRecomendacaoSimilaridade:
         """
         print("Carregando sistema de recomendação por similaridade...")
         self.embeddings = embeddings
-        self.k_vizinhos = k_vizinhos
-        self.min_avaliacoes_knn = min_avaliacoes_knn
         
         if isinstance(dataset_source, pd.DataFrame):
             self.bd = dataset_source
