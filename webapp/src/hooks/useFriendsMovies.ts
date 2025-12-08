@@ -174,7 +174,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
     // Buscar informações dos filmes
     const { data: moviesData, error: moviesError } = await supabase
       .from('movies')
-      .select('id, series_title, poster_url, runtime, genre, imdb_rating, overview')
+      .select('id, series_title, poster_url, runtime, genre, imdb_rating')
       .in('id', movieIds);
 
     if (moviesError) {
@@ -184,7 +184,6 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
 
 
 
-    // Formatar filmes para o formato esperado pelo Masonry
     const formattedMovies = moviesData.map((movie: Movie, index: number) => ({
       id: movie.id.toString(),
       img: movie.poster_url || '',
@@ -195,7 +194,6 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
       category: movie.genre || 'Uncategorized',
       year: movie.runtime ? new Date(movie.runtime).getFullYear().toString() : '2024',
       rating: movie.imdb_rating || 0,
-      synopsis: movie.overview || 'Synopsis not available',
     }));
 
     return formattedMovies;

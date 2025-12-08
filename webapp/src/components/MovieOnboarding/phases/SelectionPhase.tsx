@@ -7,7 +7,6 @@ interface Movie {
     genre: string;
     poster_url: string;
     imdb_rating: number;
-    overview?: string;
     runtime?: string;
 }
 

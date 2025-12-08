@@ -9,7 +9,6 @@ interface Movie {
   genre: string;
   poster_url: string;
   imdb_rating: number;
-  overview: string;
   runtime?: string;
 }
 
@@ -62,7 +61,7 @@ export const useOnboarding = () => {
         const { data, error } = await supabase
           .from("movies")
           .select(
-            "id, series_title, genre, poster_url, imdb_rating, overview, runtime"
+            "id, series_title, genre, poster_url, imdb_rating, runtime"
           )
           .not("poster_url", "is", null)
           .gte("imdb_rating", 7.0)
@@ -97,7 +96,7 @@ export const useOnboarding = () => {
       const { data, error } = await supabase
         .from("movies")
         .select(
-          "id, series_title, genre, poster_url, imdb_rating, overview, runtime"
+          "id, series_title, genre, poster_url, imdb_rating, runtime"
         )
         .not("poster_url", "is", null)
         .ilike("series_title", `%${query}%`)
@@ -129,7 +128,7 @@ export const useOnboarding = () => {
       const { data, error } = await supabase
         .from("movies")
         .select(
-          "id, series_title, genre, poster_url, imdb_rating, overview, runtime"
+          "id, series_title, genre, poster_url, imdb_rating, runtime"
         )
         .not("poster_url", "is", null)
         .or(`series_title.ilike.%${query}%,genre.ilike.%${query}%`)
@@ -212,7 +211,7 @@ export const useOnboarding = () => {
       const { data, error } = await supabase
         .from("movies")
         .select(
-          "id, series_title, genre, poster_url, imdb_rating, overview, runtime"
+          "id, series_title, genre, poster_url, imdb_rating, runtime"
         )
         .not("poster_url", "is", null)
         .gte("imdb_rating", 6.5)
