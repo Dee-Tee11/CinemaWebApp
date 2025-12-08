@@ -42,27 +42,40 @@ if not supabase_url or not supabase_key:
         "SUPABASE_SERVICE_KEY=..."
     )
 
-print(f"✅ Conectando ao Supabase: {supabase_url[:40]}...")
 supabase: Client = create_client(supabase_url, supabase_key)
 
-# Carregar dados dos filmes do Supabase
+# Carregar dados dos filmes do Supabase com paginação
 print("📥 Buscando filmes do Supabase...")
-try:
-    response = supabase.table("movies").select("*").execute()
-    df_movies = pd.DataFrame(response.data)
-    print(f"✅ {len(df_movies)} filmes carregados do Supabase\n")
-except Exception as e:
-    print(f"⚠️  Erro ao carregar filmes do Supabase: {e}")
-    print("   Tentando carregar do CSV local...\n")
-    # Fallback para CSV local se Supabase falhar
-    dataset_path = os.path.join(os.path.dirname(__file__), '..', 'AI', 'movies_clean_with_posters.csv')
-    df_movies = pd.read_csv(dataset_path)
-    print(f"✅ {len(df_movies)} filmes carregados do CSV\n")
+# Supabase tem limite MÁXIMO de 1000 registros por request
+# Precisamos usar paginação para buscar todos os filmes
+all_movies = []
+page_size = 1000
+offset = 0
+page_num = 1
+
+while True:
+    response = supabase.table("movies").select("*").range(offset, offset + page_size - 1).execute()
+    
+    if not response.data:
+        break
+    
+    all_movies.extend(response.data)
+    print(f"   📄 Página {page_num}: {len(response.data)} filmes carregados")
+    
+    # Se retornou menos que page_size, chegamos ao fim
+    if len(response.data) < page_size:
+        break
+    
+    offset += page_size
+    page_num += 1
+
+df_movies = pd.DataFrame(all_movies)
+print(f"✅ {len(df_movies)} filmes carregados do Supabase\n")
 
 # Recommendation System Initialization
 import numpy as np
 import json
-print("⚙️  Extraindo embeddings do DataFrame...")
+print("⚙️  Extraindo embeddings da supabase...")
 
 try:
     # Os embeddings podem vir como strings do Supabase
