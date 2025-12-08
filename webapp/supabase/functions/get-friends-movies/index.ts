@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     // 3. Pega detalhes
     const { data: movies, error: moviesError } = await supabase
       .from("movies")
-      .select("id, series_title, poster_url, runtime, genre, imdb_rating, overview")
+      .select("id, series_title, poster_url, runtime, genre, imdb_rating")
       .in("id", movieIds);
 
     if (moviesError) throw moviesError;
@@ -146,7 +146,6 @@ Deno.serve(async (req) => {
       category: m.genre || "Uncategorized",
       year: "N/A",
       rating: m.imdb_rating || 0,
-      synopsis: m.overview || "Synopsis not available",
     }));
 
     return new Response(

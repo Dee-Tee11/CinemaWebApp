@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
         let moviesQuery = supabase
           .from("movies")
           .select(
-            "id, series_title, poster_url, runtime, genre, imdb_rating, overview"
+            "id, series_title, poster_url, runtime, genre, imdb_rating"
           )
           .in("id", movieIds);
 
@@ -133,7 +133,6 @@ Deno.serve(async (req) => {
           category: movie.genre || "Uncategorized",
           year: "N/A",
           rating: movie.imdb_rating || 0,
-          synopsis: movie.overview || "Synopsis not available",
         }));
       })(),
     ]);
