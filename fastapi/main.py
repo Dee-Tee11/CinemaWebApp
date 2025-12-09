@@ -186,3 +186,18 @@ def trigger_recommendation_generation(user_id: str, background_tasks: Background
         "message": f"Geração de recomendações iniciada para o usuário {user_id}",
         "status": "processing"
     }
+
+if __name__ == "__main__":
+    print("\n" + "="*50)
+    resposta = input("🧪 Deseja testar a geração de recomendações localmente? (s/n): ").strip().lower()
+    
+    if resposta == 's':
+        user_id = input("📝 Digite o user_id para testar: ").strip()
+        if user_id:
+            print(f"\n🚀 Gerando recomendações para o usuário: {user_id}")
+            generate_and_save_recommendations(user_id)
+            print("\n✅ Teste concluído!")
+        else:
+            print("❌ User ID não pode ser vazio.")
+    else:
+        print("ℹ️  Para iniciar o servidor, execute: uvicorn main:app --reload")
