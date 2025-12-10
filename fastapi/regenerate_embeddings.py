@@ -1,300 +1,437 @@
 """
-Script para regenerar embeddings com novo formato enriquecido.
-Usa os dados existentes do Supabase e regenera os embeddings com estrutura:
-{genres}. {keywords}. {language_name}. | {title}. {overview} | {genres}. {keywords}.
+Versão OTIMIZADA com batch processing e rate limiting inteligente.
+
+Melhorias:
+- Rate limiter para TMDB (40 calls/10s)
+- Progress saving (resume capability)
+- Validação de API key antes de começar
+- Estatísticas em tempo real
 
 Uso:
-    python regenerate_embeddings.py
+    export TMDB_API_KEY="your_key_here"
+    python regenerate_embeddings_v3.py
 """
 import os
-import json
-import time
+import sys
 import pickle
+import time
 import numpy as np
-from dotenv import load_dotenv
-from supabase import create_client, Client
+import requests
+from collections import deque
 from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
 
-# Carregar variáveis de ambiente
 load_dotenv()
 
-# Configuração Supabase
-supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_SERVICE_KEY")
+# Paths
+CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
+MOVIES_CACHE_PATH = os.path.join(CACHE_DIR, "movies.pkl")
+EMBEDDINGS_CACHE_PATH = os.path.join(CACHE_DIR, "embeddings.npy")
+TMDB_CACHE_PATH = os.path.join(CACHE_DIR, "tmdb_metadata.pkl")
+PROGRESS_PATH = os.path.join(CACHE_DIR, "progress.txt")
 
-if not supabase_url or not supabase_key:
-    raise ValueError("❌ Variáveis de ambiente SUPABASE_URL e SUPABASE_SERVICE_KEY não configuradas!")
-
-supabase: Client = create_client(supabase_url, supabase_key)
-
-# Mapeamento de códigos de idioma para nomes
-LANGUAGE_NAMES = {
-    'en': 'English',
-    'ja': 'Japanese',
-    'ko': 'Korean',
-    'zh': 'Chinese',
-    'es': 'Spanish',
-    'fr': 'French',
-    'de': 'German',
-    'it': 'Italian',
-    'pt': 'Portuguese',
-    'ru': 'Russian',
-    'hi': 'Hindi',
-    'ar': 'Arabic',
-    'th': 'Thai',
-    'id': 'Indonesian',
-    'tr': 'Turkish',
-    'pl': 'Polish',
-    'nl': 'Dutch',
-    'sv': 'Swedish',
-    'da': 'Danish',
-    'no': 'Norwegian',
-    'fi': 'Finnish',
-    'cs': 'Czech',
-    'hu': 'Hungarian',
-    'ro': 'Romanian',
-    'el': 'Greek',
-    'he': 'Hebrew',
-    'vi': 'Vietnamese',
-    'ms': 'Malay',
-    'tl': 'Filipino',
-    'uk': 'Ukrainian',
-    'bn': 'Bengali',
-    'ta': 'Tamil',
-    'te': 'Telugu',
-    'mr': 'Marathi',
-    'cn': 'Chinese',
-}
-
-def get_language_name(lang_code: str) -> str:
-    """Converte código de idioma para nome completo"""
-    if not lang_code:
-        return 'Unknown'
-    return LANGUAGE_NAMES.get(lang_code.lower(), lang_code.capitalize())
+# API
+TMDB_API_KEY = os.getenv('TMDB_API_KEY')
+TMDB_BASE_URL = "https://api.themoviedb.org/3"
 
 
-def extract_fields_from_embedding_input(embedding_input: str) -> dict:
-    """
-    Extrai campos do embedding_input existente.
-    Formato esperado: "{title}. {overview} Genres: {genres}. Keywords: {keywords}. Language: {lang}. Director: {dir}"
-    """
-    result = {
-        'title': '',
-        'overview': '',
-        'genres': '',
-        'keywords': '',
-        'language': '',
-        'director': ''
-    }
+class TMDBRateLimiter:
+    """Rate limiter inteligente para TMDB API (40 calls / 10 segundos)"""
+    def __init__(self, max_calls=38, period=10):  # 38 para margem de segurança
+        self.calls = deque()
+        self.max_calls = max_calls
+        self.period = period
+        self.total_waits = 0
+        self.total_wait_time = 0
     
+    def wait_if_needed(self):
+        now = time.time()
+        
+        # Remove chamadas antigas (fora da janela)
+        while self.calls and self.calls[0] < now - self.period:
+            self.calls.popleft()
+        
+        # Se chegou ao limite, espera
+        if len(self.calls) >= self.max_calls:
+            sleep_time = self.period - (now - self.calls[0]) + 0.1  # +0.1s margem
+            if sleep_time > 0:
+                self.total_waits += 1
+                self.total_wait_time += sleep_time
+                print(f"      ⏳ Rate limit - aguardando {sleep_time:.1f}s (wait #{self.total_waits})...")
+                time.sleep(sleep_time)
+        
+        self.calls.append(time.time())
+    
+    def get_stats(self):
+        return {
+            'total_waits': self.total_waits,
+            'total_wait_time': self.total_wait_time,
+            'calls_in_window': len(self.calls)
+        }
+
+
+def validate_tmdb_api():
+    """Valida que a API key está configurada e funciona"""
+    if not TMDB_API_KEY:
+        print("❌ TMDB_API_KEY não configurada!")
+        print("\n   Configure assim:")
+        print("   export TMDB_API_KEY='sua_chave_aqui'")
+        print("\n   Ou cria um ficheiro .env:")
+        print("   TMDB_API_KEY=sua_chave_aqui")
+        return False
+    
+    # Test API call
+    print("🔑 Validando TMDB API key...")
     try:
-        text = embedding_input
+        url = f"{TMDB_BASE_URL}/movie/550"  # Fight Club
+        params = {'api_key': TMDB_API_KEY}
+        response = requests.get(url, params=params, timeout=5)
         
-        # Extrair título (até o primeiro ponto seguido de espaço maiúsculo, indicando início do overview)
-        first_period = text.find('. ')
-        if first_period > 0:
-            result['title'] = text[:first_period]
-            text = text[first_period + 2:]
+        if response.status_code == 401:
+            print("❌ API Key inválida!")
+            return False
+        elif response.status_code == 200:
+            print("✅ API Key válida!")
+            data = response.json()
+            print(f"   Teste: {data.get('title')} ({data.get('release_date', '')[:4]})")
+            return True
+        else:
+            print(f"⚠️  Resposta inesperada: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Erro ao validar API: {e}")
+        return False
+
+
+def fetch_tmdb_rich_metadata(title: str, year: int, rate_limiter: TMDBRateLimiter) -> dict:
+    """Fetch TMDB metadata com rate limiting"""
+    try:
+        # Rate limiting
+        rate_limiter.wait_if_needed()
         
-        # Encontrar marcadores
-        genres_idx = text.find('Genres:')
-        keywords_idx = text.find('Keywords:')
-        lang_idx = text.find('Language:')
-        director_idx = text.find('Director:')
+        # Search
+        search_url = f"{TMDB_BASE_URL}/search/movie"
+        params = {'api_key': TMDB_API_KEY, 'query': title}
+        if year:
+            params['year'] = year
         
-        # Extrair overview (tudo antes de Genres:)
-        if genres_idx > 0:
-            result['overview'] = text[:genres_idx].strip()
+        response = requests.get(search_url, params=params, timeout=5)
+        if response.status_code != 200:
+            return {}
         
-        # Extrair genres
-        if genres_idx >= 0 and keywords_idx > genres_idx:
-            result['genres'] = text[genres_idx + 7:keywords_idx].strip().rstrip('.')
+        results = response.json().get('results', [])
+        if not results:
+            return {}
         
-        # Extrair keywords
-        if keywords_idx >= 0 and lang_idx > keywords_idx:
-            result['keywords'] = text[keywords_idx + 9:lang_idx].strip().rstrip('.')
+        movie_id = results[0]['id']
         
-        # Extrair language
-        if lang_idx >= 0:
-            if director_idx > lang_idx:
-                result['language'] = text[lang_idx + 9:director_idx].strip().rstrip('.')
-            else:
-                result['language'] = text[lang_idx + 9:].strip().rstrip('.')
+        # Details (outra chamada, precisa de rate limit)
+        rate_limiter.wait_if_needed()
         
-        # Extrair director
-        if director_idx >= 0:
-            result['director'] = text[director_idx + 9:].strip()
+        details_url = f"{TMDB_BASE_URL}/movie/{movie_id}"
+        params = {
+            'api_key': TMDB_API_KEY,
+            'append_to_response': 'keywords,credits'
+        }
+        
+        response = requests.get(details_url, params=params, timeout=5)
+        if response.status_code != 200:
+            return {}
+        
+        data = response.json()
+        
+        # Extract metadata
+        metadata = {
+            'tmdb_id': movie_id,
+            'original_title': data.get('original_title', ''),
+            'original_language': data.get('original_language', ''),
+            'genres': [g['name'] for g in data.get('genres', [])],
+            'keywords': [kw['name'] for kw in data.get('keywords', {}).get('keywords', [])],
+            'tagline': data.get('tagline', ''),
+            'overview': data.get('overview', ''),
+            'production_companies': [pc['name'] for pc in data.get('production_companies', [])],
+            'production_countries': [pc['name'] for pc in data.get('production_countries', [])],
+            'directors': [],
+            'writers': [],
+            'actors': [],
+        }
+        
+        # Extract crew
+        credits = data.get('credits', {})
+        crew = credits.get('crew', [])
+        cast = credits.get('cast', [])
+        
+        metadata['directors'] = [p['name'] for p in crew if p.get('job') == 'Director'][:3]
+        metadata['writers'] = [p['name'] for p in crew if p.get('department') == 'Writing'][:3]
+        metadata['actors'] = [p['name'] for p in cast[:5]]
+        
+        return metadata
         
     except Exception as e:
-        print(f"⚠️  Erro ao extrair campos: {e}")
-    
-    return result
+        return {}
 
 
-def build_enriched_embedding_text(fields: dict) -> str:
-    """
-    Constrói o novo formato de texto para embedding:
-    {genres}. {keywords}. {language_name}. | {title}. {overview} | {genres}. {keywords}.
-    """
-    lang_name = get_language_name(fields['language'])
+def build_semantic_embedding_text(row, tmdb_data: dict = None) -> str:
+    """Constrói texto rico para embeddings"""
+    title = row.get('series_title', 'Unknown')
+    year = row.get('released_year', '')
     
-    # Prefixo com informação categórica
-    prefix = f"{fields['genres']}. {fields['keywords']}. {lang_name}."
+    # Cultural Context
+    cultural_markers = []
+    if tmdb_data and tmdb_data.get('original_language'):
+        cultural_markers.append(f"Language: {tmdb_data['original_language']}")
+    if tmdb_data and tmdb_data.get('production_countries'):
+        countries = ', '.join(tmdb_data['production_countries'][:2])
+        cultural_markers.append(f"Countries: {countries}")
+    if tmdb_data and tmdb_data.get('production_companies'):
+        companies = ', '.join(tmdb_data['production_companies'][:3])
+        cultural_markers.append(f"Studios: {companies}")
     
-    # Sufixo (sem language para não repetir demais)
-    suffix = f"{fields['genres']}. {fields['keywords']}."
+    cultural_context = ' | '.join(cultural_markers) if cultural_markers else ''
     
-    # Texto final
-    enriched = f"{prefix} | {fields['title']}. {fields['overview']} | {suffix}"
+    # Genres & Keywords
+    genre_markers = []
+    if tmdb_data and tmdb_data.get('genres'):
+        genres = ', '.join(tmdb_data['genres'])
+        genre_markers.append(f"Genres: {genres}")
+    elif row.get('genre'):
+        genre_markers.append(f"Genres: {row['genre']}")
     
-    return enriched
+    if tmdb_data and tmdb_data.get('keywords'):
+        keywords = ', '.join(tmdb_data['keywords'][:10])
+        genre_markers.append(f"Themes: {keywords}")
+    
+    genre_context = ' | '.join(genre_markers)
+    
+    # Creative Team
+    creative_markers = []
+    directors = tmdb_data.get('directors', []) if tmdb_data else []
+    if not directors and row.get('director'):
+        directors = [row['director']]
+    
+    if directors:
+        creative_markers.append(f"Directed by {', '.join(directors)}")
+    if tmdb_data and tmdb_data.get('writers'):
+        creative_markers.append(f"Written by {', '.join(tmdb_data['writers'][:2])}")
+    if tmdb_data and tmdb_data.get('actors'):
+        creative_markers.append(f"Starring {', '.join(tmdb_data['actors'][:3])}")
+    
+    creative_context = ' | '.join(creative_markers)
+    
+    # Content
+    content_parts = []
+    if tmdb_data and tmdb_data.get('tagline'):
+        content_parts.append(tmdb_data['tagline'])
+    if tmdb_data and tmdb_data.get('overview'):
+        content_parts.append(tmdb_data['overview'])
+    
+    content_description = ' '.join(content_parts)
+    
+    # Assembly
+    parts = []
+    if cultural_context:
+        parts.append(cultural_context)
+    if genre_context:
+        parts.append(genre_context)
+    if creative_context:
+        parts.append(creative_context)
+    parts.append(f"{title} ({year}). {content_description}")
+    if tmdb_data and tmdb_data.get('genres'):
+        parts.append(f"Style: {', '.join(tmdb_data['genres'])}")
+    
+    return '\n'.join(parts)
+
+
+def save_progress(index: int):
+    """Salva progresso para resume capability"""
+    with open(PROGRESS_PATH, 'w') as f:
+        f.write(str(index))
+
+
+def load_progress() -> int:
+    """Carrega progresso anterior"""
+    if os.path.exists(PROGRESS_PATH):
+        try:
+            return int(open(PROGRESS_PATH).read().strip())
+        except:
+            return 0
+    return 0
 
 
 def main():
-    print("=" * 70)
-    print("🔄 REGENERAR EMBEDDINGS COM FORMATO ENRIQUECIDO")
-    print("=" * 70)
+    print("="*80)
+    print("🚀 REGENERAÇÃO DE EMBEDDINGS - VERSÃO OTIMIZADA (V3)")
+    print("="*80)
     print()
     
-    # Perguntar confirmação
-    print("⚠️  Este processo vai:")
-    print("   1. Carregar todos os filmes do cache local")
-    print("   2. Regenerar embeddings com novo formato")
-    print("   3. Atualizar no Supabase")
-    print("   4. Atualizar cache local")
-    print()
-    print("   ⏱️  Tempo estimado: 2-4 horas para 16k filmes")
-    print()
-    
-    confirm = input("Continuar? (s/n): ").strip().lower()
-    if confirm != 's':
-        print("❌ Cancelado.")
+    # Validate API
+    if not validate_tmdb_api():
         return
     
-    # Carregar cache local
-    print("\n📥 Carregando dados do cache local...")
-    CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
-    MOVIES_CACHE_PATH = os.path.join(CACHE_DIR, "movies.pkl")
+    print()
     
+    # Load data
+    print("📥 Carregando dados...")
     if not os.path.exists(MOVIES_CACHE_PATH):
-        print("❌ Cache não encontrado! Execute primeiro: python export_cache.py")
+        print("❌ Cache não encontrado! Execute: python export_cache.py")
         return
     
     df = pickle.load(open(MOVIES_CACHE_PATH, 'rb'))
-    print(f"✅ {len(df)} filmes carregados")
+    print(f"✅ {len(df)} filmes")
     
-    # Carregar modelo
-    print("\n📥 Carregando modelo de embeddings...")
-    model = SentenceTransformer('all-mpnet-base-v2')
-    print("✅ Modelo carregado!")
+    # Load TMDB cache
+    tmdb_cache = {}
+    if os.path.exists(TMDB_CACHE_PATH):
+        tmdb_cache = pickle.load(open(TMDB_CACHE_PATH, 'rb'))
+        print(f"📦 {len(tmdb_cache)} metadados TMDB em cache")
     
-    # Processar filmes
-    print(f"\n⚙️  Processando {len(df)} filmes...")
+    # Check progress
+    start_idx = load_progress()
+    if start_idx > 0:
+        print(f"📍 Retomando do filme #{start_idx}")
+        response = input("   Continuar de onde parou? (y/n): ")
+        if response.lower() != 'y':
+            start_idx = 0
+            save_progress(0)
+    
     print()
     
-    batch_size = 50  # Processar em batches para updates
-    total_processed = 0
-    total_errors = 0
+    # Load model
+    print("📥 Carregando modelo...")
+    model = SentenceTransformer('BAAI/bge-large-en-v1.5')
+    print("✅ BAAI/bge-large-en-v1.5")
+    print()
     
+    # Initialize
+    rate_limiter = TMDBRateLimiter()
     new_embeddings = []
     new_embedding_inputs = []
     
-    for idx, row in df.iterrows():
+    # Se está a resumir, carrega embeddings anteriores
+    if start_idx > 0 and os.path.exists(EMBEDDINGS_CACHE_PATH):
         try:
-            movie_id = int(row['id'])
-            embedding_input = row.get('embedding_input', '')
+            prev_embeddings = np.load(EMBEDDINGS_CACHE_PATH)
+            new_embeddings = prev_embeddings[:start_idx].tolist()
             
-            if not embedding_input:
-                print(f"⚠️  [{movie_id}] Sem embedding_input, pulando...")
-                total_errors += 1
-                new_embeddings.append(None)
-                new_embedding_inputs.append(None)
-                continue
+            prev_df = pickle.load(open(MOVIES_CACHE_PATH, 'rb'))
+            if 'embedding_input' in prev_df.columns:
+                new_embedding_inputs = prev_df['embedding_input'].iloc[:start_idx].tolist()
+            print(f"   ✅ Carregados {len(new_embeddings)} embeddings anteriores")
+        except Exception as e:
+            print(f"   ⚠️  Erro ao carregar checkpoint anterior: {e}")
+            print(f"   ⚠️  Recomeçando do zero...")
+            new_embeddings = []
+            new_embedding_inputs = []
+            start_idx = 0
+            save_progress(0)
+    
+    # Stats
+    tmdb_fetched = 0
+    tmdb_hits = 0
+    start_time = time.time()
+    
+    print(f"⚙️  Processando {len(df) - start_idx} filmes...")
+    print(f"   (Estimativa: ~{(len(df) - start_idx) * 0.5 / 60:.1f} minutos com rate limiting)")
+    print()
+    
+    # Process
+    for i, (idx, row) in enumerate(df.iloc[start_idx:].iterrows(), start=start_idx):
+        try:
+            title = row.get('series_title', '')
+            year = row.get('released_year', None)
+            if year:
+                try:
+                    year = int(year)
+                except (ValueError, TypeError):
+                    year = None
             
-            # Extrair campos do embedding_input existente
-            fields = extract_fields_from_embedding_input(embedding_input)
+            # TMDB metadata
+            tmdb_data = None
+            cache_key = f"{title}_{year}"
             
-            # Construir texto enriquecido
-            enriched_text = build_enriched_embedding_text(fields)
+            if cache_key in tmdb_cache:
+                tmdb_data = tmdb_cache[cache_key]
+                tmdb_hits += 1
+            elif title:
+                tmdb_data = fetch_tmdb_rich_metadata(title, year, rate_limiter)
+                if tmdb_data and tmdb_data.get('tmdb_id'):
+                    tmdb_cache[cache_key] = tmdb_data
+                    tmdb_fetched += 1
             
-            # Gerar novo embedding
-            new_embedding = model.encode(enriched_text).tolist()
+            # Build text
+            enriched_text = build_semantic_embedding_text(row, tmdb_data)
             
-            new_embeddings.append(new_embedding)
+            # Generate embedding
+            embedding = model.encode(enriched_text).tolist()
+            
+            # Validação Zero Input
+            if all(v == 0 for v in embedding):
+                print(f"      ⚠️  Warning: Embedding zero para '{title}'")
+            
+            new_embeddings.append(embedding)
             new_embedding_inputs.append(enriched_text)
             
-            total_processed += 1
-            
-            # Mostrar progresso
-            if total_processed % 100 == 0:
-                print(f"   ✓ {total_processed}/{len(df)} filmes processados...")
-            
-            # Exemplo ocasional
-            if total_processed == 1 or total_processed == 100:
-                print(f"\n   📝 Exemplo [{movie_id}]:")
-                print(f"      ANTES: {embedding_input[:100]}...")
-                print(f"      DEPOIS: {enriched_text[:100]}...")
-                print()
-            
-        except Exception as e:
-            print(f"❌ Erro no filme {row.get('id', 'unknown')}: {e}")
-            total_errors += 1
-            new_embeddings.append(None)
-            new_embedding_inputs.append(None)
-    
-    print(f"\n✅ Processamento local concluído!")
-    print(f"   Sucesso: {total_processed}")
-    print(f"   Erros: {total_errors}")
-    
-    # Atualizar Supabase
-    print(f"\n🚀 Atualizando Supabase...")
-    
-    updates_success = 0
-    
-    for idx, row in df.iterrows():
-        if new_embeddings[idx] is None:
-            continue
-        
-        try:
-            movie_id = int(row['id'])
-            
-            supabase.table('movies').update({
-                'embedding': new_embeddings[idx],
-                'embedding_input': new_embedding_inputs[idx]
-            }).eq('id', movie_id).execute()
-            
-            updates_success += 1
-            
-            if updates_success % 100 == 0:
-                print(f"   ✓ {updates_success} filmes atualizados no Supabase...")
-            
-            # Rate limiting
-            time.sleep(0.02)  # ~50 requests/segundo
+            # Progress (a cada 25 filmes)
+            if (i + 1) % 25 == 0:
+                elapsed = time.time() - start_time
+                rate = (i + 1 - start_idx) / elapsed if elapsed > 0 else 0
+                eta_seconds = (len(df) - i - 1) / rate if rate > 0 else 0
+                eta_mins = eta_seconds / 60
+                
+                rl_stats = rate_limiter.get_stats()
+                
+                print(f"   ✓ {i + 1}/{len(df)} | "
+                      f"TMDB: {tmdb_fetched} new, {tmdb_hits} cached | "
+                      f"Rate: {rate:.1f} films/s | "
+                      f"ETA: {eta_mins:.1f}min")
+                
+                # Save progress
+                save_progress(i + 1)
+                
+                # Save intermediate results (a cada 100)
+                if (i + 1) % 100 == 0:
+                    print(f"      💾 Salvando checkpoint...")
+                    embeddings_array = np.array(new_embeddings, dtype=np.float32)
+                    np.save(EMBEDDINGS_CACHE_PATH, embeddings_array)
+                    # Handle size mismatch if checkpoints happen
+                    # Fill remainder with empty
+                    remaining = len(df) - len(new_embedding_inputs)
+                    df['embedding_input'] = new_embedding_inputs + [''] * remaining
+                    pickle.dump(df, open(MOVIES_CACHE_PATH, 'wb'))
+                    pickle.dump(tmdb_cache, open(TMDB_CACHE_PATH, 'wb'))
             
         except Exception as e:
-            print(f"❌ Erro ao atualizar filme {movie_id}: {e}")
+            print(f"❌ Erro: {e}")
+            new_embeddings.append([0.0] * 768)
+            new_embedding_inputs.append('')
     
-    print(f"\n✅ {updates_success} filmes atualizados no Supabase!")
-    
-    # Atualizar cache local
-    print(f"\n💾 Atualizando cache local...")
-    
-    # Atualizar embeddings no array
-    embeddings_array = np.array([e if e is not None else [0]*768 for e in new_embeddings], dtype=np.float32)
-    
-    EMBEDDINGS_CACHE_PATH = os.path.join(CACHE_DIR, "embeddings.npy")
+    # Final save
+    print(f"\n💾 Salvando resultados finais...")
+    embeddings_array = np.array(new_embeddings, dtype=np.float32)
     np.save(EMBEDDINGS_CACHE_PATH, embeddings_array)
-    print(f"   ✅ {EMBEDDINGS_CACHE_PATH}")
     
-    # Atualizar embedding_input no DataFrame
     df['embedding_input'] = new_embedding_inputs
     pickle.dump(df, open(MOVIES_CACHE_PATH, 'wb'))
-    print(f"   ✅ {MOVIES_CACHE_PATH}")
+    pickle.dump(tmdb_cache, open(TMDB_CACHE_PATH, 'wb'))
     
-    print("\n" + "=" * 70)
-    print("🎉 REGENERAÇÃO CONCLUÍDA!")
-    print("=" * 70)
-    print("\n💡 Agora teste com: python find_similar.py")
+    # Remove progress file
+    if os.path.exists(PROGRESS_PATH):
+        os.remove(PROGRESS_PATH)
+    
+    # Stats
+    total_time = time.time() - start_time
+    rl_stats = rate_limiter.get_stats()
+    
+    print(f"\n✅ CONCLUÍDO!")
+    print(f"\n📊 Estatísticas:")
+    print(f"   Total processado: {len(new_embeddings)}")
+    print(f"   TMDB novos: {tmdb_fetched}")
+    print(f"   TMDB cache hits: {tmdb_hits}")
+    print(f"   Taxa TMDB: {(tmdb_fetched+tmdb_hits)/len(df)*100:.1f}%")
+    print(f"   Tempo total: {total_time/60:.1f} minutos")
+    print(f"   Rate limiter: {rl_stats['total_waits']} waits, {rl_stats['total_wait_time']/60:.1f}min waiting")
+    print(f"\n🧪 Teste agora: python debug/test_embeddings.py")
 
 
 if __name__ == "__main__":
