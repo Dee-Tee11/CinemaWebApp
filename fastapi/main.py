@@ -281,26 +281,26 @@ def get_ai_recommendations(request: AiRecsRequest):
 
         # 2. Generate Candidates (Vector Search)
         # Using the same logic as generate_and_save_recommendations but ad-hoc
-        user_vector = np.zeros(embeddings.shape[1])
+        user_vector = np.zeros(movie_embeddings.shape[1])
         count = 0
         for r in ratings:
-            match = df_filmes[df_filmes['series_title'] == r['title']]
+            match = df_movies[df_movies['series_title'] == r['title']]
             if len(match) > 0:
                 idx = match.index[0]
-                user_vector += embeddings[idx]
+                user_vector += movie_embeddings[idx]
                 count += 1
         
         if count > 0:
             user_vector /= count
             
-        sims = cosine_similarity([user_vector], embeddings)[0]
+        sims = cosine_similarity([user_vector], movie_embeddings)[0]
         top_indices = np.argsort(sims)[::-1][:50]
         
         candidates = []
         seen_titles = set(r['title'] for r in ratings)
         
         for idx in top_indices:
-            movie = df_filmes.iloc[idx]
+            movie = df_movies.iloc[idx]
             if movie['series_title'] in seen_titles: continue
             
             candidates.append({
