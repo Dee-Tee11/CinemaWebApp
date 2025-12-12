@@ -1,16 +1,17 @@
 import React, { useState } from "react";
-import { Settings, User, Compass, UserPlus, Menu, X } from "lucide-react";
+import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle } from "lucide-react";
 import { useClerk } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 import SettingsPopup from "./SettingsPopup";
 import AddFriendPopup from "./AddFriend/AddFriend";
+import Chatbot from "./Chatbot/Chatbot";
 import "./Slidebar.css";
 
 interface SidebarProps {
   onSettingsClick?: () => void;
   onProfileClick?: () => void;
 }
-  
+
 const Logo: React.FC<LogoProps> = ({ width = 48, height = 48, className }) => {
   return (
     <svg
@@ -37,6 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { signOut } = useClerk();
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
+  const [showChatbotPopup, setShowChatbotPopup] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleProfileClick = () => {
@@ -76,6 +78,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Link>
 
         <button
+          onClick={() => setShowChatbotPopup(true)}
+          className="sidebar-button"
+          aria-label="Assistant"
+        >
+          <MessageCircle size={22} />
+        </button>
+
+        <button
           onClick={() => setShowAddFriendPopup(true)}
           className="sidebar-button"
           aria-label="Adicionar Amigo"
@@ -111,7 +121,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       />
       {/* MOBILE SLIDE MENU */}
 
-     <div className={`sidebar-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+      <div className={`sidebar-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="sidebar-mobile-header">
           <div className="sidebar-mobile-logo-container">
             <div className="sidebar-mobile-logo-circle">
@@ -151,6 +161,19 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Link>
 
           <button
+            onClick={() => {
+              setShowChatbotPopup(true);
+              setIsMobileMenuOpen(false);
+            }}
+            className="sidebar-mobile-button"
+          >
+            <span className="sidebar-mobile-button-icon">
+              <MessageCircle size={22} />
+            </span>
+            AI Assistant
+          </button>
+
+          <button
             onClick={handleAddFriendClick}
             className="sidebar-mobile-button"
           >
@@ -181,6 +204,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       <AddFriendPopup
         isOpen={showAddFriendPopup}
         onClose={() => setShowAddFriendPopup(false)}
+      />
+
+      <Chatbot
+        isOpen={showChatbotPopup}
+        onClose={() => setShowChatbotPopup(false)}
       />
     </div>
   );

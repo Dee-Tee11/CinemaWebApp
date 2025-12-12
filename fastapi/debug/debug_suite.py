@@ -76,6 +76,14 @@ def find_movie_by_title(df, title: str):
         return None
     return matches.iloc[0]
 
+def find_movie_by_id(df, movie_id):
+    """Encontra filme por ID exato"""
+    # Ensure ID type consistency
+    matches = df[df['id'] == int(movie_id)]
+    if len(matches) == 0:
+        return None
+    return matches.iloc[0]
+
 def calc_similarity(emb1, emb2):
     return np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
 
@@ -237,8 +245,24 @@ TEST_CASES = {
         'Classics': {
             'movies': ['The Evil Dead', 'Hereditary'],
             'expect_keywords': ['horror', 'cult', 'gore', 'supernatural'],
-            'expect_keywords': ['horror', 'cult', 'gore', 'supernatural'],
             'expect_studios': []
+        }
+    },
+    '🌍 MAINSTREAM / BROAD': {
+        '😂 Comedy / Feel Good': {
+            'movies': ['Superbad', 'The Hangover'],
+            'expect_keywords': ['comedy', 'funny', 'laugh', 'friends', 'party'],
+            'expect_studios': []
+        },
+        '😭 Emotional / Drama': {
+            'movies': ["Hachi: A Dog's Tale", 'The Green Mile'],
+            'expect_keywords': ['drama', 'sad', 'emotional', 'cry', 'touching'],
+            'expect_studios': []
+        },
+        '🤠 80s Adventure': {
+            'movies': ['Back to the Future', 'Raiders of the Lost Ark'],
+            'expect_keywords': ['adventure', 'action', '80s', 'classic', 'sci-fi'],
+            'expect_studios': ['Universal', 'Lucasfilm']
         }
     }
 }
@@ -621,6 +645,550 @@ def run_explain_recs(df, embeddings):
 # ==============================================================================
 # MAIN MENU
 # ==============================================================================
+# --- RAG SERVICE IMPORT ---
+try:
+    import sys
+    import os
+    # Add parent directory to path to find rag_service from inside debug folder
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from rag_service import RagService
+    rag_service = RagService()
+except Exception as e:
+    print(f"⚠️ RAG Service unavailable: {e}")
+    rag_service = RagService()
+except Exception as e:
+    print(f"⚠️ RAG Service unavailable: {e}")
+    rag_service = None
+
+import time
+
+def run_rag_validation_suite(df, embeddings):
+    print("\n" + "="*80)
+    print("🤖 TESTE AUTOMÁTICO DE RAG (PERSONA + LLM)")
+    print("="*80)
+    
+    if not rag_service or not rag_service.llm:
+        print("❌ RAG Service não configurado.")
+        return
+
+    all_scores = []
+
+    for cat, subcats in TEST_CASES.items():
+        print("\n" + "="*80)
+        print(f"{cat}")
+        print("="*80)
+        
+        for sub, config in subcats.items():
+            print(f"⏳ Waiting 15s to respect Rate Limits...")
+            time.sleep(15)
+            
+            print(f"\n🎯 {sub} (Simulando User):")
+            
+            # 1. Simular Ratings
+            ratings = []
+            for m in config['movies']:
+                match = find_movie_by_title(df, m)
+                if match is not None:
+                    # Enrich rating with metadata for better persona
+                    ratings.append({
+                        'title': match['series_title'],
+                        'rating': 20.0,
+                        'genre': match.get('genre', ''),
+                        'year': match.get('released_year', ''),
+                        'origin_country': match.get('origin_country', ''),
+                        'original_language': match.get('original_language', '')
+                    })
+            
+            if not ratings:
+                print("   ⚠️  Nenhum filme encontrado para este teste.")
+                continue
+                
+            # 2. Build Persona
+            print("   👤 Construindo Persona...")
+            persona = rag_service.build_persona(ratings)
+            print(f"      \"{persona[:100]}...\"")
+            
+            # 3. Vector Search (Candidate Gen)
+            print("   🔍 Generating 50 Candidates...")
+            candidates_pool = {}
+            for rated in ratings:
+                match = df[df['series_title'] == rated['title']]
+                if len(match) > 0:
+                    idx = match.index[0]
+                    query_emb = embeddings[idx]
+                    sims = cosine_similarity([query_emb], embeddings)[0]
+                    # Top 20 similar per movie
+                    top_idx = np.argsort(sims)[::-1][1:21]
+                    for cand_idx in top_idx:
+                        score = sims[cand_idx]
+                        if cand_idx not in candidates_pool:
+                            candidates_pool[cand_idx] = score
+                        else:
+                            candidates_pool[cand_idx] = max(candidates_pool[cand_idx], score)
+            
+            # Convert to list
+            candidates_list = []
+            watched_titles = {r['title'] for r in ratings}
+            sorted_pool = sorted(candidates_pool.items(), key=lambda x: x[1], reverse=True)
+            
+            for idx, score in sorted_pool:
+                if len(candidates_list) >= 50: break
+                row = df.iloc[idx]
+                title = row['series_title']
+                if title in watched_titles: continue
+                
+                candidates_list.append({
+                    'title': title,
+                    'year': row.get('released_year', 'N/A'),
+                    'genre': row.get('genre', ''),
+                    'overview': row.get('overview', 'N/A'),
+                    'score': float(score),
+                    'origin_country': row.get('origin_country', ''),
+                    # Meta for scoring
+                    'studios': extract_metadata(row)['studios'],
+                    'embedding_input': str(row.get('embedding_input', ''))
+                })
+                
+            # 4. RAG Rerank
+            print("   🧠 LLM Reranking logic...")
+            final_recs = rag_service.rerank_recommendations(persona, candidates_list, user_query=f"I want movies like {cat} - {sub}")
+            
+            # 5. Score Results
+            results_tuple = []
+            print(f"\n   📋 Top 5 RAG Recommendations:")
+            for i, rec in enumerate(final_recs[:5], 1):
+                print(f"      {i}. {rec['title']}")
+                print(f"         Reason: {rec.get('rag_explanation', 'N/A')}")
+                
+                # Adapt format for scorer: (title, sim, metadata)
+                # metadata dict needs 'embedding_input' and 'studios'
+                meta = {
+                    'embedding_input': rec.get('embedding_input', ''),
+                    'studios': rec.get('studios', [])
+                }
+                results_tuple.append((rec['title'], 0.9, meta)) # Mock high sim for RAG
+                
+            accuracy = smart_score_results(
+                config['movies'][0], # Use first movie as "query" anchor
+                results_tuple,
+                config['expect_keywords'],
+                config['expect_studios'],
+                config.get('expect_directors')
+            )
+            all_scores.append(accuracy)
+            print(f"      ✓ RAG Relevance Score: {accuracy:.1f}%")
+
+    if all_scores:
+        overall = sum(all_scores)/len(all_scores)
+        print("\n" + "="*80)
+        print(f"🎯 SCORE GERAL RAG: {overall:.1f}%")
+
+def run_rag_test(df, embeddings):
+    print("\n🧠 TESTE RAG INTELLIGENCE")
+    if not rag_service or not rag_service.llm:
+        print("❌ RAG Service não configurado (Falta GROQ_API_KEY).")
+        return
+        
+    print("   (Simulando Onboarding...)")
+    print("\n🔹 PASSO 1: QUEM ÉS TU? (Para criar a Persona)")
+    print("   [1] User Simulado (Fã do Nolan)")
+    print("   [2] User Real (Supabase ID)")
+    choice_mode = input("   Escolha (1/2): ").strip()
+    
+    ratings = []
+    
+    if choice_mode == '2':
+        user_id = input("   📝 Digite o user_id: ").strip()
+        raw_ratings = get_user_ratings(user_id)
+        
+        if not raw_ratings:
+            print("❌ Sem ratings ou erro. Abortando.")
+            return
+
+        # Map ID -> Title
+        # Try to find the correct ID column
+        id_col = 'id'
+        possible_cols = ['id', 'movie_id', 'movieId', 'tmdb_id']
+        for c in possible_cols:
+            if c in df.columns:
+                id_col = c
+                break
+                
+        # Create map
+        id_to_title = dict(zip(df[id_col], df['series_title']))
+        
+        for mid, r in raw_ratings.items():
+            # Try direct, int, str lookup
+            title = None
+            if mid in id_to_title: title = id_to_title[mid]
+            elif int(mid) in id_to_title: title = id_to_title[int(mid)]
+            
+            if title:
+                ratings.append({'title': title, 'rating': r})
+        
+        print(f"✅ Convertidos {len(ratings)} filmes para texto.")
+        
+    else:
+        # 1. Simulate Profile (Scale 0-20)
+        ratings = [
+            {'title': 'The Dark Knight', 'rating': 20.0},
+            {'title': 'Inception', 'rating': 20.0},
+            {'title': 'Se7en', 'rating': 20.0},
+            {'title': 'Mamma Mia!', 'rating': 5.0},
+            {'title': 'Fast & Furious', 'rating': 8.0}
+        ]
+    print("\n📝 Histórico do Utilizador Simulado:")
+    for r in ratings:
+        print(f"   - {r['title']}: {r['rating']}⭐")
+        
+    print("\n🤖 [Fase 1] Construindo Persona com LLM...")
+    persona = rag_service.build_persona(ratings)
+    print(f"   👤 Persona Gerada: \"{persona}\"")
+    
+    # --- LOOP: ACTIVE RAG ---
+    while True:
+        print("\n" + "-"*40)
+        query = input("🗣️  Query (ou Enter para 'For You' | 'sair'): ").strip()
+        if query.lower() in ['sair', 'exit', '0']: break
+        
+        # 2. Vector Search (Phase 2)
+        print("🔍 [Fase 2] Fetched Top 50 Candidates (Vector Search)...")
+        candidates_pool = {}
+        
+        # A) Personal History Candidates (Always active)
+        liked_movies = [r for r in ratings if r['rating'] >= 15.0]
+        if liked_movies:
+            # print(f"   Using history anchors: {[m['title'] for m in liked_movies[:3]]}...")
+            for liked in liked_movies:
+                match = df[df['series_title'] == liked['title']]
+                if len(match) > 0:
+                    idx = match.index[0]
+                    source_emb = embeddings[idx]
+                    
+                    # Calc similarities to all
+                    sims = cosine_similarity([source_emb], embeddings)[0]
+                    
+                    # --- HYBRID BOOSTING FOR CANDIDATES ---
+                    # 1. Get Top 100 Raw neighbors first (Optimization)
+                    raw_top_indices = np.argsort(sims)[::-1][1:101]
+                    
+                    # 2. Apply Boosts (Director/Metadata)
+                    source_meta = extract_metadata(df.iloc[idx])
+                    source_directors = source_meta.get('directors', [])
+                    
+                    boosted_candidates = []
+                    for cand_idx in raw_top_indices:
+                        cand_row = df.iloc[cand_idx]
+                        cand_meta = extract_metadata(cand_row)
+                        
+                        boost = 0.0
+                        # Director Boost (+0.15) if shared director
+                        if source_directors:
+                            cand_directors = cand_meta.get('directors', [])
+                            # DEBUG PROBE
+                            if 'Prestige' in cand_row['series_title']:
+                                print(f"   🐛 PROBE: Checking Prestige. Source Dirs: {source_directors} | Cand Dirs: {cand_directors}")
+                                
+                            if any(d in cand_directors for d in source_directors):
+                                boost += 0.15
+                                if 'Prestige' in cand_row['series_title']:
+                                     print(f"   🚀 BOOSTED Prestige by +0.15! New Score: {sims[cand_idx] + boost}")
+                                
+                        final_score = sims[cand_idx] + boost
+                        boosted_candidates.append((cand_idx, final_score))
+                    
+                    # 3. Sort by Boosted Score
+                    boosted_candidates.sort(key=lambda x: x[1], reverse=True)
+                    
+                    # 4. Take Top 15 (Boosted)
+                    for cand_idx, score in boosted_candidates[:15]:
+                        if cand_idx not in candidates_pool:
+                            candidates_pool[cand_idx] = score
+                        else:
+                            candidates_pool[cand_idx] = max(candidates_pool[cand_idx], score)
+
+        # B) Query Anchors (Active Flow)
+        # Check if user mentioned any movie title in the query
+        if query:
+            print(f"   🕵️ Analisando query por títulos de filmes...")
+            # Simple fuzzy match: check if any movie title is in the query string
+            # Optimization: Only check known popular titles or exact matches to avoid noise
+            # For debug suite, we iterate DF
+            found_anchors = []
+            lower_query = query.lower()
+            
+            # Heuristic: Check words in query against titles
+            # This is slow, but OK for local debug
+            for idx, row in df.iterrows():
+                t = row['series_title']
+                if len(t) > 3 and t.lower() in lower_query:
+                    found_anchors.append((idx, t))
+            
+            if found_anchors:
+                print(f"   🎯 Anchors encontrados: {[t for _, t in found_anchors]}")
+                for idx, t in found_anchors:
+                    # Boost this semantic area
+                    sims = cosine_similarity([embeddings[idx]], embeddings)[0]
+                    top_indices = np.argsort(sims)[::-1][1:20] # Top 20 similar to anchor
+                    for cand_idx in top_indices:
+                        if cand_idx not in candidates_pool:
+                            candidates_pool[cand_idx] = sims[cand_idx] # Add raw sim
+                        else:
+                            candidates_pool[cand_idx] += 0.5 # Boost existing
+            else:
+                if len(query) > 3:
+                     print("   (Nenhum filme específico detetado na query, usando apenas Persona)")
+        
+        # Sort e Select Top 50
+        candidates_sorted = sorted(candidates_pool.items(), key=lambda x: x[1], reverse=True)
+        
+        # Filter watched
+        watched_titles = set(r['title'] for r in ratings)
+        indices = []
+        for idx, score in candidates_sorted:
+            movie_title = df.iloc[idx]['series_title']
+            if movie_title not in watched_titles:
+                indices.append(idx)
+            if len(indices) >= 50: break
+
+        candidates = []
+        for i in indices:
+            if i >= len(df): continue
+            m = df.iloc[i] 
+            candidates.append({
+                'title': m.get('series_title', 'Unknown'),
+                'year': m.get('released_year', m.get('Released_Year', 'N/A')),
+                'genre': m.get('genre', ''),
+                'overview': m.get('overview', 'No overview'),
+                'score': float(candidates_pool.get(i, 0.0))
+            })
+            
+        if not candidates:
+            print("❌ Nenhum candidato encontrado. (Tenta adicionar mais ratings ou mencionar filmes conhecidos)")
+            continue
+            
+        print(f"   generated {len(candidates)} unique candidates.")
+        
+        # DEBUG: Check for The Prestige
+        for i, c in enumerate(candidates):
+            if 'Prestige' in c['title']:
+                print(f"   👀 DEBUG: '{c['title']}' está na posição #{i+1} dos candidatos (Score: {c['score']:.4f})")
+                break
+        else:
+             print("   👀 DEBUG: 'The Prestige' NÃO entrou no Top 50 candidatos.")
+            
+        print("🤔 [Fase 3] LLM Reranking & Filtering...")
+        final_recs = rag_service.rerank_recommendations(persona, candidates, query)
+        
+        print("\n✨ RECOMENDAÇÕES FINAIS (RAG):")
+        for i, rec in enumerate(final_recs, 1):
+            print(f"   {i}. {rec['title']} ({rec.get('year')})")
+            print(f"      💡 AI: {rec.get('rag_explanation', 'No reasoning')}")
+
+def run_rag_test(df, embeddings):
+    print("\n🧠 TESTE RAG INTELLIGENCE")
+    if not rag_service or not rag_service.llm:
+        print("❌ RAG Service não configurado (Falta GROQ_API_KEY).")
+        return
+        
+    print("   (Simulando Onboarding...)")
+    print("\n🔹 PASSO 1: QUEM ÉS TU? (Para criar a Persona)")
+    print("   [1] User Simulado (Fã do Nolan)")
+    print("   [2] User Real (Supabase ID)")
+    choice_mode = input("   Escolha (1/2): ").strip()
+    
+    ratings = []
+    
+    if choice_mode == '2':
+        user_id = input("   📝 Digite o user_id: ").strip()
+        raw_ratings = get_user_ratings(user_id)
+        
+        if not raw_ratings:
+            print("❌ Sem ratings ou erro. Abortando.")
+            return
+
+        # Map ID -> Title
+        # Try to find the correct ID column
+        id_col = 'id'
+        possible_cols = ['id', 'movie_id', 'movieId', 'tmdb_id']
+        for c in possible_cols:
+            if c in df.columns:
+                id_col = c
+                break
+                
+        # Create map
+        id_to_title = dict(zip(df[id_col], df['series_title']))
+        
+        for mid, r in raw_ratings.items():
+            # Try direct, int, str lookup
+            title = None
+            if mid in id_to_title: title = id_to_title[mid]
+            elif int(mid) in id_to_title: title = id_to_title[int(mid)]
+            
+            if title:
+                ratings.append({'title': title, 'rating': r})
+        
+        print(f"✅ Convertidos {len(ratings)} filmes para texto.")
+        
+    else:
+        # 1. Simulate Profile (Scale 0-20)
+        ratings = [
+            {'title': 'The Dark Knight', 'rating': 20.0},
+            {'title': 'Inception', 'rating': 20.0},
+            {'title': 'Se7en', 'rating': 20.0},
+            {'title': 'Mamma Mia!', 'rating': 5.0},
+            {'title': 'Fast & Furious', 'rating': 8.0}
+        ]
+    print("\n📝 Histórico do Utilizador Simulado:")
+    for r in ratings:
+        print(f"   - {r['title']}: {r['rating']}⭐")
+        
+    print("\n🤖 [Fase 1] Construindo Persona com LLM...")
+    persona = rag_service.build_persona(ratings)
+    print(f"   👤 Persona Gerada: \"{persona}\"")
+    
+    # --- LOOP: ACTIVE RAG ---
+    while True:
+        print("\n" + "-"*40)
+        query = input("🗣️  Query (ou Enter para 'For You' | 'sair'): ").strip()
+        if query.lower() in ['sair', 'exit', '0']: break
+        
+        # 2. Vector Search (Phase 2)
+        print("🔍 [Fase 2] Fetched Top 50 Candidates (Vector Search)...")
+        candidates_pool = {}
+        
+        # A) Personal History Candidates (Always active)
+        liked_movies = [r for r in ratings if r['rating'] >= 15.0]
+        if liked_movies:
+            # print(f"   Using history anchors: {[m['title'] for m in liked_movies[:3]]}...")
+            for liked in liked_movies:
+                match = df[df['series_title'] == liked['title']]
+                if len(match) > 0:
+                    idx = match.index[0]
+                    source_emb = embeddings[idx]
+                    
+                    # Calc similarities to all
+                    sims = cosine_similarity([source_emb], embeddings)[0]
+                    
+                    # --- HYBRID BOOSTING FOR CANDIDATES ---
+                    # 1. Get Top 100 Raw neighbors first (Optimization)
+                    raw_top_indices = np.argsort(sims)[::-1][1:101]
+                    
+                    # 2. Apply Boosts (Director/Metadata)
+                    source_meta = extract_metadata(df.iloc[idx])
+                    source_directors = source_meta.get('directors', [])
+                    
+                    boosted_candidates = []
+                    for cand_idx in raw_top_indices:
+                        cand_row = df.iloc[cand_idx]
+                        cand_meta = extract_metadata(cand_row)
+                        
+                        boost = 0.0
+                        # Director Boost (+0.15) if shared director
+                        if source_directors:
+                            cand_directors = cand_meta.get('directors', [])
+                            # DEBUG PROBE
+                            if 'Prestige' in cand_row['series_title']:
+                                print(f"   🐛 PROBE: Checking Prestige. Source Dirs: {source_directors} | Cand Dirs: {cand_directors}")
+                                
+                            if any(d in cand_directors for d in source_directors):
+                                boost += 0.15
+                                if 'Prestige' in cand_row['series_title']:
+                                     print(f"   🚀 BOOSTED Prestige by +0.15! New Score: {sims[cand_idx] + boost}")
+                                
+                        final_score = sims[cand_idx] + boost
+                        boosted_candidates.append((cand_idx, final_score))
+                    
+                    # 3. Sort by Boosted Score
+                    boosted_candidates.sort(key=lambda x: x[1], reverse=True)
+                    
+                    # 4. Take Top 15 (Boosted)
+                    for cand_idx, score in boosted_candidates[:15]:
+                        if cand_idx not in candidates_pool:
+                            candidates_pool[cand_idx] = score
+                        else:
+                            candidates_pool[cand_idx] = max(candidates_pool[cand_idx], score)
+
+        # B) Query Anchors (Active Flow)
+        # Check if user mentioned any movie title in the query
+        if query:
+            print(f"   🕵️ Analisando query por títulos de filmes...")
+            # Simple fuzzy match: check if any movie title is in the query string
+            # Optimization: Only check known popular titles or exact matches to avoid noise
+            # For debug suite, we iterate DF
+            found_anchors = []
+            lower_query = query.lower()
+            
+            # Heuristic: Check words in query against titles
+            # This is slow, but OK for local debug
+            for idx, row in df.iterrows():
+                t = row['series_title']
+                if len(t) > 3 and t.lower() in lower_query:
+                    found_anchors.append((idx, t))
+            
+            if found_anchors:
+                print(f"   🎯 Anchors encontrados: {[t for _, t in found_anchors]}")
+                for idx, t in found_anchors:
+                    # Boost this semantic area
+                    sims = cosine_similarity([embeddings[idx]], embeddings)[0]
+                    top_indices = np.argsort(sims)[::-1][1:20] # Top 20 similar to anchor
+                    for cand_idx in top_indices:
+                        if cand_idx not in candidates_pool:
+                            candidates_pool[cand_idx] = sims[cand_idx] # Add raw sim
+                        else:
+                            candidates_pool[cand_idx] += 0.5 # Boost existing
+            else:
+                if len(query) > 3:
+                     print("   (Nenhum filme específico detetado na query, usando apenas Persona)")
+        
+        # Sort e Select Top 50
+        candidates_sorted = sorted(candidates_pool.items(), key=lambda x: x[1], reverse=True)
+        
+        # Filter watched
+        watched_titles = set(r['title'] for r in ratings)
+        indices = []
+        for idx, score in candidates_sorted:
+            movie_title = df.iloc[idx]['series_title']
+            if movie_title not in watched_titles:
+                indices.append(idx)
+            if len(indices) >= 50: break
+
+        candidates = []
+        for i in indices:
+            if i >= len(df): continue
+            m = df.iloc[i] 
+            candidates.append({
+                'title': m.get('series_title', 'Unknown'),
+                'year': m.get('released_year', m.get('Released_Year', 'N/A')),
+                'genre': m.get('genre', ''),
+                'overview': m.get('overview', 'No overview'),
+                'score': float(candidates_pool.get(i, 0.0))
+            })
+            
+        if not candidates:
+            print("❌ Nenhum candidato encontrado. (Tenta adicionar mais ratings ou mencionar filmes conhecidos)")
+            continue
+            
+        print(f"   generated {len(candidates)} unique candidates.")
+        
+        # DEBUG: Check for The Prestige
+        for i, c in enumerate(candidates):
+            if 'Prestige' in c['title']:
+                print(f"   👀 DEBUG: '{c['title']}' está na posição #{i+1} dos candidatos (Score: {c['score']:.4f})")
+                break
+        else:
+             print("   👀 DEBUG: 'The Prestige' NÃO entrou no Top 50 candidatos.")
+            
+        print("🤔 [Fase 3] LLM Reranking & Filtering...")
+        final_recs = rag_service.rerank_recommendations(persona, candidates, query)
+        
+        print("\n✨ RECOMENDAÇÕES FINAIS (RAG):")
+        for i, rec in enumerate(final_recs, 1):
+            print(f"   {i}. {rec['title']} ({rec.get('year')})")
+            print(f"      💡 AI: {rec.get('rag_explanation', 'No reasoning')}") 
+            
+    # input("\n(Pressiona Enter para voltar ao menu...)") # Loop handles this
+
 def main():
     while True:
         print("\n" + "="*60)
@@ -629,7 +1197,10 @@ def main():
         print("   1. [Validar] Suite Automática (Testes de Qualidade)")
         print("   2. [Manual]  Busca Interativa & Similaridade")
         print("   3. [Explain] Explicar Recomendações")
-        print("   4. [Info]    Info do Cache")
+        print("   5. [Info]    Info do Cache")
+        print("   7. [Direct RAG] Experiência: RAG Direto (Sem Persona)")
+        print("   8. [Manual RAG] Teste Manual Interativo (1 Filme)")
+        print("   9. [Chatbot]    Assistente de Cinema")
         print("   0. Sair")
         
         choice = input("\nEscolha: ").strip()
@@ -639,8 +1210,8 @@ def main():
             break
             
         # Load data if needed
-        if choice in ['1', '2', '3', '4']:
-            df, embeddings = load_data(verbose=(choice=='4'))
+        if choice in ['1', '2', '3', '5', '7', '8', '9']:
+            df, embeddings = load_data(verbose=(choice=='5'))
             if df is None: continue
             
         if choice == '1':
@@ -649,7 +1220,225 @@ def main():
             run_manual_test(df, embeddings)
         elif choice == '3':
             run_explain_recs(df, embeddings)
-        elif choice == '4':
+        elif choice == '8':
+             print("\n🕵️ TESTE MANUAL INTERATIVO (DIRECT RAG)")
+             print("   (Digite 'sair' para voltar ao menu)")
+             
+             while True:
+                 movie_input = input("\n🎬 Filme para buscar similares: ").strip()
+                 if movie_input.lower() == 'sair': break
+                 
+                 match = find_movie_by_title(df, movie_input)
+                 if match is None:
+                     print("❌ Filme não encontrado.")
+                     continue
+                     
+                 # Setup Single-Movie History
+                 ratings = [{
+                    'title': match['series_title'],
+                    'rating': 20.0, # Max rating to simulate favorite
+                    'genre': match.get('genre', ''),
+                    'year': match.get('released_year', '')
+                 }]
+                 
+                 # Vector Search (Just that movie's vector)
+                 idx = df[df['series_title'] == match['series_title']].index[0]
+                 user_vector = embeddings[idx]
+                 
+                 print(f"🎯 Buscando similares para: {match['series_title']}...")
+                 
+                 # Get Candidates
+                 sims = cosine_similarity([user_vector], embeddings)[0]
+                 top_indices = np.argsort(sims)[::-1][1:51] # Skip itself
+                 
+                 candidates = []
+                 for i in top_indices:
+                     m = df.iloc[i]
+                     candidates.append({
+                        'title': m['series_title'],
+                        'year': m.get('released_year', 'N/A'),
+                        'genre': m.get('genre', ''),
+                        'overview': m.get('overview', 'N/A'),
+                        'score': float(sims[i]),
+                        'origin_country': m.get('origin_country', '')
+                     })
+                 
+                 # RAG Rerank
+                 print("   🧠 Asking AI to judge connections...")
+                 final_recs = rag_service.rerank(ratings, candidates, "")
+                 
+                 print("\n✨ RECOMENDAÇÕES (RAG):")
+                 for i, rec in enumerate(final_recs, 1):
+                     print(f"   {i}. {rec['title']} ({rec.get('year')})")
+                     print(f"      📝 {rec.get('rag_explanation', 'N/A')}")
+
+        elif choice == '9':
+             # Chatbot Mode
+             print("\n🤖 ASSISTENTE DE CINEMA (CHATBOT)")
+             
+             raw_input = input("   [S]imulado (Fã do Nolan) ou [U]ser Real (Supabase ID)? (s/u ou cole o ID): ").strip()
+             mode = 's'
+             user_id = None
+             if raw_input.lower() == 'u':
+                 mode = 'u'
+                 user_id = input("   User ID (UUID): ").strip()
+             elif raw_input.lower().startswith('user_') or len(raw_input) > 5:
+                 mode = 'u'
+                 user_id = raw_input
+                 
+             ratings = []
+             if mode == 'u':
+                 print(f"   📡 Fetching ratings for {user_id}...")
+                 try:
+                    data = supabase.table('user_movies').select('*').eq('user_id', user_id).execute()
+                    if data.data:
+                        for item in data.data:
+                            match = find_movie_by_id(df, item['movie_id'])
+                            if match is not None:
+                                ratings.append({
+                                    'title': match['series_title'],
+                                    'rating': item['rating'],
+                                    'genre': match.get('genre', ''),
+                                    'year': match.get('released_year', '')
+                                })
+                        print(f"   ✅ {len(ratings)} filmes carregados.")
+                    else:
+                        print("   ⚠️ Nenhuma data encontrada.")
+                 except Exception as e:
+                    print(f"   ❌ Erro: {e}")
+             else:
+                 print("   🎭 Carregando perfil simulado (Nolan Fan)...")
+                 nolan_movies = ['The Dark Knight', 'Inception', 'Interstellar', 'The Prestige', 'Memento']
+                 for title in nolan_movies:
+                     match = find_movie_by_title(df, title)
+                     if match: ratings.append({'title': title, 'rating': 20.0})
+            
+             if not ratings:
+                 print("   ⚠️ Sem histórico para o chat.")
+                 continue
+                 
+             print("\n💬 CHAT INICIADO (Digite 'sair' para terminar)")
+             print("   (O AI tem acesso ao teu histórico de filmes)")
+             while True:
+                 user_msg = input("\n👤 Tu: ").strip()
+                 if user_msg.lower() in ['sair', 'exit', 'quit']: break
+                 
+                 print("   🤖 AI a pensar...")
+                 response = rag_service.chat_with_history(ratings, user_msg)
+                 print(f"\n🤖 AI: {response}")
+
+        elif choice == '7':
+             # Direct RAG Test
+             print("\n🧪 EXPERIÊNCIA: RAG DIRETO (SEM PERSONA)")
+             
+             raw_input = input("   [S]imulado (Fã do Nolan) ou [U]ser Real (Supabase ID)? (s/u ou cole o ID): ").strip()
+             
+             mode = 's'
+             user_id = None
+             
+             if raw_input.lower() == 'u':
+                 mode = 'u'
+                 user_id = input("   User ID (UUID): ").strip()
+             elif raw_input.lower().startswith('user_') or len(raw_input) > 5:
+                 mode = 'u'
+                 user_id = raw_input
+             
+             ratings = []
+             
+             if mode == 'u':
+                 print(f"   📡 Fetching ratings for {user_id}...")
+                 try:
+                    data = supabase.table('user_movies').select('*').eq('user_id', user_id).execute()
+                    if data.data:
+                        for item in data.data:
+                            match = find_movie_by_id(df, item['movie_id'])
+                            if match is not None:
+                                ratings.append({
+                                    'title': match['series_title'],
+                                    'rating': item['rating'],
+                                    'genre': match.get('genre', ''),
+                                    'year': match.get('released_year', '')
+                                })
+                        print(f"   ✅ {len(ratings)} filmes encontrados para este user.")
+                    else:
+                        print("   ⚠️ Nenhuma rating encontrada.")
+                        continue
+                 except Exception as e:
+                    print(f"   ❌ Erro ao buscar user: {e}")
+                    continue
+             else:
+                 print("   A enviar histórico bruto para o LLM...")
+                 # Hardcoded Nolan Fan for quick test
+                 print("   Simulando Fã do Nolan...")
+                 nolan_movies = ['The Dark Knight', 'Inception', 'Interstellar', 'The Prestige', 'Memento', 'The Shawshank Redemption','The Green Mile','Fight Club','The Matrix','The Dark Knight Rises','The Dark Knight Returns','The Dark Knight','Avatar','Life of Pi']
+                 for title in nolan_movies:
+                     match = find_movie_by_title(df, title)
+                     if match is not None:
+                         ratings.append({
+                            'title': match['series_title'],
+                            'rating': 20.0,
+                            'genre': match.get('genre', ''),
+                            'year': match.get('released_year', '')
+                         })
+
+             if not ratings:
+                 print("   ⚠️ Sem ratings para processar.")
+                 continue
+
+             # Generate Candidates
+             # (No query, just history based)
+             query = "" 
+             found_anchors = []
+             print(f"   Query: (Empty - Relying on History)")
+             
+             # Calculate User Vector (Average of Rated Movies)
+             print("   🧮 Calculating User Vector...")
+             user_vector = np.zeros(embeddings.shape[1])
+             count = 0
+             for r in ratings:
+                 match = find_movie_by_title(df, r['title'])
+                 if match is not None:
+                     idx = df[df['series_title'] == r['title']].index[0]
+                     user_vector += embeddings[idx]
+                     count += 1
+             
+             if count > 0:
+                 user_vector /= count
+             
+             # Search Candidates (Vector Search)
+             print("   🔍 Generating 50 Candidates (Vector Search)...")
+             sims = cosine_similarity([user_vector], embeddings)[0]
+             # Get Top 50 unique
+             top_indices = np.argsort(sims)[::-1]
+             
+             candidates = []
+             seen_titles = set(r['title'] for r in ratings)
+             
+             for idx in top_indices:
+                 if len(candidates) >= 50: break
+                 movie = df.iloc[idx]
+                 title = movie['series_title']
+                 
+                 if title in seen_titles: continue
+                 
+                 candidates.append({
+                    'title': movie['series_title'],
+                    'year': movie.get('released_year', 'N/A'),
+                    'genre': movie.get('genre', ''),
+                    'overview': movie.get('overview', 'N/A'),
+                    'score': float(sims[idx]),
+                    'origin_country': movie.get('origin_country', '')
+                 })
+             
+             print("   🧠 Asking LLM to pick defaults based on history...")
+             final_recs = rag_service.rerank(ratings, candidates, query)
+             
+             print("\n✨ RECOMENDAÇÕES DIRETAS:")
+             for i, rec in enumerate(final_recs, 1):
+                 print(f"   {i}. {rec['title']} ({rec.get('year')})")
+                 print(f"      📝 AI Decision: {rec.get('rag_explanation', 'N/A')}")
+
+        elif choice == '5':
             # Detailed Info (Merged from inspect_cache.py)
             print("\n" + "="*60)
             print("📋 ESTRUTURA DA CACHE")
@@ -672,9 +1461,13 @@ def main():
                 print(f"   Input Len: {len(m['embedding_input'])} chars")
                 print(f"   Input Preview: {m['embedding_input'][:100]}...")
             
+        elif choice == '6':
+             run_rag_validation_suite(df, embeddings)
+
         else:
             print("❌ Opção inválida.")
 
 
 if __name__ == "__main__":
     main()
+
