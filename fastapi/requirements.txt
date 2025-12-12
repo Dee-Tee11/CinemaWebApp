@@ -2,6 +2,5 @@ fastapi
 uvicorn
 supabase
 python-dotenv
-pandas
 numpy
-scikit-learn
+requests

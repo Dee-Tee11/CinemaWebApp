@@ -1,17 +1,13 @@
 import os
+import json
+import numpy as np
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import pandas as pd
 
 # Carregar variáveis de ambiente PRIMEIRO
 load_dotenv()
-
-# Adicionar caminho para importar o sistema de recomendação
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from recommendation_system import SistemaRecomendacaoSimilaridade
 
 app = FastAPI()
 
@@ -43,109 +39,107 @@ if not supabase_url or not supabase_key:
 
 supabase: Client = create_client(supabase_url, supabase_key)
 
-# Carregar dados dos filmes do Supabase com paginação
-print("📥 Buscando filmes do Supabase...")
-all_movies = []
-page_size = 1000
-offset = 0
-page_num = 1
+print("✅ Supabase connected. Using pgvector for similarity search.")
 
-while True:
-    response = supabase.table("movies").select("*").range(offset, offset + page_size - 1).execute()
-    
-    if not response.data:
-        break
-    
-    all_movies.extend(response.data)
-    print(f"   📄 Página {page_num}: {len(response.data)} filmes carregados")
-    
-    if len(response.data) < page_size:
-        break
-    
-    offset += page_size
-    page_num += 1
-
-df_movies = pd.DataFrame(all_movies)
-print(f"✅ {len(df_movies)} filmes carregados do Supabase\n")
-
-# Recommendation System Initialization
-import numpy as np
-import json
-print("⚙️  Extraindo embeddings da supabase...")
-
-try:
-    embeddings_list = []
-    for emb in df_movies['embedding']:
-        if isinstance(emb, str):
-            emb = json.loads(emb)
-        embeddings_list.append(emb)
-    
-    print(f"✅ Convertidos {len(embeddings_list)} embeddings de string para lista")
-except Exception as e:
-    print(f"⚠️  Falha ao converter embeddings: {e}")
-    embeddings_list = df_movies['embedding'].tolist()
-
-movie_embeddings = np.array(embeddings_list, dtype=np.float32)
-print(f"✅ Embeddings extraídos. Shape: {movie_embeddings.shape}")
-
-rec_system = SistemaRecomendacaoSimilaridade(movie_embeddings, df_movies)
-
-def generate_and_save_recommendations(user_id: str):
+# Helper function to calculate user vector from ratings
+def calculate_user_vector(user_id: str):
     """
-    Gera e salva recomendações para um usuário específico
+    Calcula vetor médio ponderado baseado nos ratings do usuário.
+    Retorna None se o usuário não tiver avaliações suficientes.
     """
-    # 1. Buscar filmes avaliados pelo usuário no Supabase
     try:
+        # Buscar ratings do usuário
         response = supabase.table('user_movies')\
             .select('movie_id, rating')\
             .eq('user_id', user_id)\
             .execute()
+        
+        if not response.data or len(response.data) < 5:
+            print(f"⚠️  Usuário {user_id} tem apenas {len(response.data) if response.data else 0} avaliações (mínimo: 5)")
+            return None
+        
+        # Buscar embeddings dos filmes avaliados
+        movie_ids = [m['movie_id'] for m in response.data]
+        movies_response = supabase.table('movies')\
+            .select('id, embedding')\
+            .in_('id', movie_ids)\
+            .execute()
+        
+        if not movies_response.data:
+            print(f"⚠️  Nenhum embedding encontrado para os filmes do usuário {user_id}")
+            return None
+        
+        # Calcular média ponderada por rating
+        user_vector = np.zeros(1024)
+        total_weight = 0
+        
+        for movie_data in response.data:
+            movie = next((m for m in movies_response.data if m['id'] == movie_data['movie_id']), None)
+            if movie and movie.get('embedding'):
+                weight = movie_data['rating']
+                embedding = json.loads(movie['embedding']) if isinstance(movie['embedding'], str) else movie['embedding']
+                user_vector += np.array(embedding) * weight
+                total_weight += weight
+        
+        if total_weight > 0:
+            user_vector = user_vector / total_weight
+            return user_vector.tolist()
+        
+        return None
+        
     except Exception as e:
-        print(f"❌ Erro ao buscar avaliações do usuário: {e}")
-        return
-    
-    if not response.data:
-        print(f"⚠️  Nenhum filme avaliado encontrado para o usuário {user_id}")
-        return
+        print(f"❌ Erro ao calcular vetor do usuário: {e}")
+        return None
 
-    user_movies = response.data
-    print(f"📊 Encontradas {len(user_movies)} avaliações do usuário")
+def generate_and_save_recommendations(user_id: str):
+    """
+    Gera e salva recomendações para um usuário usando pgvector do Supabase
+    """
+    print(f"🚀 Gerando recomendações para usuário {user_id}...")
     
-    # 2. Preparar dados para o sistema de recomendação
-    avaliacoes_por_movie_id = {}
-    filmes_vistos_ids = []
-    
-    for movie in user_movies:
-        movie_id = int(movie['movie_id'])
-        rating = float(movie['rating'])
-        avaliacoes_por_movie_id[movie_id] = rating
-        filmes_vistos_ids.append(movie_id)
-    
-    # Verificar número mínimo de avaliações
-    if len(avaliacoes_por_movie_id) < 5:
-        print(f"⚠️  Usuário tem apenas {len(avaliacoes_por_movie_id)} avaliações.")
-        print(f"   Mínimo necessário: 5 avaliações")
+    # 1. Calcular vetor do usuário
+    user_vector = calculate_user_vector(user_id)
+    if user_vector is None:
+        print(f"⚠️  Usuário {user_id} não tem avaliações suficientes (mínimo: 5)")
         return
-
-    # 3. Configurar dados do usuário e gerar recomendações
+    
+    # 2. Buscar filmes já vistos para excluir
     try:
-        rec_system.set_user_data(avaliacoes_por_movie_id, filmes_vistos_ids)
-        recommendations = rec_system.gerar_recomendacoes(n=50)  # ✅ 50 em vez de 25
+        seen_response = supabase.table('user_movies')\
+            .select('movie_id')\
+            .eq('user_id', user_id)\
+            .execute()
+        seen_ids = [m['movie_id'] for m in seen_response.data] if seen_response.data else []
     except Exception as e:
-        print(f"❌ Erro ao gerar recomendações: {e}")
+        print(f"⚠️  Erro ao buscar filmes vistos: {e}")
+        seen_ids = []
+    
+    # 3. Usar função SQL de similarity search via pgvector
+    try:
+        result = supabase.rpc('match_movies', {
+            'query_embedding': user_vector,
+            'match_threshold': 0.5,
+            'match_count': 50,
+            'excluded_ids': seen_ids
+        }).execute()
+        
+        if not result.data:
+            print("⚠️  Nenhuma recomendação gerada pelo pgvector")
+            return
+        
+        print(f"📊 pgvector retornou {len(result.data)} candidatos")
+        
+    except Exception as e:
+        print(f"❌ Erro ao chamar match_movies: {e}")
         return
-
-    if not recommendations:
-        print("⚠️  Nenhuma recomendação foi gerada")
-        return
-
+    
     # 4. Preparar dados para inserir no Supabase
     recs_to_insert = []
-    for i, rec in enumerate(recommendations[:25]):  # Salva top 25 no DB
+    for i, rec in enumerate(result.data[:25]):  # Salva top 25 no DB
         recs_to_insert.append({
             'user_id': user_id,
-            'movie_id': rec['movie_id'],
-            'predicted_score': rec['score'],
+            'movie_id': rec['id'],
+            'predicted_score': rec['similarity'],
             'position': i + 1,
         })
 
@@ -180,6 +174,17 @@ def trigger_recommendation_generation(user_id: str, background_tasks: Background
         "status": "processing"
     }
 
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint for monitoring
+    """
+    return {
+        "status": "ok",
+        "message": "FastAPI is running with pgvector"
+    }
+
+
 # --- NEW RAG ENDPOINTS ---
 
 from pydantic import BaseModel
@@ -194,24 +199,6 @@ class ChatRequest(BaseModel):
 class AiRecsRequest(BaseModel):
     user_id: str
 
-def search_movie_by_id(movie_id):
-    """Helper local para buscar filme no DF pelo ID"""
-    try:
-        # Debug: Print incoming ID type if needed (uncomment for verbose logs)
-        # print(f"DEBUG: Searching for ID {movie_id} (Type: {type(movie_id)})")
-        
-        # Ensure target is int
-        target_id = int(movie_id)
-        
-        match = df_movies[df_movies['id'] == target_id]
-        if len(match) > 0:
-            return match.iloc[0]
-            
-        print(f"⚠️ Movie ID {target_id} not found in dataframe!")
-        return None
-    except Exception as e:
-        print(f"⚠️ Error searching movie ID {movie_id}: {e}")
-        return None
 
 @app.post("/api/chat")
 def chat_with_history(request: ChatRequest):
@@ -223,23 +210,31 @@ def chat_with_history(request: ChatRequest):
         print(f"💬 Chat Request received for User ID: {request.user_id}")
         
         # 1. Fetch User History
-        response = supabase.table('user_movies').select('*').eq('user_id', request.user_id).execute()
+        user_movies = supabase.table('user_movies').select('*').eq('user_id', request.user_id).execute()
         ratings = []
-        if response.data:
-            print(f"   Found {len(response.data)} raw ratings in Supabase.")
-            for item in response.data:
-                match = search_movie_by_id(item['movie_id'])
-                if match is not None:
+        
+        if user_movies.data:
+            print(f"   Found {len(user_movies.data)} raw ratings in Supabase.")
+            
+            # Buscar detalhes dos filmes
+            movie_ids = [item['movie_id'] for item in user_movies.data]
+            movies = supabase.table('movies')\
+                .select('id, series_title, genre, released_year')\
+                .in_('id', movie_ids)\
+                .execute()
+            
+            # Criar mapa de filmes
+            movie_map = {m['id']: m for m in movies.data} if movies.data else {}
+            
+            for item in user_movies.data:
+                movie = movie_map.get(item['movie_id'])
+                if movie:
                     ratings.append({
-                        'title': match['series_title'],
+                        'title': movie['series_title'],
                         'rating': item['rating'],
-                        'genre': match.get('genre', ''),
-                        'year': match.get('released_year', '')
+                        'genre': movie.get('genre', ''),
+                        'year': movie.get('released_year', '')
                     })
-                else:
-                    # Optional: Print if movie not found so we know
-                    # print(f"   Movie ID {item['movie_id']} not found in local DF.")
-                    pass
         else:
             print("   ⚠️ No ratings found in Supabase for this user.")
         
@@ -254,71 +249,100 @@ def chat_with_history(request: ChatRequest):
         
     except Exception as e:
         print(f"Chat Error: {e}")
+        import traceback
+        traceback.print_exc()
         return {"response": "Desculpa, estou com dificuldades técnicas. Tenta novamente mais tarde. 🤖💥"}
+
 
 @app.post("/api/recommendations/ai")
 def get_ai_recommendations(request: AiRecsRequest):
     """
-    Direct RAG Recommendations Endpoint
+    Direct RAG Recommendations Endpoint usando pgvector
     """
     try:
-        # 1. Fetch History
-        response = supabase.table('user_movies').select('*').eq('user_id', request.user_id).execute()
-        ratings = []
-        if response.data:
-            for item in response.data:
-                match = search_movie_by_id(item['movie_id'])
-                if match is not None:
-                    ratings.append({
-                        'title': match['series_title'],
-                        'rating': item['rating'],
-                        'genre': match.get('genre', ''),
-                        'year': match.get('released_year', '')
-                    })
+        print(f"🤖 AI Recommendations request for user {request.user_id}")
         
-        if not ratings:
+        # 1. Calcular vetor do usuário
+        user_vector = calculate_user_vector(request.user_id)
+        if user_vector is None:
+            print("⚠️  Usuário sem avaliações suficientes")
             return {"recommendations": []}
-
-        # 2. Generate Candidates (Vector Search)
-        # Using the same logic as generate_and_save_recommendations but ad-hoc
-        user_vector = np.zeros(movie_embeddings.shape[1])
-        count = 0
-        for r in ratings:
-            match = df_movies[df_movies['series_title'] == r['title']]
-            if len(match) > 0:
-                idx = match.index[0]
-                user_vector += movie_embeddings[idx]
-                count += 1
         
-        if count > 0:
-            user_vector /= count
-            
-        sims = cosine_similarity([user_vector], movie_embeddings)[0]
-        top_indices = np.argsort(sims)[::-1][:50]
+        # 2. Buscar filmes vistos para excluir
+        seen_response = supabase.table('user_movies')\
+            .select('movie_id')\
+            .eq('user_id', request.user_id)\
+            .execute()
+        seen_ids = [m['movie_id'] for m in seen_response.data] if seen_response.data else []
         
+        # 3. Buscar candidates via pgvector
+        result = supabase.rpc('match_movies', {
+            'query_embedding': user_vector,
+            'match_threshold': 0.5,
+            'match_count': 50,
+            'excluded_ids': seen_ids
+        }).execute()
+        
+        if not result.data:
+            print("⚠️  Nenhum candidato retornado pelo pgvector")
+            return {"recommendations": []}
+        
+        print(f"📊 {len(result.data)} candidatos encontrados")
+        
+        # 4. Buscar detalhes completos dos filmes
+        movie_ids = [r['id'] for r in result.data]
+        movies_response = supabase.table('movies')\
+            .select('id, series_title, released_year, genre, overview, origin_country')\
+            .in_('id', movie_ids)\
+            .execute()
+        
+        if not movies_response.data:
+            return {"recommendations": []}
+        
+        # 5. Combinar scores de similaridade com detalhes dos filmes
+        score_map = {r['id']: r['similarity'] for r in result.data}
         candidates = []
-        seen_titles = set(r['title'] for r in ratings)
         
-        for idx in top_indices:
-            movie = df_movies.iloc[idx]
-            if movie['series_title'] in seen_titles: continue
-            
+        for movie in movies_response.data:
             candidates.append({
                 'title': movie['series_title'],
                 'year': movie.get('released_year', 'N/A'),
                 'genre': movie.get('genre', ''),
                 'overview': movie.get('overview', 'N/A'),
-                'score': float(sims[idx]),
+                'score': score_map.get(movie['id'], 0),
                 'origin_country': movie.get('origin_country', '')
             })
-            
-        # 3. RAG Rerank
+        
+        # 6. Buscar histórico do usuário para contexto do RAG
+        ratings = []
+        user_data = supabase.table('user_movies').select('*').eq('user_id', request.user_id).execute()
+        
+        if user_data.data:
+            for item in user_data.data[:50]:  # Limitar a 50 para economizar tokens
+                movie_match = supabase.table('movies')\
+                    .select('series_title, genre, released_year')\
+                    .eq('id', item['movie_id'])\
+                    .single()\
+                    .execute()
+                    
+                if movie_match.data:
+                    ratings.append({
+                        'title': movie_match.data['series_title'],
+                        'rating': item['rating'],
+                        'genre': movie_match.data.get('genre', ''),
+                        'year': movie_match.data.get('released_year', '')
+                    })
+        
+        # 7. RAG Rerank
+        print("🧠 Aplicando RAG reranking...")
         final_recs = rag_service.rerank(ratings, candidates)
         
         return {"recommendations": final_recs}
         
     except Exception as e:
-        print(f"AI Recs Error: {e}")
+        print(f"❌ AI Recs Error: {e}")
+        import traceback
+        traceback.print_exc()
         return {"recommendations": []}
 
 if __name__ == "__main__":
