@@ -7,6 +7,7 @@ import Onboarding from "./components/MovieOnboarding/MovieOnboardingNewVersion";
 
 >>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
 
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
