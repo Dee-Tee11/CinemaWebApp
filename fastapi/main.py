@@ -16,7 +16,6 @@ from recommendation_system import SistemaRecomendacaoSimilaridade
 app = FastAPI()
 
 # CORS Middleware
-# Ler origens do environment variable, separado por vírgulas
 frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 origins = [url.strip() for url in frontend_url.split(",")]
 
@@ -42,34 +41,42 @@ if not supabase_url or not supabase_key:
         "SUPABASE_SERVICE_KEY=..."
     )
 
-print(f"✅ Conectando ao Supabase: {supabase_url[:40]}...")
 supabase: Client = create_client(supabase_url, supabase_key)
 
-# Carregar dados dos filmes do Supabase
+# Carregar dados dos filmes do Supabase com paginação
 print("📥 Buscando filmes do Supabase...")
-try:
-    response = supabase.table("movies").select("*").execute()
-    df_movies = pd.DataFrame(response.data)
-    print(f"✅ {len(df_movies)} filmes carregados do Supabase\n")
-except Exception as e:
-    print(f"⚠️  Erro ao carregar filmes do Supabase: {e}")
-    print("   Tentando carregar do CSV local...\n")
-    # Fallback para CSV local se Supabase falhar
-    dataset_path = os.path.join(os.path.dirname(__file__), '..', 'AI', 'movies_clean_with_posters.csv')
-    df_movies = pd.read_csv(dataset_path)
-    print(f"✅ {len(df_movies)} filmes carregados do CSV\n")
+all_movies = []
+page_size = 1000
+offset = 0
+page_num = 1
+
+while True:
+    response = supabase.table("movies").select("*").range(offset, offset + page_size - 1).execute()
+    
+    if not response.data:
+        break
+    
+    all_movies.extend(response.data)
+    print(f"   📄 Página {page_num}: {len(response.data)} filmes carregados")
+    
+    if len(response.data) < page_size:
+        break
+    
+    offset += page_size
+    page_num += 1
+
+df_movies = pd.DataFrame(all_movies)
+print(f"✅ {len(df_movies)} filmes carregados do Supabase\n")
 
 # Recommendation System Initialization
 import numpy as np
 import json
-print("⚙️  Extraindo embeddings do DataFrame...")
+print("⚙️  Extraindo embeddings da supabase...")
 
 try:
-    # Os embeddings podem vir como strings do Supabase
     embeddings_list = []
     for emb in df_movies['embedding']:
         if isinstance(emb, str):
-            # Converter string para lista
             emb = json.loads(emb)
         embeddings_list.append(emb)
     
@@ -123,7 +130,7 @@ def generate_and_save_recommendations(user_id: str):
     # 3. Configurar dados do usuário e gerar recomendações
     try:
         rec_system.set_user_data(avaliacoes_por_movie_id, filmes_vistos_ids)
-        recommendations = rec_system.gerar_recomendacoes()
+        recommendations = rec_system.gerar_recomendacoes(n=50)  # ✅ 50 em vez de 25
     except Exception as e:
         print(f"❌ Erro ao gerar recomendações: {e}")
         return
@@ -134,7 +141,7 @@ def generate_and_save_recommendations(user_id: str):
 
     # 4. Preparar dados para inserir no Supabase
     recs_to_insert = []
-    for i, rec in enumerate(recommendations):
+    for i, rec in enumerate(recommendations[:25]):  # Salva top 25 no DB
         recs_to_insert.append({
             'user_id': user_id,
             'movie_id': rec['movie_id'],
@@ -151,7 +158,6 @@ def generate_and_save_recommendations(user_id: str):
         print(f"🗑️  Recomendações antigas deletadas para usuário {user_id}")
     except Exception as e:
         print(f"⚠️  Erro ao deletar recomendações antigas: {e}")
-        # Continuar mesmo se falhar
 
     # 6. Inserir novas recomendações
     try:
@@ -173,3 +179,159 @@ def trigger_recommendation_generation(user_id: str, background_tasks: Background
         "message": f"Geração de recomendações iniciada para o usuário {user_id}",
         "status": "processing"
     }
+
+# --- NEW RAG ENDPOINTS ---
+
+from pydantic import BaseModel
+from rag_service import RagService
+
+rag_service = RagService()
+
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+
+class AiRecsRequest(BaseModel):
+    user_id: str
+
+def search_movie_by_id(movie_id):
+    """Helper local para buscar filme no DF pelo ID"""
+    try:
+        # Debug: Print incoming ID type if needed (uncomment for verbose logs)
+        # print(f"DEBUG: Searching for ID {movie_id} (Type: {type(movie_id)})")
+        
+        # Ensure target is int
+        target_id = int(movie_id)
+        
+        match = df_movies[df_movies['id'] == target_id]
+        if len(match) > 0:
+            return match.iloc[0]
+            
+        print(f"⚠️ Movie ID {target_id} not found in dataframe!")
+        return None
+    except Exception as e:
+        print(f"⚠️ Error searching movie ID {movie_id}: {e}")
+        return None
+
+@app.post("/api/chat")
+def chat_with_history(request: ChatRequest):
+    """
+    Chatbot endpoint: Receives user_id + message.
+    Fetches user history from Supabase, calls RAG Service, returns text.
+    """
+    try:
+        print(f"💬 Chat Request received for User ID: {request.user_id}")
+        
+        # 1. Fetch User History
+        response = supabase.table('user_movies').select('*').eq('user_id', request.user_id).execute()
+        ratings = []
+        if response.data:
+            print(f"   Found {len(response.data)} raw ratings in Supabase.")
+            for item in response.data:
+                match = search_movie_by_id(item['movie_id'])
+                if match is not None:
+                    ratings.append({
+                        'title': match['series_title'],
+                        'rating': item['rating'],
+                        'genre': match.get('genre', ''),
+                        'year': match.get('released_year', '')
+                    })
+                else:
+                    # Optional: Print if movie not found so we know
+                    # print(f"   Movie ID {item['movie_id']} not found in local DF.")
+                    pass
+        else:
+            print("   ⚠️ No ratings found in Supabase for this user.")
+        
+        print(f"   ✅ Processed {len(ratings)} valid movie ratings for context.")
+
+        if not ratings:
+            return {"response": "Olá! Ainda não vi nenhum filme no teu histórico. Avalia alguns filmes primeiro para eu poder ajudar! 🎬"}
+            
+        # 2. Call RAG Chat
+        ai_reply = rag_service.chat_with_history(ratings, request.message)
+        return {"response": ai_reply}
+        
+    except Exception as e:
+        print(f"Chat Error: {e}")
+        return {"response": "Desculpa, estou com dificuldades técnicas. Tenta novamente mais tarde. 🤖💥"}
+
+@app.post("/api/recommendations/ai")
+def get_ai_recommendations(request: AiRecsRequest):
+    """
+    Direct RAG Recommendations Endpoint
+    """
+    try:
+        # 1. Fetch History
+        response = supabase.table('user_movies').select('*').eq('user_id', request.user_id).execute()
+        ratings = []
+        if response.data:
+            for item in response.data:
+                match = search_movie_by_id(item['movie_id'])
+                if match is not None:
+                    ratings.append({
+                        'title': match['series_title'],
+                        'rating': item['rating'],
+                        'genre': match.get('genre', ''),
+                        'year': match.get('released_year', '')
+                    })
+        
+        if not ratings:
+            return {"recommendations": []}
+
+        # 2. Generate Candidates (Vector Search)
+        # Using the same logic as generate_and_save_recommendations but ad-hoc
+        user_vector = np.zeros(movie_embeddings.shape[1])
+        count = 0
+        for r in ratings:
+            match = df_movies[df_movies['series_title'] == r['title']]
+            if len(match) > 0:
+                idx = match.index[0]
+                user_vector += movie_embeddings[idx]
+                count += 1
+        
+        if count > 0:
+            user_vector /= count
+            
+        sims = cosine_similarity([user_vector], movie_embeddings)[0]
+        top_indices = np.argsort(sims)[::-1][:50]
+        
+        candidates = []
+        seen_titles = set(r['title'] for r in ratings)
+        
+        for idx in top_indices:
+            movie = df_movies.iloc[idx]
+            if movie['series_title'] in seen_titles: continue
+            
+            candidates.append({
+                'title': movie['series_title'],
+                'year': movie.get('released_year', 'N/A'),
+                'genre': movie.get('genre', ''),
+                'overview': movie.get('overview', 'N/A'),
+                'score': float(sims[idx]),
+                'origin_country': movie.get('origin_country', '')
+            })
+            
+        # 3. RAG Rerank
+        final_recs = rag_service.rerank(ratings, candidates)
+        
+        return {"recommendations": final_recs}
+        
+    except Exception as e:
+        print(f"AI Recs Error: {e}")
+        return {"recommendations": []}
+
+if __name__ == "__main__":
+    print("\n" + "="*50)
+    resposta = input("🧪 Deseja testar a geração de recomendações localmente? (s/n): ").strip().lower()
+    
+    if resposta == 's':
+        user_id = input("📝 Digite o user_id para testar: ").strip()
+        if user_id:
+            print(f"\n🚀 Gerando recomendações para o usuário: {user_id}")
+            generate_and_save_recommendations(user_id)
+            print("\n✅ Teste concluído!")
+        else:
+            print("❌ User ID não pode ser vazio.")
+    else:
+        print("ℹ️  Para iniciar o servidor, execute: uvicorn main:app --reload")

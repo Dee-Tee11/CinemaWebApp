@@ -19,7 +19,7 @@ class SistemaRecomendacaoSimilaridade:
         
         # Verificar coluna 'id'
         if 'id' not in self.bd.columns:
-            possible_id_cols = ['movie_id', 'movieId', 'Movie_Id', 'ID']
+            possible_id_cols = ['movie_id', 'movieId', 'Movie_Id', 'ID', 'tmdb_id']
             id_col_found = None
             
             for col in possible_id_cols:
@@ -62,6 +62,7 @@ class SistemaRecomendacaoSimilaridade:
                 self.avaliacoes[idx] = float(rating)
         
         self.filmes_vistos_ids = set(int(mid) for mid in filmes_vistos_ids)
+        self._perfil_usuario_cache = None  # Invalidar cache
         
         print(f"📊 Dados do usuário carregados:")
         print(f"   Avaliações: {len(self.avaliacoes)}")
@@ -103,13 +104,13 @@ class SistemaRecomendacaoSimilaridade:
         
         return similaridades
     
-    def gerar_recomendacoes(self, n: int = 25) -> List[Dict]:
+    def gerar_recomendacoes(self, n: int = 50) -> List[Dict]:  # ✅ Default 50 agora
         """
         Gera recomendações encontrando os top K similares para cada filme avaliado
         """
         if len(self.avaliacoes) == 0:
-            print("⚠️  Nenhuma avaliação fornecida.")
-            return []
+            print("⚠️  Nenhuma avaliação fornecida. Usando cold start.")
+            return self._get_popular_movies(n)
         
         print(f"\n🧮 Gerando recomendações...")
         print(f"   Método: Top-{self.k_por_filme} similares por filme avaliado")
@@ -130,9 +131,11 @@ class SistemaRecomendacaoSimilaridade:
             
             for rec in top_k:
                 movie_id = rec['movie_id']
+                idx = rec['idx']
                 
                 if movie_id not in candidatos:
                     candidatos[movie_id] = {
+                        'idx': idx,
                         'movie_id': movie_id,
                         'titulo': rec['titulo'],
                         'genero': rec['genero'],
@@ -159,15 +162,29 @@ class SistemaRecomendacaoSimilaridade:
             # Filmes que aparecem múltiplas vezes (similares a vários filmes avaliados) são preferidos
             score = (avg_sim * 0.5 + max_sim * 0.3) * (1 + count * 0.1)
             
+            # ✅ ADICIONAR METADATA COMPLETA PARA RAG
+            idx = info['idx']
+            row = self.bd.iloc[idx]
+            
             recomendacoes.append({
                 'movie_id': movie_id,
                 'score': float(score),
                 'avg_similarity': float(avg_sim),
                 'max_similarity': float(max_sim),
-                'appears_for': count,  # Quantos filmes avaliados têm este como similar
+                'appears_for': count,
+                
+                # Campos originais
                 'titulo': info['titulo'],
                 'genero': info['genero'],
-                'imdb_rating': info['imdb_rating']
+                'imdb_rating': info['imdb_rating'],
+                
+                # ✅ NOVOS CAMPOS PARA RAG
+                'title': info['titulo'],  # Alias
+                'genre': info['genero'],  # Alias
+                'year': row.get('released_year', 'N/A'),
+                'origin_country': row.get('origin_country', 'N/A'),
+                'original_language': row.get('original_language', 'N/A'),
+                'overview': row.get('overview', 'N/A'),
             })
         
         # Ordenar por score
@@ -180,3 +197,29 @@ class SistemaRecomendacaoSimilaridade:
         print(f"   Retornando top {n}\n")
         
         return recomendacoes[:n]
+    
+    def _get_popular_movies(self, n: int) -> List[Dict]:
+        """Cold start: retorna filmes populares"""
+        print("   Usando fallback: filmes mais populares (IMDb rating)")
+        
+        popular = self.bd.nlargest(n, 'imdb_rating')
+        
+        recs = []
+        for _, row in popular.iterrows():
+            recs.append({
+                'movie_id': int(row['id']),
+                'score': float(row.get('imdb_rating', 0)),
+                'titulo': row.get('series_title', 'Unknown'),
+                'genero': row.get('genre', 'Unknown'),
+                'imdb_rating': float(row.get('imdb_rating', 0)),
+                
+                # Para RAG
+                'title': row.get('series_title', 'Unknown'),
+                'genre': row.get('genre', 'Unknown'),
+                'year': row.get('released_year', 'N/A'),
+                'origin_country': row.get('origin_country', 'N/A'),
+                'original_language': row.get('original_language', 'N/A'),
+                'overview': row.get('overview', 'N/A'),
+            })
+        
+        return recs
