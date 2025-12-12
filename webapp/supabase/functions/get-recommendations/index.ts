@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+<<<<<<< HEAD
 import { getAllHeaders, SECURITY_HEADERS } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -84,6 +85,65 @@ Deno.serve(async (req) => {
       console.warn("⚠️ Failed to parse body, using defaults");
     }
 
+=======
+
+const ITEMS_PER_PAGE = 10;
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("❌ Missing Authorization Header");
+      return new Response(
+        JSON.stringify({ error: "Missing Authorization Header" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("❌ Server configuration error");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Extrai userId do token JWT (igual ao get-user-movies)
+    const token = authHeader.replace("Bearer ", "");
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const userId = payload.sub;
+
+
+    // Lê page do body (mantém compatível com o hook atual)
+    const body = await req.json();
+    const page = parseInt(body.page || "0", 10);
+    const searchQuery = body.searchQuery || null;
+
+
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     // Busca recomendações paginadas
     const { data: recommendationData, error: recommendationError } =
       await supabase
@@ -105,7 +165,14 @@ Deno.serve(async (req) => {
           page,
           hasMore: false,
         }),
+<<<<<<< HEAD
         { status: 200, headers }
+=======
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       );
     }
 
@@ -115,7 +182,11 @@ Deno.serve(async (req) => {
     let moviesQuery = supabase
       .from("movies")
       .select(
+<<<<<<< HEAD
         "id, series_title, poster_url, runtime, genre, imdb_rating"
+=======
+        "id, series_title, poster_url, runtime, genre, imdb_rating, overview"
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       )
       .in("id", movieIds);
 
@@ -140,14 +211,23 @@ Deno.serve(async (req) => {
       category: movie.genre || "Uncategorized",
       year: "N/A",
       rating: movie.imdb_rating || 0,
+<<<<<<< HEAD
     }));
 
+=======
+      synopsis: movie.overview || "Synopsis not available",
+    }));
+
+
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     return new Response(
       JSON.stringify({
         recommendations,
         page,
         hasMore: recommendations.length === ITEMS_PER_PAGE,
       }),
+<<<<<<< HEAD
       { status: 200, headers }
     );
 
@@ -282,3 +362,23 @@ function base64UrlDecode(str: string): Uint8Array {
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
+=======
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("❌ Error:", error);
+    return new Response(
+      JSON.stringify({
+        error: error.message || "Internal server error",
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
+  }
+});
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b

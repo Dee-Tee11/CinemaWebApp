@@ -1,17 +1,28 @@
 import React, { useState } from "react";
+<<<<<<< HEAD
 import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle } from "lucide-react";
+=======
+import { Settings, User, Compass, UserPlus, Menu, X } from "lucide-react";
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
 import { useClerk } from "@clerk/clerk-react";
 import { Link } from "react-router-dom";
 import SettingsPopup from "./SettingsPopup";
 import AddFriendPopup from "./AddFriend/AddFriend";
+<<<<<<< HEAD
 import Chatbot from "./Chatbot/Chatbot";
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
 import "./Slidebar.css";
 
 interface SidebarProps {
   onSettingsClick?: () => void;
   onProfileClick?: () => void;
 }
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
 const Logo: React.FC<LogoProps> = ({ width = 48, height = 48, className }) => {
   return (
     <svg
@@ -38,7 +49,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   const { signOut } = useClerk();
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
+<<<<<<< HEAD
   const [showChatbotPopup, setShowChatbotPopup] = useState(false);
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleProfileClick = () => {
@@ -78,6 +92,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Link>
 
         <button
+<<<<<<< HEAD
           onClick={() => setShowChatbotPopup(true)}
           className="sidebar-button"
           aria-label="Assistant"
@@ -86,6 +101,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         </button>
 
         <button
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
           onClick={() => setShowAddFriendPopup(true)}
           className="sidebar-button"
           aria-label="Adicionar Amigo"
@@ -121,7 +138,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       />
       {/* MOBILE SLIDE MENU */}
 
+<<<<<<< HEAD
       <div className={`sidebar-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+=======
+     <div className={`sidebar-mobile-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
         <div className="sidebar-mobile-header">
           <div className="sidebar-mobile-logo-container">
             <div className="sidebar-mobile-logo-circle">
@@ -161,6 +182,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Link>
 
           <button
+<<<<<<< HEAD
             onClick={() => {
               setShowChatbotPopup(true);
               setIsMobileMenuOpen(false);
@@ -174,6 +196,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <button
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
             onClick={handleAddFriendClick}
             className="sidebar-mobile-button"
           >
@@ -205,11 +229,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         isOpen={showAddFriendPopup}
         onClose={() => setShowAddFriendPopup(false)}
       />
+<<<<<<< HEAD
 
       <Chatbot
         isOpen={showChatbotPopup}
         onClose={() => setShowChatbotPopup(false)}
       />
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     </div>
   );
 };

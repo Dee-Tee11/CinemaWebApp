@@ -38,6 +38,7 @@ export const useOnboarding = () => {
   const [showRatingSelector, setShowRatingSelector] = useState(false);
   const [tempRating, setTempRating] = useState(10);
 
+<<<<<<< HEAD
   // Search state for rating phase
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
@@ -48,6 +49,8 @@ export const useOnboarding = () => {
   const [selectionSearchResults, setSelectionSearchResults] = useState<Movie[]>([]);
   const [isSelectionSearching, setIsSelectionSearching] = useState(false);
 
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
   // UI state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +61,10 @@ export const useOnboarding = () => {
     const fetchInitialMovies = async () => {
       setLoading(true);
       try {
+<<<<<<< HEAD
+=======
+        // Buscar 50 filmes populares ordenados por rating
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
         const { data, error } = await supabase
           .from("movies")
           .select(
@@ -84,6 +91,7 @@ export const useOnboarding = () => {
     fetchInitialMovies();
   }, []);
 
+<<<<<<< HEAD
   // Search movies
   const searchMovies = async (query: string) => {
     if (!query.trim()) {
@@ -167,6 +175,8 @@ export const useOnboarding = () => {
     setShowRatingSelector(false);
   };
 
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
   // Handle movie selection (min 5)
   const handleMovieSelect = (movieId: number) => {
     setSelectedMovies((prev) => {
@@ -189,10 +199,18 @@ export const useOnboarding = () => {
 
     setLoading(true);
     try {
+<<<<<<< HEAD
+=======
+      // Buscar os géneros dos filmes selecionados
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       const selectedMoviesList = availableMovies.filter((m) =>
         selectedMovies.has(m.id)
       );
 
+<<<<<<< HEAD
+=======
+      // Contar a ocorrência de cada género
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       const genreCounts = new Map<string, number>();
       selectedMoviesList.forEach((movie) => {
         movie.genre.split(",").forEach((g) => {
@@ -201,12 +219,20 @@ export const useOnboarding = () => {
         });
       });
 
+<<<<<<< HEAD
+=======
+      // Ordenar os géneros por contagem e pegar os 3 mais proeminentes
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       const sortedGenres = Array.from(genreCounts.entries())
         .sort((a, b) => b[1] - a[1])
         .map((entry) => entry[0]);
 
       const top3Genres = sortedGenres.slice(0, 3);
 
+<<<<<<< HEAD
+=======
+      // Buscar filmes relacionados baseados nos géneros
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       const genreArray = top3Genres;
       const { data, error } = await supabase
         .from("movies")
@@ -298,7 +324,11 @@ export const useOnboarding = () => {
     setIsModalOpen(true);
   };
 
+<<<<<<< HEAD
   // Complete onboarding
+=======
+  // Complete onboarding - save all data, mark as complete, and trigger recommendations
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
   const handleComplete = async () => {
     if (!userId) {
       setError("User not authenticated");
@@ -309,6 +339,10 @@ export const useOnboarding = () => {
     setCurrentPhase("complete");
 
     try {
+<<<<<<< HEAD
+=======
+      // 1. Guardar os 5 filmes selecionados como "seen" com rating 15
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       const selectedMoviesData = Array.from(selectedMovies).map((movieId) => ({
         user_id: userId,
         movie_id: movieId,
@@ -325,6 +359,10 @@ export const useOnboarding = () => {
 
       if (selectedError) throw selectedError;
 
+<<<<<<< HEAD
+=======
+      // 2. Guardar os ratings dos filmes relacionados
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       if (ratings.length > 0) {
         const ratingsData = ratings.map((r) => ({
           user_id: userId,
@@ -343,6 +381,10 @@ export const useOnboarding = () => {
         if (ratingsError) throw ratingsError;
       }
 
+<<<<<<< HEAD
+=======
+      // 3. Chamar a API para gerar recomendações
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       try {
         await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/generate-recommendations/${userId}`,
@@ -352,8 +394,15 @@ export const useOnboarding = () => {
         );
       } catch (apiError) {
         console.warn("⚠️ Could not trigger recommendations API:", apiError);
+<<<<<<< HEAD
       }
 
+=======
+        // Não bloquear o fluxo se a API falhar
+      }
+
+      // 4. Marcar onboarding como completo
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       const { error: updateError } = await supabase
         .from("User")
         .update({ onboarding_status: "completed" })
@@ -364,6 +413,11 @@ export const useOnboarding = () => {
         throw updateError;
       }
 
+<<<<<<< HEAD
+=======
+
+      // Aguardar 2 segundos antes de redirecionar
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       setTimeout(() => {
         navigate("/foryou", { replace: true });
       }, 2000);
@@ -390,6 +444,7 @@ export const useOnboarding = () => {
     setIsModalOpen,
     error,
     setError,
+<<<<<<< HEAD
     searchQuery,
     setSearchQuery,
     searchResults,
@@ -398,6 +453,8 @@ export const useOnboarding = () => {
     setSelectionSearchQuery,
     selectionSearchResults,
     isSelectionSearching,
+=======
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     handleMovieSelect,
     handlePhase1Complete,
     handleSkipOnboarding,
@@ -407,8 +464,13 @@ export const useOnboarding = () => {
     handlePrevious,
     handleOpenModal,
     handleComplete,
+<<<<<<< HEAD
     searchMovies,
     searchMoviesForSelection,
     addSearchedMovie,
   };
 };
+=======
+  };
+};
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b

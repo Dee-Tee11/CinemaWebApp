@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /**
  * 🔒 CORS Headers Seguros para Supabase Edge Functions
  * - Validação estrita de origens com verificação de protocolo
@@ -121,4 +122,9 @@ export function createPreflightResponse(origin: string | null): Response {
   }
 
   return new Response(null, { status: 204, headers });
+=======
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
 }

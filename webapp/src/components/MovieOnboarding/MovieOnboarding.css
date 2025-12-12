@@ -1,0 +1,387 @@
+/* Container Principal */
+.onboarding-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fffff0 0%, #fff8dc 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.onboarding-content {
+  max-width: 64rem;
+  width: 100%;
+}
+
+/* Header */
+.onboarding-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.onboarding-title {
+  font-size: 2.25rem;
+  font-weight: bold;
+  color: #991b1b;
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-subtitle {
+  color: #991b1b;
+}
+
+/* Progress Bar */
+.progress-bar-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.progress-bar-item {
+  height: 0.5rem;
+  flex: 1;
+  border-radius: 9999px;
+  transition: background-color 0.3s ease;
+}
+
+.progress-bar-item.completed {
+  background-color: #991b1b;
+}
+
+.progress-bar-item.active {
+  background-color: #991b1b;
+}
+
+.progress-bar-item.inactive {
+  background-color: #721515;
+}
+
+/* Card Container */
+.card-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.movie-card-wrapper {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.movie-card-main {
+  background-color: #991b1b;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Card Image */
+.card-image {
+  position: relative;
+  height: 24rem;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Badges */
+.badge-rating {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.badge-user-rating {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: linear-gradient(135deg, #fffff0 0%, #fff8dc 100%);
+  backdrop-filter: blur(4px);
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.badge-text {
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.star-yellow {
+  color: #fbbf24;
+}
+
+.star-white {
+  color: white;
+}
+
+.star-red {
+  color: #ef4444;
+}
+
+/* Rating Overlay */
+.rating-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.rating-selector-content {
+  width: 100%;
+  max-width: 24rem;
+}
+
+.rating-selector-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.rating-selector-title {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.rating-display {
+  font-size: 3.75rem;
+  font-weight: bold;
+  color: white;
+}
+
+.rating-slider {
+  width: 100%;
+  height: 0.75rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  appearance: none;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  outline: none;
+}
+
+.rating-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: white;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.rating-slider::-moz-range-thumb {
+  width: 1.5rem;
+  height: 1.5rem;
+  background-color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.rating-range-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.btn-confirm {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #991b1b;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-confirm:hover {
+  background-color: #991b1b;
+}
+
+/* Card Info */
+.card-info {
+  padding: 1.5rem;
+}
+
+
+.card-meta {
+  color: #ffffff;
+  font-size: 0.875rem;
+}
+
+/* Card Actions */
+.card-actions {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.btn-rate,
+.btn-change-rating {
+  width: 100%;
+  padding: 0.75rem;
+  color: #991b1b;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.btn-rate {
+  background-color: white;
+}
+
+.btn-rate:hover {
+  background-color: white;
+}
+
+.btn-change-rating {
+  background-color: white;
+  color:#991b1b;
+}
+
+.btn-change-rating:hover {
+  background-color: #991b1b;
+  border: white;
+  color:white;
+}
+
+.navigation-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-nav {
+  flex: 1;
+  padding: 0.75rem;
+  background-color: white;
+  color: #991b1b;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-nav:hover {
+  background-color: #991b1b;
+  border: white;
+  color:white;
+}
+
+.btn-nav:disabled {
+  background-color: gray;
+  color:#991b1b ;
+  cursor: not-allowed;
+}
+
+/* Complete Screen */
+.complete-card {
+  max-width: 42rem;
+  width: 100%;
+  background-color: #991b1b;
+  backdrop-filter: blur(16px);
+  border-radius: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.complete-emoji {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.complete-title {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.complete-subtitle {
+  color: #cbd5e1;
+  margin-bottom: 1.5rem;
+}
+
+.ratings-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.rating-item {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rating-item-info {
+  text-align: left;
+}
+
+.rating-item-title {
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.rating-item-category {
+  color: #991b1b;
+  font-size: bold;
+}
+
+.rating-item-score {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rating-value {
+  color: #991b1b;
+  font-weight: bold;
+}
+
+.btn-restart {
+  padding: 0.75rem 2rem;
+  background-color: white;
+  color: #991b1b;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-restart:hover {
+  background-color: #991b1b;
+}

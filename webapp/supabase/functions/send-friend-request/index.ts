@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+<<<<<<< HEAD
 import { getAllHeaders, SECURITY_HEADERS } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -66,12 +67,29 @@ Deno.serve(async (req) => {
   }
 
   // 🚀 5. Lógica de Negócio
+=======
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight request
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
   try {
     // Get request body
     const { receiver_id } = await req.json();
     if (!receiver_id || typeof receiver_id !== "string" || receiver_id.trim() === "") {
       return new Response(
         JSON.stringify({ error: "receiver_id is required and must be a valid string." }),
+<<<<<<< HEAD
         { headers, status: 400 }
       );
     }
@@ -81,11 +99,53 @@ Deno.serve(async (req) => {
       auth: { persistSession: false },
     });
 
+=======
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    // Check for Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header. Please login." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    // Create Supabase client with service_role_key (INSECURE - TEMPORARY)
+    // This bypasses all RLS. This is a temporary and insecure measure.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    });
+
+    // Manually decode token to get sender_id (INSECURE - TEMPORARY)
+    let sender_id: string;
+    try {
+      const token = authHeader.replace("Bearer ", "");
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      sender_id = payload.sub;
+      if (!sender_id) throw new Error("User ID (sub) not found in token payload.");
+    } catch (e) {
+      console.error("Error manually decoding token:", e);
+      return new Response(
+        JSON.stringify({ error: "Invalid token format." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     // Validate: Cannot send a request to yourself
     if (sender_id === receiver_id) {
       return new Response(
         JSON.stringify({ error: "You cannot send a friend request to yourself." }),
+<<<<<<< HEAD
         { headers, status: 400 }
+=======
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       );
     }
 
@@ -100,7 +160,11 @@ Deno.serve(async (req) => {
     if (!receiverExists) {
       return new Response(
         JSON.stringify({ error: "User not found. Please check the user ID." }),
+<<<<<<< HEAD
         { headers, status: 404 }
+=======
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       );
     }
 
@@ -115,7 +179,11 @@ Deno.serve(async (req) => {
     if (existingFriendship) {
       return new Response(
         JSON.stringify({ error: "You are already friends with this user." }),
+<<<<<<< HEAD
         { headers, status: 409 }
+=======
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 409 }
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       );
     }
 
@@ -134,7 +202,11 @@ Deno.serve(async (req) => {
         : "You already have a pending friend request with this user.";
       return new Response(
         JSON.stringify({ error }),
+<<<<<<< HEAD
         { headers, status: 409 }
+=======
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 409 }
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       );
     }
 
@@ -150,13 +222,18 @@ Deno.serve(async (req) => {
     // Success
     return new Response(
       JSON.stringify({ success: true, data }),
+<<<<<<< HEAD
       { headers, status: 201 }
+=======
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 201 }
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     );
 
   } catch (error) {
     console.error("❌ Error in send-friend-request:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Internal Server Error" }),
+<<<<<<< HEAD
       { headers, status: 500 }
     );
   }
@@ -282,3 +359,9 @@ function base64UrlDecode(str: string): Uint8Array {
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
+=======
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
+  }
+});
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b

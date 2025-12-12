@@ -35,9 +35,17 @@ export const verifyUserInSupabase = async (
     .single();
 
   if (error) {
+<<<<<<< HEAD
     return null;
   }
 
+=======
+
+    return null;
+  }
+
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
   return data;
 };
 
@@ -58,6 +66,11 @@ export const searchUserByTag = async ({
     return { user: null, error: null };
   }
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
   try {
     // Search for user by tag
     const { data, error } = await supabase
@@ -68,9 +81,18 @@ export const searchUserByTag = async ({
       .single();
 
     if (error || !data) {
+<<<<<<< HEAD
       return { user: null, error: "User not found with this tag" };
     }
 
+=======
+
+      return { user: null, error: "User not found with this tag" };
+    }
+
+
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     // Check if already friends
     const { data: friendshipData } = await supabase
       .from("friendships")
@@ -98,6 +120,10 @@ export const searchUserByTag = async ({
 
     return { user: { ...data, requestStatus: "none" }, error: null };
   } catch (err) {
+<<<<<<< HEAD
+=======
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     return { user: null, error: "Error searching for user" };
   }
 };
@@ -116,13 +142,18 @@ export const sendFriendRequest = async ({
   error: string | null;
 }> => {
   if (!currentUserId) {
+<<<<<<< HEAD
     console.error("❌ sendFriendRequest: Missing currentUserId");
+=======
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     return {
       success: false,
       error: "You must be logged in to send friend requests",
     };
   }
 
+<<<<<<< HEAD
   try {
     // Get authentication token
     console.log("🔐 sendFriendRequest: Requesting token...");
@@ -131,11 +162,21 @@ export const sendFriendRequest = async ({
 
     if (!token) {
       console.error("❌ sendFriendRequest: Token is missing!");
+=======
+
+  try {
+    // Get authentication token
+    const token = await getToken({ template: "supabase" });
+
+
+    if (!token) {
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       return { success: false, error: "Authentication token not found" };
     }
 
     // Make request to edge function
     const url = `${supabaseUrl}/functions/v1/send-friend-request`;
+<<<<<<< HEAD
     console.log("📡 sendFriendRequest: Calling Edge Function:", url);
     console.log("📤 sendFriendRequest: Headers:", {
       Authorization: `Bearer ${token.substring(0, 20)}...`,
@@ -143,6 +184,10 @@ export const sendFriendRequest = async ({
       apikey: `${supabaseAnonKey.substring(0, 20)}...`,
     });
     console.log("📦 sendFriendRequest: Body:", { receiver_id: friendId });
+=======
+
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
 
     const fetchResponse = await fetch(url, {
       method: "POST",
@@ -154,25 +199,45 @@ export const sendFriendRequest = async ({
       body: JSON.stringify({ receiver_id: friendId }),
     });
 
+<<<<<<< HEAD
     console.log("📥 sendFriendRequest: Response Status:", fetchResponse.status);
     console.log("📥 sendFriendRequest: Response Headers:", Object.fromEntries(fetchResponse.headers.entries()));
 
     const responseText = await fetchResponse.text();
     console.log("📄 sendFriendRequest: Response Body:", responseText);
+=======
+
+
+    const responseText = await fetchResponse.text();
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
 
     let data;
     try {
       data = JSON.parse(responseText);
+<<<<<<< HEAD
     } catch (e) {
       console.error("❌ sendFriendRequest: Failed to parse JSON response:", e);
+=======
+
+    } catch (e) {
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       return {
         success: false,
         error: `Server returned invalid response: ${responseText.substring(0, 100)}`,
       };
     }
 
+<<<<<<< HEAD
     if (!fetchResponse.ok) {
       console.error("❌ sendFriendRequest: Request failed with status", fetchResponse.status, data);
+=======
+
+
+    if (!fetchResponse.ok) {
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       return {
         success: false,
         error: data?.error || `Server error: ${fetchResponse.status}`,
@@ -180,6 +245,7 @@ export const sendFriendRequest = async ({
     }
 
     if (data?.success) {
+<<<<<<< HEAD
       console.log("✅ sendFriendRequest: Success!", data);
       return { success: true, error: null };
     } else {
@@ -189,6 +255,17 @@ export const sendFriendRequest = async ({
     }
   } catch (err) {
     console.error("❌ sendFriendRequest: Exception caught:", err);
+=======
+
+      return { success: true, error: null };
+    } else {
+      const errorMessage = data?.error || "Failed to send friend request";
+
+      return { success: false, error: errorMessage };
+    }
+  } catch (err) {
+
+>>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     return { success: false, error: `Caught error: ${err}` };
   }
 };
