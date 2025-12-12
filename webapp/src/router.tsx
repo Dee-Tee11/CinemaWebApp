@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./home";
 import Onboarding from "./components/MovieOnboarding/MovieOnboardingFinal";
 
+
 export default function AppRouter() {
   return (
     <BrowserRouter>
