@@ -4,7 +4,6 @@ import { useAuth } from "@clerk/clerk-react";
 import type { Item } from "./useMovies";
 
 const MINIMUM_RATED_MOVIES = 5;
-const ITEMS_PER_PAGE = 10;
 
 interface RecommendedMoviesResponse {
   items: Item[];

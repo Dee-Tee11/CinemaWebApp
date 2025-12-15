@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle } from "lucide-react";
-import { useClerk } from "@clerk/clerk-react";
+
 import { Link } from "react-router-dom";
 import SettingsPopup from "./SettingsPopup";
 import AddFriendPopup from "./AddFriend/AddFriend";
@@ -42,7 +42,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSettingsClick,
   onProfileClick,
 }) => {
-  const { signOut } = useClerk();
   const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
   const [showChatbotPopup, setShowChatbotPopup] = useState(false);
