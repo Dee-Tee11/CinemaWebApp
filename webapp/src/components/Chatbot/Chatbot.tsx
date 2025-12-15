@@ -42,7 +42,9 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/chat", {
+      // Use environment variable for backend URL
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || "https://movienight-ai.onrender.com";
+      const response = await fetch(`${backendUrl}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
