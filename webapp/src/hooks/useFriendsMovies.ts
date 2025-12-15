@@ -112,11 +112,7 @@ export const useFriendsMovies = (movieId?: string): UseFriendsMoviesReturn => {
 
         const activities: FriendActivity[] = data?.map((activity: UserMovieWithUserArray) => ({
           friend_id: activity.user_id,
-<<<<<<< HEAD
-          friend_name: activity.user?.name || 'Anonymous Friend',
-=======
           friend_name: activity.user?.[0]?.name || 'Anonymous Friend',
->>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
           movie_id: activity.movie_id.toString(),
           status: activity.status || 'Unknown',
           rating: activity.rating || null,

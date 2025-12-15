@@ -103,7 +103,6 @@ export default function Home() {
   if (activeView === "forYou") {
     currentData = recommendedMovies;
   } else if (activeView === "friends") {
-<<<<<<< HEAD
     currentData = { ...friendsMovies, needsRecommendations: false, isGeneratingRecommendations: false, isPolling: false };
   } else if (activeView === "myMovies") {
     currentData = { ...myMoviesData, needsRecommendations: false, isGeneratingRecommendations: false, isPolling: false };
@@ -112,16 +111,6 @@ export default function Home() {
   }
 
   const { items, isLoading, hasMore, loadMore, needsRecommendations, isGeneratingRecommendations, isPolling } =
-=======
-    currentData = { ...friendsMovies, needsRecommendations: false, isGeneratingRecommendations: false };
-  } else if (activeView === "myMovies") {
-    currentData = { ...myMoviesData, needsRecommendations: false, isGeneratingRecommendations: false };
-  } else {
-    currentData = { ...exploreMovies, needsRecommendations: false, isGeneratingRecommendations: false };
-  }
-
-  const { items, isLoading, hasMore, loadMore, needsRecommendations, isGeneratingRecommendations } =
->>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
     currentData;
 
   // Debug - ver estados em tempo real
@@ -133,11 +122,7 @@ export default function Home() {
 
   // Alternar mensagens de loading
   useEffect(() => {
-<<<<<<< HEAD
     if (activeView === "forYou" && (isLoading || isGeneratingRecommendations || isPolling) && items.length === 0) {
-=======
-    if (activeView === "forYou" && (isLoading || isGeneratingRecommendations) && items.length === 0) {
->>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
       const messages = ["Loading films", "Please wait"];
       let index = 0;
 
@@ -273,11 +258,7 @@ export default function Home() {
           {activeView === "forYou" &&
             items.length === 0 &&
             !needsRecommendations &&
-<<<<<<< HEAD
             (isLoading || isGeneratingRecommendations || isPolling) && (
-=======
-            (isLoading || isGeneratingRecommendations) && (
->>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
               <div className="loading-films-container">
                 <div className="loading-films-spinner"></div>
                 <p className="loading-films-text">

@@ -263,11 +263,6 @@ export const useRecommendedMovies = () => {
     needsRecommendations: needsMoreRatings,
     refresh,
     isGeneratingRecommendations,
-<<<<<<< HEAD
     isPolling,
   };
 };
-=======
-  };
-};
->>>>>>> 410001e6a0cfb928630a7d2eea7ffb041bb5979b
