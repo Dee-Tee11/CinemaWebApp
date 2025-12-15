@@ -1311,3 +1311,294 @@
   }
 }
 
+
+/* ==================== REDESIGN: HORIZONTAL RATING CARD ==================== */
+
+.rating-phase-horizontal {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff; /* Page background */
+  padding: 40px;
+}
+
+.rating-card-horizontal {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: 900px;
+  height: 500px;
+  background-color: #7f1d1d; /* Deep Red Card Background */
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+
+/* --- Left Side: Poster --- */
+.horizontal-poster {
+  width: 35%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.poster-rating-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: rgba(0,0,0,0.8);
+  padding: 6px 10px;
+  border-radius: 20px;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* --- Right Side: Content --- */
+.horizontal-content {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  position: relative;
+}
+
+/* Search replace */
+.search-replace-container {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.search-replace-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-replace-input {
+  width: 100%;
+  background: #5c1414; /* Darker red input */
+  border: none;
+  padding: 12px 15px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+}
+
+.search-replace-input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+.search-icon-right {
+  position: absolute;
+  right: 15px;
+  color: rgba(255,255,255,0.4);
+}
+
+.search-replace-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1f2937;
+  z-index: 50;
+  border-radius: 8px;
+  margin-top: 5px;
+  max-height: 250px;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.search-result-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-result-item:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.search-result-item img {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.result-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+}
+
+.result-meta {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Movie Details */
+.movie-details-section {
+  flex: 1; /* Pushes rating section down */
+}
+
+.movie-genre-pill {
+  display: inline-block;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  color: rgba(255,255,255,0.8);
+}
+
+.movie-title-large {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+
+.movie-meta-large {
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  gap: 15px;
+}
+
+/* Rating Actions */
+.rating-action-section {
+  background: rgba(0,0,0,0.2);
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.rating-slider-wrapper {
+  margin-bottom: 20px;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+
+.label-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+}
+
+.rating-value-large {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.horizontal-rating-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.2); /* Track color */
+  outline: none;
+}
+
+.horizontal-rating-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+}
+
+/* Buttons */
+.action-buttons-row {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.btn-update-rating-white {
+  flex: 1;
+  background: white;
+  color: #7f1d1d;
+  font-weight: 700;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-update-rating-white:hover {
+  transform: translateY(-2px);
+}
+
+.btn-skip-transparent {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-skip-transparent:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border-color: white;
+}
+
+/* Progress Dots */
+.progress-dots {
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.progress-dot {
+  width: 40px;
+  height: 4px;
+  background: rgba(153,27,27,0.2);
+  border-radius: 2px;
+}
+
+.progress-dot.active {
+  background: #7f1d1d;
+}
+
+.progress-dot.completed {
+  background: #dc2626;
+}
+

@@ -29,6 +29,15 @@ const OnboardingFlow: React.FC = () => {
     handlePrevious,
     handleOpenModal,
     handleComplete,
+    selectionSearchQuery,
+    setSelectionSearchQuery,
+    selectionSearchResults,
+    searchMoviesForSelection,
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    addSearchedMovie,
+    searchMovies,
   } = useOnboarding();
 
   // ============================================
@@ -82,6 +91,30 @@ const OnboardingFlow: React.FC = () => {
       <div className="phase-header">
         <h2 className="phase-title">Choose at least 5 movies you LOVE</h2>
         <div className="phase-progress">{selectedMovies.size} movies selected</div>
+
+        <div className="search-container" style={{ marginTop: '1rem', width: '100%', maxWidth: '600px', display: 'flex', gap: '10px', margin: '1rem auto' }}>
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search for movies..."
+            value={selectionSearchQuery}
+            onChange={(e) => {
+              setSelectionSearchQuery(e.target.value);
+              searchMoviesForSelection(e.target.value);
+            }}
+            style={{
+              width: '100%',
+              padding: '12px 20px',
+              borderRadius: '25px',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              background: 'rgba(0, 0, 0, 0.05)',
+              color: '#1f2937',
+              fontSize: '1rem',
+              outline: 'none',
+              transition: 'all 0.3s ease'
+            }}
+          />
+        </div>
       </div>
 
       {error && (
@@ -116,12 +149,11 @@ const OnboardingFlow: React.FC = () => {
       )}
 
       <div className="movies-grid">
-        {availableMovies.map((movie) => (
+        {(selectionSearchQuery ? selectionSearchResults : availableMovies).map((movie) => (
           <div
             key={movie.id}
-            className={`onboarding-movie-card ${
-              selectedMovies.has(movie.id) ? "selected" : ""
-            }`}
+            className={`onboarding-movie-card ${selectedMovies.has(movie.id) ? "selected" : ""
+              }`}
             onClick={() => handleMovieSelect(movie.id)}
           >
             <div
@@ -161,6 +193,9 @@ const OnboardingFlow: React.FC = () => {
   // ============================================
   // RATE RELATED MOVIES PHASE (10 MOVIES)
   // ============================================
+  // ============================================
+  // RATE RELATED MOVIES PHASE (10 MOVIES)
+  // ============================================
   const renderRateRelated = () => {
     if (relatedMovies.length === 0) return null;
 
@@ -168,160 +203,134 @@ const OnboardingFlow: React.FC = () => {
     const hasRating = ratings.some((r) => r.movieId === currentMovie.id);
     const isLastMovie = currentIndex === relatedMovies.length - 1;
 
+    // Helper to format user rating for slider
+    const currentRatingValue = hasRating
+      ? ratings.find((r) => r.movieId === currentMovie.id)?.rating || 10
+      : 10;
+
     return (
-      <div className="onboarding-page-content rating-phase-slider">
+      <div className="onboarding-page-content rating-phase-horizontal">
         <button
           className="back-button"
           onClick={() => setCurrentPhase("initial-selection")}
-          style={{
-            position: "absolute",
-            top: "24px",
-            left: "24px",
-            zIndex: 10,
-          }}
+          style={{ position: "absolute", top: "24px", left: "24px", zIndex: 10 }}
         >
           <ChevronLeft size={24} />
         </button>
 
-        <div className="slider-header">
-          <h1 className="slider-title">Rate These Movies</h1>
-          <p className="slider-subtitle">
-            Movie {currentIndex + 1} of {relatedMovies.length}
-          </p>
-        </div>
-
-        <div className="progress-bar-container">
-          {relatedMovies.map((_, idx) => (
-            <div
-              key={`progress-${idx}`}
-              className={`progress-bar-item ${
-                idx < currentIndex
-                  ? "completed"
-                  : idx === currentIndex
-                  ? "active"
-                  : "inactive"
-              }`}
-            />
-          ))}
-        </div>
-
-        <div className="slider-card-container">
-          <div className="slider-movie-card">
-            <div
-              className="slider-card-image"
-              style={{ backgroundImage: `url(${currentMovie.poster_url})` }}
-              onClick={handleOpenModal}
-            >
-              <div className="badge-rating">
-                <Star size={14} className="star-yellow" fill="#fbbf24" />
-                <span className="badge-text">{currentMovie.imdb_rating}</span>
-              </div>
-
-              {hasRating && (
-                <div className="badge-user-rating">
-                  <Star size={14} className="star-white" fill="white" />
-                  <span className="badge-text">
-                    {ratings.find((r) => r.movieId === currentMovie.id)?.rating}
-                    /20
-                  </span>
-                </div>
-              )}
-
-              {showRatingSelector && (
-                <div
-                  className="rating-overlay"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="rating-selector-content">
-                    <div className="rating-selector-header">
-                      <div className="rating-selector-title">
-                        Rate this movie
-                      </div>
-                      <div className="rating-display">{tempRating}</div>
-                    </div>
-
-                    <input
-                      type="range"
-                      min="0"
-                      max="20"
-                      value={tempRating}
-                      onChange={(e) => setTempRating(Number(e.target.value))}
-                      className="rating-slider"
-                    />
-
-                    <div className="rating-range-labels">
-                      <span>0</span>
-                      <span>20</span>
-                    </div>
-
-                    <button
-                      onClick={handleConfirmRating}
-                      className="btn-confirm"
-                    >
-                      Confirm Rating
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="slider-card-info">
-              <div className="slider-card-category">{currentMovie.genre}</div>
-              <div className="slider-card-title">
-                {currentMovie.series_title}
-              </div>
-              <div className="slider-card-meta">
-                {currentMovie.runtime || ""}
-              </div>
-            </div>
-
-            <div className="slider-card-actions">
-              {!hasRating ? (
-                <button onClick={handleRateClick} className="btn-rate">
-                  <Star size={18} />
-                  Rate Movie
-                </button>
-              ) : (
-                <button onClick={handleRateClick} className="btn-change-rating">
-                  <Star size={18} />
-                  Change Rating
-                </button>
-              )}
-
-              <div className="navigation-buttons">
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentIndex === 0}
-                  className="btn-nav btn-previous"
-                >
-                  <ChevronLeft size={18} />
-                  Previous
-                </button>
-                <button onClick={handleNext} className="btn-nav btn-next">
-                  {isLastMovie ? "Finish" : "Next"}
-                  <ChevronRight size={18} />
-                </button>
-              </div>
+        <div className="rating-card-horizontal">
+          {/* LEFT: MOVIE POSTER */}
+          <div
+            className="horizontal-poster"
+            style={{ backgroundImage: `url(${currentMovie.poster_url})` }}
+          >
+            <div className="poster-rating-badge">
+              <Star size={14} fill="#fbbf24" color="#fbbf24" />
+              <span>{currentMovie.imdb_rating}</span>
             </div>
           </div>
-        </div>
 
-        {isModalOpen && (
-          <MovieModal
-            movie={{
-              id: currentMovie.id,
-              title: currentMovie.series_title,
-              category: currentMovie.genre,
-              img: currentMovie.poster_url,
-              rating: currentMovie.imdb_rating,
-              time: currentMovie.runtime || "",
-              synopsis: currentMovie.overview || "Synopsis not available",
-            }}
-            isWatched={false}
-            onClose={() => setIsModalOpen(false)}
-            onToggleWatched={() => {}}
-          />
-        )}
+          {/* RIGHT: CONTENT */}
+          <div className="horizontal-content">
+            {/* SEARCH TO REPLACE */}
+            <div className="search-replace-container">
+              <div className="search-replace-input-wrapper">
+                <input
+                  type="text"
+                  className="search-replace-input"
+                  placeholder="Search to replace this movie..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    searchMovies(e.target.value);
+                  }}
+                />
+                <div className="search-icon-right">
+                  <span style={{ fontSize: '18px' }}>🔍</span>
+                </div>
+              </div>
+
+              {/* DROPDOWN RESULTS */}
+              {searchResults.length > 0 && searchQuery && (
+                <div className="search-replace-results">
+                  {searchResults.map((movie) => (
+                    <div
+                      key={movie.id}
+                      className="search-result-item"
+                      onClick={() => addSearchedMovie(movie)}
+                    >
+                      <img src={movie.poster_url} alt={movie.series_title} />
+                      <div className="result-info">
+                        <div className="result-title">{movie.series_title}</div>
+                        <div className="result-meta">{movie.runtime} • {movie.imdb_rating} ★</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="movie-details-section">
+              <div className="movie-genre-pill">
+                {currentMovie.genre.split(',')[0]}
+              </div>
+              <h1 className="movie-title-large">{currentMovie.series_title}</h1>
+              <div className="movie-meta-large">
+                <span className="meta-item">⏱ {currentMovie.runtime || "N/A"}</span>
+              </div>
+            </div>
+
+            <div className="rating-action-section">
+              <div className="rating-slider-wrapper">
+                <div className="slider-labels">
+                  <span className="label-text">Your Rating</span>
+                  <span className="rating-value-large">{hasRating ? currentRatingValue : tempRating}/20</span>
+                </div>
+
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  value={hasRating ? currentRatingValue : tempRating}
+                  onChange={(e) => {
+                    setTempRating(Number(e.target.value));
+                  }}
+                  className="horizontal-rating-slider"
+                />
+              </div>
+
+              <div className="action-buttons-row">
+                <button
+                  className="btn-update-rating-white"
+                  onClick={() => {
+                    setTempRating(hasRating ? currentRatingValue : tempRating);
+                    handleConfirmRating();
+                    handleNext();
+                  }}
+                >
+                  {hasRating ? "Update Rating" : "Submit Rating"}
+                </button>
+
+                <button
+                  className="btn-skip-transparent"
+                  onClick={handleNext}
+                >
+                  Skip <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="progress-dots">
+              {relatedMovies.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`progress-dot ${idx === currentIndex ? 'active' : ''} ${idx < currentIndex ? 'completed' : ''}`}
+                />
+              ))}
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   };

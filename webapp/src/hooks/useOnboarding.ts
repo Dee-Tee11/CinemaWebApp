@@ -10,6 +10,7 @@ interface Movie {
   poster_url: string;
   imdb_rating: number;
   runtime?: string;
+  overview?: string;
 }
 
 interface Rating {
