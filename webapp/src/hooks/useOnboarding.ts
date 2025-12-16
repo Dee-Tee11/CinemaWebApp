@@ -148,15 +148,18 @@ export const useOnboarding = () => {
   // Add searched movie to rating list (replaces current movie)
   const addSearchedMovie = (movie: Movie) => {
     // Substituir o filme atual pelo filme pesquisado
+    console.log("Adding searched movie:", movie.series_title, movie.id);
     setRelatedMovies(prev => {
       const newMovies = [...prev];
       newMovies[currentIndex] = movie;
+      console.log("Updated relatedMovies at index", currentIndex, newMovies);
       return newMovies;
     });
 
     // Remover rating do filme anterior (se existir)
     const previousMovieId = relatedMovies[currentIndex]?.id;
     if (previousMovieId) {
+      console.log("Removing previous rating for movie:", previousMovieId);
       setRatings(prev => prev.filter(r => r.movieId !== previousMovieId));
     }
 

@@ -257,7 +257,10 @@ const OnboardingFlow: React.FC = () => {
                     <div
                       key={movie.id}
                       className="search-result-item"
-                      onClick={() => addSearchedMovie(movie)}
+                      onClick={() => {
+                        addSearchedMovie(movie);
+                        setSearchQuery(""); // Clear query to close dropdown
+                      }}
                     >
                       <img src={movie.poster_url} alt={movie.series_title} />
                       <div className="result-info">
@@ -270,7 +273,7 @@ const OnboardingFlow: React.FC = () => {
               )}
             </div>
 
-            <div className="movie-details-section">
+            <div className="movie-details-section" key={currentMovie.id}>
               <div className="movie-genre-pill">
                 {currentMovie.genre.split(',')[0]}
               </div>
