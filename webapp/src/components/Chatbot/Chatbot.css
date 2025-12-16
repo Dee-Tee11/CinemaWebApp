@@ -58,8 +58,8 @@
 /* Header */
 .chatbot-header {
   padding: 16px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background: #991b1b;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -75,14 +75,14 @@
 }
 
 .bot-icon {
-  color: #991b1b;
+  color: white;
 }
 
 .chatbot-header h1 {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #111827;
+  color: white;
 }
 
 .close-button {
