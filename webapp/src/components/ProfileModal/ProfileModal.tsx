@@ -346,7 +346,7 @@ export default function ProfileModal({
                 <span className="badge">{friendRequests.length}</span>
               )}
             </button>
-            <button className="icon-button close" onClick={onClose}>
+            <button className="shared-close-button" onClick={onClose} type="button">
               <X size={20} />
             </button>
           </div>

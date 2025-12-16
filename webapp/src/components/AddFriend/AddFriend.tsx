@@ -113,7 +113,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
           <div className="header-content">
             <h2 className="header-title">Add Friend</h2>
           </div>
-          <button className="close-button" onClick={onClose}>
+          <button className="shared-close-button" onClick={onClose} type="button">
             <X size={22} />
           </button>
         </div>

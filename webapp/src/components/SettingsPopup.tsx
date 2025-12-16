@@ -42,7 +42,7 @@ const SettingsPopup: React.FC<SettingsPopupProps> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="settings-header">
           <h2 className="settings-title">Settings</h2>
-          <button className="settings-close-button" onClick={onClose}>
+          <button className="shared-close-button" onClick={onClose} type="button">
             <X size={20} />
           </button>
         </div>

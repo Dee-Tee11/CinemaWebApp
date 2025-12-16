@@ -90,7 +90,7 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
             <Bot size={24} className="bot-icon" />
 
           </div>
-          <button onClick={onClose} className="close-button" aria-label="Fechar">
+          <button onClick={onClose} className="shared-close-button" aria-label="Fechar" type="button">
             <X size={24} />
           </button>
         </div>
