@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle } from "lucide-react";
 
 import { Link } from "react-router-dom";
-import SettingsPopup from "./SettingsPopup";
 import AddFriendPopup from "./AddFriend/AddFriend";
 import Chatbot from "./Chatbot/Chatbot";
 import "./Slidebar.css";
@@ -42,7 +41,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSettingsClick,
   onProfileClick,
 }) => {
-  const [showSettingsPopup, setShowSettingsPopup] = useState(false);
   const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
   const [showChatbotPopup, setShowChatbotPopup] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -53,7 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleSettingsClick = () => {
-    setShowSettingsPopup(true);
+    // setShowSettingsPopup(true); // Removido
     if (onSettingsClick) onSettingsClick();
     setIsMobileMenuOpen(false);
   };
@@ -101,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => {
-            setShowSettingsPopup(true);
+            // setShowSettingsPopup(true); // Removido
             if (onSettingsClick) onSettingsClick();
           }}
           className="sidebar-button sidebar-button-settings"
@@ -202,10 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* POPUPS */}
-      <SettingsPopup
-        isOpen={showSettingsPopup}
-        onClose={() => setShowSettingsPopup(false)}
-      />
+      {/* SettingsPopup removido de Slidebar para evitar duplicacao com Home */}
 
       <AddFriendPopup
         isOpen={showAddFriendPopup}
