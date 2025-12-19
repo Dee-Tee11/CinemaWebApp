@@ -54,8 +54,8 @@ export default function Contact({ isOpen, onClose }: ContactProps) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <Mail size={16} />
-                                diogoluisteixeira@gmail.com
+                                <Mail size={20} />
+                                <span>diogoluisteixeira@gmail.com</span>
                             </a>
                             <a
                                 href="https://www.linkedin.com/in/diogo-teixeira/"
@@ -63,8 +63,8 @@ export default function Contact({ isOpen, onClose }: ContactProps) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <ExternalLink size={16} />
-                                LinkedIn
+                                <ExternalLink size={20} />
+                                <span>LinkedIn Profile</span>
                             </a>
                             <a
                                 href="https://github.com/Dee-Tee11"
@@ -72,8 +72,8 @@ export default function Contact({ isOpen, onClose }: ContactProps) {
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
-                                <ExternalLink size={16} />
-                                GitHub
+                                <ExternalLink size={20} />
+                                <span>GitHub Repository</span>
                             </a>
                         </div>
                     </div>
