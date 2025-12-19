@@ -17,7 +17,7 @@ interface ChatbotProps {
 export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
   const { user, isLoaded } = useUser();
   const [messages, setMessages] = useState<Message[]>([
-    { role: "ai", content: "Olá! Sou o teu Assistente de Cinema. Como posso ajudar-te hoje? 🎬" }
+    { role: "ai", content: "Hello! I am your Cinema Assistant. How can I help you today? 🎬" }
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +65,7 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
       console.error("Chat error:", error);
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: "Desculpa, tive um problema técnico. Tenta novamente! 🤖💥" },
+        { role: "ai", content: "Sorry, I had a technical problem. Please try again! 🤖💥" },
       ]);
     } finally {
       setIsLoading(false);
@@ -90,7 +90,7 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
             <Bot size={24} className="bot-icon" />
 
           </div>
-          <button onClick={onClose} className="shared-close-button" aria-label="Fechar" type="button">
+          <button onClick={onClose} className="shared-close-button" aria-label="Close" type="button">
             <X size={24} />
           </button>
         </div>
@@ -117,7 +117,7 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
           <input
             type="text"
             className="chat-input"
-            placeholder="Pergunta sobre filmes..."
+            placeholder="Ask about movies..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyPress}

@@ -241,7 +241,7 @@ def chat_with_history(request: ChatRequest):
         print(f"   ✅ Processed {len(ratings)} valid movie ratings for context.")
 
         if not ratings:
-            return {"response": "Olá! Ainda não vi nenhum filme no teu histórico. Avalia alguns filmes primeiro para eu poder ajudar! 🎬"}
+            return {"response": "Hello! I haven't seen any movies in your history yet. Rate some movies first so I can help! 🎬"}
             
         # 2. Call RAG Chat
         ai_reply = rag_service.chat_with_history(ratings, request.message)
@@ -251,7 +251,7 @@ def chat_with_history(request: ChatRequest):
         print(f"Chat Error: {e}")
         import traceback
         traceback.print_exc()
-        return {"response": "Desculpa, estou com dificuldades técnicas. Tenta novamente mais tarde. 🤖💥"}
+        return {"response": "Sorry, I'm having technical difficulties. Please try again later. 🤖💥"}
 
 
 @app.post("/api/recommendations/ai")
