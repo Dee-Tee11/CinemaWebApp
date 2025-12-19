@@ -8,6 +8,7 @@ import {
   sendFriendRequest,
 } from "../../hooks/addFriend";
 import type { Friend } from "../../hooks/addFriend";
+import { useFriendRequests } from "../../hooks/useFriendRequests";
 import "./AddFriend.css";
 
 interface AddFriendPopupProps {
@@ -26,6 +27,7 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const { pendingRequests, acceptRequest, declineRequest, isLoading: isRequestsLoading } = useFriendRequests();
 
   // Loads the authenticated user ID from Clerk
   useEffect(() => {
@@ -120,6 +122,40 @@ const AddFriendPopup: React.FC<AddFriendPopupProps> = ({ isOpen, onClose }) => {
 
         {/* Content */}
         <div className="content content-compact">
+          {/* Section: Pending Requests */}
+          {pendingRequests.length > 0 && (
+            <div className="pending-requests-section">
+              <h3 className="section-title">Pending Requests</h3>
+              <div className="friends-list">
+                {pendingRequests.map((req) => (
+                  <div key={req.id} className="friend-item">
+                    <div className="friend-info">
+                      <span className="friend-name">{req.sender_name}</span>
+                      <span className="friend-tag">Sent you a request</span>
+                    </div>
+                    <div className="request-actions">
+                      <button
+                        className="action-button accept"
+                        onClick={() => acceptRequest(req.id)}
+                        title="Accept"
+                      >
+                        <Check size={18} />
+                      </button>
+                      <button
+                        className="action-button decline"
+                        onClick={() => declineRequest(req.id)}
+                        title="Decline"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="section-divider" />
+            </div>
+          )}
+
           {/* Premium Search Bar */}
           <div className="search-container">
             <input

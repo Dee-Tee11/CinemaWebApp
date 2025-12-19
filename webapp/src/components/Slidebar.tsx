@@ -4,6 +4,7 @@ import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle } from "lucid
 import { Link } from "react-router-dom";
 import AddFriendPopup from "./AddFriend/AddFriend";
 import Chatbot from "./Chatbot/Chatbot";
+import { useFriendRequests } from "../hooks/useFriendRequests";
 import "./Slidebar.css";
 
 interface LogoProps {
@@ -44,6 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
   const [showChatbotPopup, setShowChatbotPopup] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { pendingCount } = useFriendRequests();
 
   const handleProfileClick = () => {
     if (onProfileClick) onProfileClick();
@@ -95,6 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           aria-label="Adicionar Amigo"
         >
           <UserPlus size={22} />
+          {pendingCount > 0 && <span className="sidebar-notification-badge" />}
         </button>
 
         <button
@@ -183,6 +186,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           >
             <span className="sidebar-mobile-button-icon">
               <UserPlus size={22} />
+              {pendingCount > 0 && <span className="mobile-notification-badge" />}
             </span>
             Add Friend
           </button>

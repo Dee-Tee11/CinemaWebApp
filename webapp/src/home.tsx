@@ -15,6 +15,7 @@ import { useMovies } from "./hooks/useMovies";
 import { useRecommendedMovies } from "./hooks/useRecommendedMovies";
 import { useFriendsMovies } from "./hooks/useFriendsMovies";
 import { useMyMovies } from "./hooks/useMyMovies";
+import { useFriendRequests } from "./hooks/useFriendRequests";
 import { useInfiniteScroll } from "./hooks/useInfiniteScroll";
 import type { MovieStatus } from "./components/MovieCard/MovieCard";
 import "./home.css";
@@ -40,6 +41,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState("Loading movies");
+  const { pendingCount } = useFriendRequests();
+  const [hasShownFriendToast, setHasShownFriendToast] = useState(false);
+  const [showFriendToast, setShowFriendToast] = useState(false);
 
   // Update activeView based on route
   useEffect(() => {
@@ -135,6 +139,15 @@ export default function Home() {
       return () => clearInterval(interval);
     }
   }, [activeView, isLoading, isGeneratingRecommendations, items.length]);
+
+  // Mostrar toast de pedidos de amizade ao fazer login
+  useEffect(() => {
+    if (isLoaded && user && pendingCount > 0 && !hasShownFriendToast) {
+      setShowFriendToast(true);
+      setHasShownFriendToast(true);
+      setTimeout(() => setShowFriendToast(false), 5000);
+    }
+  }, [isLoaded, user, pendingCount, hasShownFriendToast]);
 
 
   useInfiniteScroll(loadMore, hasMore, isLoading);
@@ -247,7 +260,6 @@ export default function Home() {
             !needsRecommendations &&
             (isLoading || isGeneratingRecommendations || isPolling) && (
               <div className="loading-films-container">
-                <div className="loading-films-spinner"></div>
                 <p className="loading-films-text">
                   {loadingMessage}<span className="loading-dots"></span>
                 </p>
@@ -346,6 +358,26 @@ export default function Home() {
           )}
         </div>
       </main>
-    </div>
+
+      {/* Friend Request Toast */}
+      {showFriendToast && (
+        <div
+          className="friend-notification-toast"
+          onClick={() => {
+            setIsAddFriendOpen(true);
+            setShowFriendToast(false);
+          }}
+        >
+          <div className="toast-icon">👥</div>
+          <div className="toast-content">
+            <p className="toast-title">New Friend Request!</p>
+            <p className="toast-desc">
+              You have {pendingCount} pending{" "}
+              {pendingCount === 1 ? "request" : "requests"}.
+            </p>
+          </div>
+        </div>
+      )}
+    </div >
   );
 }
