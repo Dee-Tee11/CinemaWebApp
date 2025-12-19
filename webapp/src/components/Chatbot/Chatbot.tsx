@@ -103,10 +103,10 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
           ))}
           {isLoading && (
             <div className="message ai loading">
-              <div className="loading-dots">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
+              <div className="chat-loading-dots">
+                <span className="chat-dot"></span>
+                <span className="chat-dot"></span>
+                <span className="chat-dot"></span>
               </div>
             </div>
           )}

@@ -253,29 +253,30 @@
   transform: none;
 }
 
-/* Loading Dots */
-.loading-dots {
+/* Chat Loading Dots */
+.chat-loading-dots {
   display: flex;
   gap: 4px;
+  align-items: center;
 }
 
-.dot {
+.chat-dot {
   width: 5px;
   height: 5px;
   background-color: #9ca3af;
   border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out both;
+  animation: chatBounce 1.4s infinite ease-in-out both;
 }
 
-.dot:nth-child(1) {
+.chat-dot:nth-child(1) {
   animation-delay: -0.32s;
 }
 
-.dot:nth-child(2) {
+.chat-dot:nth-child(2) {
   animation-delay: -0.16s;
 }
 
-@keyframes bounce {
+@keyframes chatBounce {
 
   0%,
   80%,
