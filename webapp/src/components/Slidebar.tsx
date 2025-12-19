@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle, Mail } from "lucide-react";
+import { Settings, User, Compass, Menu, X, MessageCircle, Mail } from "lucide-react";
 
 import { Link } from "react-router-dom";
-import AddFriendPopup from "./AddFriend/AddFriend";
 import Chatbot from "./Chatbot/Chatbot";
 import Contact from "./Contact/Contact";
-import { useFriendRequests } from "../hooks/useFriendRequests";
 import "./Slidebar.css";
 
 interface LogoProps {
@@ -43,11 +41,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSettingsClick,
   onProfileClick,
 }) => {
-  const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
   const [showChatbotPopup, setShowChatbotPopup] = useState(false);
   const [showContactPopup, setShowContactPopup] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { pendingCount } = useFriendRequests();
 
   const handleProfileClick = () => {
     if (onProfileClick) onProfileClick();
@@ -60,10 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     setIsMobileMenuOpen(false);
   };
 
-  const handleAddFriendClick = () => {
-    setShowAddFriendPopup(true);
-    setIsMobileMenuOpen(false);
-  };
+
 
   return (
     <div>
@@ -93,14 +86,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           <MessageCircle size={22} />
         </button>
 
-        <button
-          onClick={() => setShowAddFriendPopup(true)}
-          className="sidebar-button"
-          aria-label="Adicionar Amigo"
-        >
-          <UserPlus size={22} />
-          {pendingCount > 0 && <span className="sidebar-notification-badge" />}
-        </button>
 
         <button
           onClick={() => setShowContactPopup(true)}
@@ -190,16 +175,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             AI Assistant
           </button>
 
-          <button
-            onClick={handleAddFriendClick}
-            className="sidebar-mobile-button"
-          >
-            <span className="sidebar-mobile-button-icon">
-              <UserPlus size={22} />
-              {pendingCount > 0 && <span className="mobile-notification-badge" />}
-            </span>
-            Add Friend
-          </button>
 
           <button
             onClick={() => {
@@ -229,10 +204,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* POPUPS */}
       {/* SettingsPopup removido de Slidebar para evitar duplicacao com Home */}
 
-      <AddFriendPopup
-        isOpen={showAddFriendPopup}
-        onClose={() => setShowAddFriendPopup(false)}
-      />
 
       <Chatbot
         isOpen={showChatbotPopup}
