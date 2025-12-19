@@ -1,13 +1,13 @@
 """
-🛠️ DEBUG SUITE CENTRALIZADO (CinemaWebApp)
+🛠️ CENTRALIZED DEBUG SUITE (CinemaWebApp)
 
-Este script unifica todas as ferramentas de teste e debug:
-1. [V] Validação Automática: Testa a qualidade dos embeddings (clusters, categorias).
-2. [M] Teste Manual: Procura filmes e vê similares interactiva.
-3. [E] Explicar Recomendações: Simula o motor de recomendações para um user.
-4. [I] Info do Cache: Mostra estatísticas e estrutura dos dados.
+This script unifies all testing and debugging tools:
+1. [V] Automatic Validation: Tests the quality of embeddings (clusters, categories).
+2. [M] Manual Test: Interactive search for movies and similar ones.
+3. [E] Explain Recommendations: Simulates the recommendation engine for a user.
+4. [I] Cache Info: Shows statistics and data structure.
 
-Uso:
+Usage:
     python debug/debug_suite.py
 """
 import os
@@ -48,36 +48,36 @@ if SUPABASE_URL and SUPABASE_KEY:
 # CORE FUNCTIONS
 # ==============================================================================
 def load_data(verbose=True):
-    """Carrega dados do cache"""
+    """Loads data from cache"""
     if verbose:
-        print("📥 Carregando cache...")
+        print("📥 Loading cache...")
     
     if not os.path.exists(MOVIES_CACHE_PATH):
-        print("❌ Cache de filmes não encontrado! Execute: python regenerate_embeddings.py")
+        print("❌ Movie cache not found! Run: python regenerate_embeddings.py")
         return None, None
     
     if not os.path.exists(EMBEDDINGS_CACHE_PATH):
-        print("❌ Cache de embeddings não encontrado!")
+        print("❌ Embeddings cache not found!")
         return None, None
         
     df = pickle.load(open(MOVIES_CACHE_PATH, 'rb'))
     embeddings = np.load(EMBEDDINGS_CACHE_PATH)
     
     if verbose:
-        print(f"✅ {len(df)} filmes carregados")
+        print(f"✅ {len(df)} movies loaded")
         print(f"✅ Embeddings shape: {embeddings.shape}")
         
     return df, embeddings
 
 def find_movie_by_title(df, title: str):
-    """Encontra filme por título (partial match)"""
+    """Finds movie by title (partial match)"""
     matches = df[df['series_title'].str.contains(title, case=False, na=False)]
     if len(matches) == 0:
         return None
     return matches.iloc[0]
 
 def find_movie_by_id(df, movie_id):
-    """Encontra filme por ID exato"""
+    """Finds movie by exact ID"""
     # Ensure ID type consistency
     matches = df[df['id'] == int(movie_id)]
     if len(matches) == 0:
@@ -88,12 +88,12 @@ def calc_similarity(emb1, emb2):
     return np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
 
 def get_user_ratings(user_id: str):
-    """Busca as avaliações do utilizador no Supabase"""
+    """Fetches user ratings from Supabase"""
     if not supabase:
-        print("❌ Supabase não configurado (verifique .env)")
+        print("❌ Supabase not configured (check .env)")
         return {}
         
-    print(f"📊 Buscando avaliações do utilizador: {user_id}")
+    print(f"📊 Fetching user ratings for: {user_id}")
     try:
         response = supabase.table('user_movies')\
             .select('movie_id, rating')\
@@ -101,18 +101,18 @@ def get_user_ratings(user_id: str):
             .execute()
         
         if not response.data:
-            print("⚠️  Nenhuma avaliação encontrada!")
+            print("⚠️  No ratings found!")
             return {}
         
         ratings = {int(m['movie_id']): float(m['rating']) for m in response.data}
-        print(f"✅ {len(ratings)} avaliações encontradas")
+        print(f"✅ {len(ratings)} ratings found")
         return ratings
     except Exception as e:
-        print(f"❌ Erro ao buscar ratings: {e}")
+        print(f"❌ Error fetching ratings: {e}")
         return {}
 
 def find_top_k_similar_for_user(df, embeddings, movie_id, user_ratings, k=3):
-    """Encontra K filmes similares excluindo os já vistos"""
+    """Finds K similar movies excluding watched ones"""
     # Map ID -> Index
     id_map = {int(row['id']): idx for idx, row in df.iterrows()}
     
@@ -203,7 +203,7 @@ TEST_CASES = {
             'movies': ['Happy Feet'],
             'expect_keywords': ['animation', 'penguin', 'family', 'musical'],
             'expect_studios': [],
-            'expect_directors': [] # Não esperamos Mad Max aqui!
+            'expect_directors': [] # We don't expect Mad Max here!
         }
     },
     '💃 BOLLYWOOD': {
@@ -277,13 +277,13 @@ def smart_score_results(query_title: str, results: List[Tuple], expect_keywords:
         title_lower = title.lower()
         emb_input = metadata.get('embedding_input', '').lower()
         
-        # 1. Mesma franquia (1.0)
+        # 1. Same franchise (1.0)
         if any(word in title_lower for word in query_lower.split() if len(word) > 3):
             score += 1.0; continue
             
         # 2. Mesmo Director (0.9) - NOVO!
         if expect_directors:
-            # Tentar encontrar director no embedding_input ("Directed by X")
+            # Try to find director in embedding_input ("Directed by X")
             found_director = False
             for director in expect_directors:
                 director_lower = director.lower()
@@ -293,7 +293,7 @@ def smart_score_results(query_title: str, results: List[Tuple], expect_keywords:
                     break
             if found_director: continue
 
-        # 3. Mesmo studio (0.8)
+        # 3. Same studio (0.8)
         if expect_studios and metadata.get('studios'):
             for studio in metadata['studios']:
                 if any(exp.lower() in studio.lower() for exp in expect_studios):
@@ -301,26 +301,26 @@ def smart_score_results(query_title: str, results: List[Tuple], expect_keywords:
         # 4. Keywords (0.6)
         if any(kw in emb_input or kw in title_lower for kw in expect_keywords):
             score += 0.6
-        # 5. Similaridade alta (0.4)
+        # 5. High similarity (0.4)
         if sim > 0.7: score += 0.4
             
     return (score / max_score) * 100
 
 def run_validation_suite(df, embeddings):
     print("\n" + "="*80)
-    print("🧪 TESTE DE VALIDAÇÃO DE EMBEDDINGS (SCORING MELHORADO)")
+    print("🧪 EMBEDDING VALIDATION TEST (IMPROVED SCORING)")
     print("="*80)
     
     # 1. Qualidade Geral
     print("\n" + "="*80)
-    print("📊 ANÁLISE GERAL DE QUALIDADE")
+    print("📊 GENERAL QUALITY ANALYSIS")
     print("="*80)
     
     zero_embs = sum(1 for e in embeddings if np.all(e == 0))
-    print(f"\n1️⃣  Embeddings Válidos: {len(embeddings) - zero_embs} (Zeros: {zero_embs})")
+    print(f"\n1️⃣  Valid Embeddings: {len(embeddings) - zero_embs} (Zeros: {zero_embs})")
     
     # Check Metadata quality
-    print(f"\n2️⃣  Qualidade do embedding_input:")
+    print(f"\n2️⃣  embedding_input quality:")
     if 'embedding_input' in df.columns:
         with_tmdb = 0
         with_keywords = 0
@@ -330,19 +330,19 @@ def run_validation_suite(df, embeddings):
             if 'Language:' in emb_input or 'Countries:' in emb_input: with_tmdb += 1
             if 'Themes:' in emb_input or 'Keywords:' in emb_input: with_keywords += 1
             if 'Studios:' in emb_input: with_studios += 1
-        print(f"   🎬 Com metadata TMDB: {with_tmdb}/{len(df)} ({with_tmdb/len(df)*100:.1f}%)")
-        print(f"   🏷️  Com keywords/themes: {with_keywords}/{len(df)} ({with_keywords/len(df)*100:.1f}%)")
-        print(f"   🏢 Com studios: {with_studios}/{len(df)} ({with_studios/len(df)*100:.1f}%)")
+        print(f"   🎬 With TMDB metadata: {with_tmdb}/{len(df)} ({with_tmdb/len(df)*100:.1f}%)")
+        print(f"   🏷️  With keywords/themes: {with_keywords}/{len(df)} ({with_keywords/len(df)*100:.1f}%)")
+        print(f"   🏢 With studios: {with_studios}/{len(df)} ({with_studios/len(df)*100:.1f}%)")
 
     # 3. Distribuição
-    print(f"\n3️⃣  Distribuição de similaridades:")
+    print(f"\n3️⃣  Similarity distribution:")
     sample_size = min(1000, len(embeddings))
     random_indices = np.random.choice(len(embeddings), sample_size, replace=False)
     sims = []
     for i in range(len(random_indices)-1):
         s = cosine_similarity([embeddings[random_indices[i]]], [embeddings[random_indices[i+1]]])[0][0]
         sims.append(s)
-    print(f"   📈 Média: {np.mean(sims):.3f} | Mediana: {np.median(sims):.3f}")
+    print(f"   📈 Mean: {np.mean(sims):.3f} | Median: {np.median(sims):.3f}")
     print(f"   📉 Min: {np.min(sims):.3f} | Max: {np.max(sims):.3f}")
 
     # 2. Testes por Categoria
@@ -360,7 +360,7 @@ def run_validation_suite(df, embeddings):
             for movie_title in config['movies']:
                 match = find_movie_by_title(df, movie_title)
                 if match is None: 
-                    print(f"   ⚠️  '{movie_title}' não encontrado")
+                    print(f"   ⚠️  '{movie_title}' not found")
                     continue
                 
                 print(f"\n   📌 {movie_title}:")
@@ -404,22 +404,22 @@ def run_validation_suite(df, embeddings):
             if sub_scores:
                 avg = sum(sub_scores)/len(sub_scores)
                 all_scores.append(avg)
-                print(f"\n   📊 {sub} Score Médio: {avg:.1f}%")
+                print(f"\n   📊 {sub} Average Score: {avg:.1f}%")
 
     if all_scores:
         overall = sum(all_scores)/len(all_scores)
         print("\n" + "="*80)
-        print(f"🎯 SCORE GERAL: {overall:.1f}%")
-        if overall >= 80: print("   ✅ Embeddings estão EXCELENTES!")
-        elif overall >= 60: print("   ⚠️  Embeddings estão BONS.")
-        else: print("   ❌ Embeddings precisam de ajustes.")
+        print(f"🎯 OVERALL SCORE: {overall:.1f}%")
+        if overall >= 80: print("   ✅ Embeddings are EXCELLENT!")
+        elif overall >= 60: print("   ⚠️  Embeddings are GOOD.")
+        else: print("   ❌ Embeddings need adjustments.")
 
 
 # ==============================================================================
 # MODE 2: MANUAL TEST (from manual_test.py)
 # ==============================================================================
 def extract_metadata(row):
-    """Helper para extrair metadata do embedding_input"""
+    """Helper to extract metadata from embedding_input"""
     emb_input = str(row.get('embedding_input', ''))
     meta = {'embedding_input': emb_input, 'studios': [], 'language': '', 'genres': []}
     
@@ -452,22 +452,22 @@ def extract_metadata(row):
     return meta
 
 def run_manual_test(df, embeddings):
-    print("\n🕵️ TESTE MANUAL INTERATIVO")
-    print("   (Digite 'sair' para voltar ao menu)")
+    print("\n🕵️ INTERACTIVE MANUAL TEST")
+    print("   (Type 'exit' to return to menu)")
     
     while True:
-        query = input("\n🎬 Filme para buscar similares: ").strip()
-        if query.lower() in ['sair', 'exit', '0']: break
+        query = input("\n🎬 Movie to search for: ").strip()
+        if query.lower() in ['sair', 'exit', '0', 'quit']: break
         if not query: continue
         
         matches = df[df['series_title'].str.contains(query, case=False, na=False)]
         if len(matches) == 0:
-            print("❌ Não encontrado.")
+            print("❌ Not found.")
             continue
             
         # Select precision
         if len(matches) > 1:
-            print(f"\nEncontrados {len(matches)} filmes. Usando o primeiro:")
+            print(f"\nFound {len(matches)} movies. Using the first:")
             matches = matches.head(5) # Limit to 5
             for i in range(len(matches)):
                 print(f"{i+1}. {matches.iloc[i]['series_title']} ({matches.iloc[i].get('released_year', 'N/A')})")
@@ -479,10 +479,10 @@ def run_manual_test(df, embeddings):
         idx = movie.name
         
         if idx >= len(embeddings):
-            print("⚠️ Sem embedding gerado ainda.")
+            print("⚠️ No embedding generated yet.")
             continue
             
-        print(f"\n🎯 Buscando similares para: {movie['series_title']}...")
+        print(f"\n🎯 Searching for similar movies to: {movie['series_title']}...")
         meta = extract_metadata(movie)
         print(f"   [DEBUG] Input Preview:\n   {meta['embedding_input'][:400]}...") # Show Raw
         
@@ -522,7 +522,7 @@ def run_manual_test(df, embeddings):
         # Top 5 Final
         final_results.sort(key=lambda x: x[1], reverse=True)
         
-        print("\n🔝 TOP 5 SIMILARES (Hybrid Reranked):")
+        print("\n🔝 TOP 5 SIMILAR (Hybrid Reranked):")
         for rank, (m, score, raw_sim, boosted) in enumerate(final_results[:5], 1):
             m_meta = extract_metadata(m)
             studios = ', '.join(m_meta['studios'][:2]) if m_meta['studios'] else 'N/A'
@@ -541,27 +541,27 @@ def run_manual_test(df, embeddings):
 # MODE 3: EXPLAIN RECS (Simulated + User)
 # ==============================================================================
 def run_explain_recs(df, embeddings):
-    print("\n🧠 EXPLICAR RECOMENDAÇÕES")
-    print("   1. Simular (escolher 1 filme e ver similares)")
-    print("   2. Utilizador Real (analisar ratings do Supabase)")
+    print("\n🧠 EXPLAIN RECOMMENDATIONS")
+    print("   1. Simulate (choose 1 movie and see similar)")
+    print("   2. Real User (analyze Supabase ratings)")
     
-    mode = input("\nEscolha (1/2): ").strip()
+    mode = input("\nChoice (1/2): ").strip()
     
     if mode == '2':
         # REAL USER MODE
-        user_id = input("\n📝 Digite o user_id: ").strip()
+        user_id = input("\n📝 Enter user_id: ").strip()
         if not user_id: return
         
         ratings = get_user_ratings(user_id)
         if not ratings: return
         
-        print("\n⏳ Gerando recomendações explicadas...")
+        print("\n⏳ Generating explained recommendations...")
         all_recs = {}
         
         # Analisar Top Ratings
         sorted_ratings = sorted(ratings.items(), key=lambda x: x[1], reverse=True)
         
-        print(f"\n📋 Analisando baseados nos seus filmes favoritos:\n")
+        print(f"\n📋 Analyzing based on your favorite movies:\n")
         
         for movie_id, rating in sorted_ratings[:5]: # Top 5 recent/best
             # Find movie info
@@ -569,11 +569,11 @@ def run_explain_recs(df, embeddings):
             if len(matches) == 0: continue
             movie = matches.iloc[0]
             
-            print(f"   🎬 Porque gostaste de: {movie['series_title']} ({rating}⭐)")
+            print(f"   🎬 Because you liked: {movie['series_title']} ({rating}⭐)")
             
             similares = find_top_k_similar_for_user(df, embeddings, movie_id, ratings, k=3)
             for rec_movie, score in similares:
-                print(f"      -> Sugere: {rec_movie['series_title']} ({score*100:.1f}%)")
+                print(f"      -> Suggests: {rec_movie['series_title']} ({score*100:.1f}%)")
                 
                 # Aggregate
                 rid = int(rec_movie['id'])
@@ -593,18 +593,18 @@ def run_explain_recs(df, embeddings):
         final_list.sort(key=lambda x: x[1], reverse=True)
         
         print("\n" + "="*60)
-        print("🏆 TOP 10 RECOMENDAÇÕES FINAIS")
+        print("🏆 TOP 10 FINAL RECOMMENDATIONS")
         print("="*60)
         for i, (m, score, srcs) in enumerate(final_list[:10], 1):
             src_text = ", ".join(srcs[:2])
             print(f"{i}. {m['series_title']} (Score: {score:.3f})")
-            print(f"   Baseado em: {src_text}")
+            print(f"   Based on: {src_text}")
             
     else:
         # SIMULATION MODE
-        print("\n   Simula as recomendações baseadas num ID de filme específico.")
+        print("\n   Simulates recommendations based on a specific movie ID.")
         
-        query = input("\n🎬 ID ou Nome do filme que o user 'gostou': ").strip()
+        query = input("\n🎬 ID or Name of the movie the user 'liked': ").strip()
         if not query: return
         
         movie = find_movie_by_title(df, query)
@@ -614,14 +614,14 @@ def run_explain_recs(df, embeddings):
             if len(matches) > 0: movie = matches.iloc[0]
                 
         if movie is None:
-            print("❌ Filme não encontrado.")
+            print("❌ Movie not found.")
             return
             
-        print(f"\n✅ Baseado em: {movie['series_title']}")
+        print(f"\n✅ Based on: {movie['series_title']}")
         
         idx = movie.name
         if idx >= len(embeddings):
-            print("⚠️ Sem embedding.")
+            print("⚠️ No embedding.")
             return 
             
         # Find similar
@@ -636,10 +636,10 @@ def run_explain_recs(df, embeddings):
         
         sims.sort(key=lambda x: x[1], reverse=True)
         
-        print("\n📋 O algoritmo recomendaria:")
+        print("\n📋 The algorithm would recommend:")
         for i, (m, score) in enumerate(sims[:5], 1):
             print(f"   {i}. {m['series_title']} (Sim: {score*100:.1f}%)")
-            print(f"      Justificativa: Estilo visual e temas similares.")
+            print(f"      Justification: Visual style and similar themes.")
 
 
 # ==============================================================================
@@ -664,11 +664,11 @@ import time
 
 def run_rag_validation_suite(df, embeddings):
     print("\n" + "="*80)
-    print("🤖 TESTE AUTOMÁTICO DE RAG (PERSONA + LLM)")
+    print("🤖 AUTOMATIC RAG TEST (PERSONA + LLM)")
     print("="*80)
     
     if not rag_service or not rag_service.llm:
-        print("❌ RAG Service não configurado.")
+        print("❌ RAG Service not configured.")
         return
 
     all_scores = []
@@ -700,11 +700,11 @@ def run_rag_validation_suite(df, embeddings):
                     })
             
             if not ratings:
-                print("   ⚠️  Nenhum filme encontrado para este teste.")
+                print("   ⚠️  No movies found for this test.")
                 continue
                 
             # 2. Build Persona
-            print("   👤 Construindo Persona...")
+            print("   👤 Building Persona...")
             persona = rag_service.build_persona(ratings)
             print(f"      \"{persona[:100]}...\"")
             
@@ -781,19 +781,19 @@ def run_rag_validation_suite(df, embeddings):
     if all_scores:
         overall = sum(all_scores)/len(all_scores)
         print("\n" + "="*80)
-        print(f"🎯 SCORE GERAL RAG: {overall:.1f}%")
+        print(f"🎯 OVERALL RAG SCORE: {overall:.1f}%")
 
 def run_rag_test(df, embeddings):
-    print("\n🧠 TESTE RAG INTELLIGENCE")
+    print("\n🧠 RAG INTELLIGENCE TEST")
     if not rag_service or not rag_service.llm:
-        print("❌ RAG Service não configurado (Falta GROQ_API_KEY).")
+        print("❌ RAG Service not configured (Missing GROQ_API_KEY).")
         return
         
-    print("   (Simulando Onboarding...)")
-    print("\n🔹 PASSO 1: QUEM ÉS TU? (Para criar a Persona)")
-    print("   [1] User Simulado (Fã do Nolan)")
-    print("   [2] User Real (Supabase ID)")
-    choice_mode = input("   Escolha (1/2): ").strip()
+    print("   (Simulating Onboarding...)")
+    print("\n🔹 STEP 1: WHO ARE YOU? (To create Persona)")
+    print("   [1] Simulated User (Nolan Fan)")
+    print("   [2] Real User (Supabase ID)")
+    choice_mode = input("   Choice (1/2): ").strip()
     
     ratings = []
     
@@ -837,13 +837,13 @@ def run_rag_test(df, embeddings):
             {'title': 'Mamma Mia!', 'rating': 5.0},
             {'title': 'Fast & Furious', 'rating': 8.0}
         ]
-    print("\n📝 Histórico do Utilizador Simulado:")
+    print("\n📝 Simulated User History:")
     for r in ratings:
         print(f"   - {r['title']}: {r['rating']}⭐")
         
-    print("\n🤖 [Fase 1] Construindo Persona com LLM...")
+    print("\n🤖 [Stage 1] Building Persona with LLM...")
     persona = rag_service.build_persona(ratings)
-    print(f"   👤 Persona Gerada: \"{persona}\"")
+    print(f"   👤 Generated Persona: \"{persona}\"")
     
     # --- LOOP: ACTIVE RAG ---
     while True:
@@ -977,38 +977,37 @@ def run_rag_test(df, embeddings):
         else:
              print("   👀 DEBUG: 'The Prestige' NÃO entrou no Top 50 candidatos.")
             
-        print("🤔 [Fase 3] LLM Reranking & Filtering...")
+        print("🤔 [Stage 3] LLM Reranking & Filtering...")
         final_recs = rag_service.rerank_recommendations(persona, candidates, query)
         
-        print("\n✨ RECOMENDAÇÕES FINAIS (RAG):")
+        print("\n✨ FINAL RECOMMENDATIONS (RAG):")
         for i, rec in enumerate(final_recs, 1):
             print(f"   {i}. {rec['title']} ({rec.get('year')})")
             print(f"      💡 AI: {rec.get('rag_explanation', 'No reasoning')}")
 
 def run_rag_test(df, embeddings):
-    print("\n🧠 TESTE RAG INTELLIGENCE")
+    print("\n🧠 RAG INTELLIGENCE TEST")
     if not rag_service or not rag_service.llm:
-        print("❌ RAG Service não configurado (Falta GROQ_API_KEY).")
+        print("❌ RAG Service not configured (Missing GROQ_API_KEY).")
         return
         
-    print("   (Simulando Onboarding...)")
-    print("\n🔹 PASSO 1: QUEM ÉS TU? (Para criar a Persona)")
-    print("   [1] User Simulado (Fã do Nolan)")
-    print("   [2] User Real (Supabase ID)")
-    choice_mode = input("   Escolha (1/2): ").strip()
+    print("   (Simulating Onboarding...)")
+    print("\n🔹 STEP 1: WHO ARE YOU? (To create Persona)")
+    print("   [1] Simulated User (Nolan Fan)")
+    print("   [2] Real User (Supabase ID)")
+    choice_mode = input("   Choice (1/2): ").strip()
     
     ratings = []
     
     if choice_mode == '2':
-        user_id = input("   📝 Digite o user_id: ").strip()
+        user_id = input("   📝 Enter user_id: ").strip()
         raw_ratings = get_user_ratings(user_id)
         
         if not raw_ratings:
-            print("❌ Sem ratings ou erro. Abortando.")
+            print("❌ No ratings or error. Aborting.")
             return
 
         # Map ID -> Title
-        # Try to find the correct ID column
         id_col = 'id'
         possible_cols = ['id', 'movie_id', 'movieId', 'tmdb_id']
         for c in possible_cols:
@@ -1020,7 +1019,6 @@ def run_rag_test(df, embeddings):
         id_to_title = dict(zip(df[id_col], df['series_title']))
         
         for mid, r in raw_ratings.items():
-            # Try direct, int, str lookup
             title = None
             if mid in id_to_title: title = id_to_title[mid]
             elif int(mid) in id_to_title: title = id_to_title[int(mid)]
@@ -1028,7 +1026,7 @@ def run_rag_test(df, embeddings):
             if title:
                 ratings.append({'title': title, 'rating': r})
         
-        print(f"✅ Convertidos {len(ratings)} filmes para texto.")
+        print(f"✅ Converted {len(ratings)} movies to text.")
         
     else:
         # 1. Simulate Profile (Scale 0-20)
@@ -1039,42 +1037,35 @@ def run_rag_test(df, embeddings):
             {'title': 'Mamma Mia!', 'rating': 5.0},
             {'title': 'Fast & Furious', 'rating': 8.0}
         ]
-    print("\n📝 Histórico do Utilizador Simulado:")
+    print("\n📝 Simulated User History:")
     for r in ratings:
         print(f"   - {r['title']}: {r['rating']}⭐")
         
-    print("\n🤖 [Fase 1] Construindo Persona com LLM...")
+    print("\n🤖 [Stage 1] Building Persona with LLM...")
     persona = rag_service.build_persona(ratings)
-    print(f"   👤 Persona Gerada: \"{persona}\"")
+    print(f"   👤 Generated Persona: \"{persona}\"")
     
     # --- LOOP: ACTIVE RAG ---
     while True:
         print("\n" + "-"*40)
-        query = input("🗣️  Query (ou Enter para 'For You' | 'sair'): ").strip()
-        if query.lower() in ['sair', 'exit', '0']: break
+        query = input("🗣️  Query (or Enter for 'For You' | 'exit'): ").strip()
+        if query.lower() in ['sair', 'exit', '0', 'quit']: break
         
         # 2. Vector Search (Phase 2)
-        print("🔍 [Fase 2] Fetched Top 50 Candidates (Vector Search)...")
+        print("🔍 [Stage 2] Fetched Top 50 Candidates (Vector Search)...")
         candidates_pool = {}
         
         # A) Personal History Candidates (Always active)
         liked_movies = [r for r in ratings if r['rating'] >= 15.0]
         if liked_movies:
-            # print(f"   Using history anchors: {[m['title'] for m in liked_movies[:3]]}...")
             for liked in liked_movies:
                 match = df[df['series_title'] == liked['title']]
                 if len(match) > 0:
                     idx = match.index[0]
                     source_emb = embeddings[idx]
-                    
-                    # Calc similarities to all
                     sims = cosine_similarity([source_emb], embeddings)[0]
-                    
-                    # --- HYBRID BOOSTING FOR CANDIDATES ---
-                    # 1. Get Top 100 Raw neighbors first (Optimization)
                     raw_top_indices = np.argsort(sims)[::-1][1:101]
                     
-                    # 2. Apply Boosts (Director/Metadata)
                     source_meta = extract_metadata(df.iloc[idx])
                     source_directors = source_meta.get('directors', [])
                     
@@ -1082,27 +1073,15 @@ def run_rag_test(df, embeddings):
                     for cand_idx in raw_top_indices:
                         cand_row = df.iloc[cand_idx]
                         cand_meta = extract_metadata(cand_row)
-                        
                         boost = 0.0
-                        # Director Boost (+0.15) if shared director
                         if source_directors:
                             cand_directors = cand_meta.get('directors', [])
-                            # DEBUG PROBE
-                            if 'Prestige' in cand_row['series_title']:
-                                print(f"   🐛 PROBE: Checking Prestige. Source Dirs: {source_directors} | Cand Dirs: {cand_directors}")
-                                
                             if any(d in cand_directors for d in source_directors):
                                 boost += 0.15
-                                if 'Prestige' in cand_row['series_title']:
-                                     print(f"   🚀 BOOSTED Prestige by +0.15! New Score: {sims[cand_idx] + boost}")
-                                
                         final_score = sims[cand_idx] + boost
                         boosted_candidates.append((cand_idx, final_score))
                     
-                    # 3. Sort by Boosted Score
                     boosted_candidates.sort(key=lambda x: x[1], reverse=True)
-                    
-                    # 4. Take Top 15 (Boosted)
                     for cand_idx, score in boosted_candidates[:15]:
                         if cand_idx not in candidates_pool:
                             candidates_pool[cand_idx] = score
@@ -1110,41 +1089,31 @@ def run_rag_test(df, embeddings):
                             candidates_pool[cand_idx] = max(candidates_pool[cand_idx], score)
 
         # B) Query Anchors (Active Flow)
-        # Check if user mentioned any movie title in the query
         if query:
-            print(f"   🕵️ Analisando query por títulos de filmes...")
-            # Simple fuzzy match: check if any movie title is in the query string
-            # Optimization: Only check known popular titles or exact matches to avoid noise
-            # For debug suite, we iterate DF
+            print(f"   🕵️ Analyzing query for movie titles...")
             found_anchors = []
             lower_query = query.lower()
-            
-            # Heuristic: Check words in query against titles
-            # This is slow, but OK for local debug
             for idx, row in df.iterrows():
                 t = row['series_title']
                 if len(t) > 3 and t.lower() in lower_query:
                     found_anchors.append((idx, t))
             
             if found_anchors:
-                print(f"   🎯 Anchors encontrados: {[t for _, t in found_anchors]}")
+                print(f"   🎯 Anchors found: {[t for _, t in found_anchors]}")
                 for idx, t in found_anchors:
-                    # Boost this semantic area
                     sims = cosine_similarity([embeddings[idx]], embeddings)[0]
-                    top_indices = np.argsort(sims)[::-1][1:20] # Top 20 similar to anchor
+                    top_indices = np.argsort(sims)[::-1][1:20]
                     for cand_idx in top_indices:
                         if cand_idx not in candidates_pool:
-                            candidates_pool[cand_idx] = sims[cand_idx] # Add raw sim
+                            candidates_pool[cand_idx] = sims[cand_idx]
                         else:
-                            candidates_pool[cand_idx] += 0.5 # Boost existing
+                            candidates_pool[cand_idx] += 0.5
             else:
                 if len(query) > 3:
-                     print("   (Nenhum filme específico detetado na query, usando apenas Persona)")
+                     print("   (No specific movie detected in query, using Persona only)")
         
         # Sort e Select Top 50
         candidates_sorted = sorted(candidates_pool.items(), key=lambda x: x[1], reverse=True)
-        
-        # Filter watched
         watched_titles = set(r['title'] for r in ratings)
         indices = []
         for idx, score in candidates_sorted:
@@ -1166,26 +1135,18 @@ def run_rag_test(df, embeddings):
             })
             
         if not candidates:
-            print("❌ Nenhum candidato encontrado. (Tenta adicionar mais ratings ou mencionar filmes conhecidos)")
+            print("❌ No candidates found. (Try adding more ratings or mentioning known movies)")
             continue
             
         print(f"   generated {len(candidates)} unique candidates.")
-        
-        # DEBUG: Check for The Prestige
-        for i, c in enumerate(candidates):
-            if 'Prestige' in c['title']:
-                print(f"   👀 DEBUG: '{c['title']}' está na posição #{i+1} dos candidatos (Score: {c['score']:.4f})")
-                break
-        else:
-             print("   👀 DEBUG: 'The Prestige' NÃO entrou no Top 50 candidatos.")
             
-        print("🤔 [Fase 3] LLM Reranking & Filtering...")
+        print("🤔 [Stage 3] LLM Reranking & Filtering...")
         final_recs = rag_service.rerank_recommendations(persona, candidates, query)
         
-        print("\n✨ RECOMENDAÇÕES FINAIS (RAG):")
+        print("\n✨ FINAL RECOMMENDATIONS (RAG):")
         for i, rec in enumerate(final_recs, 1):
             print(f"   {i}. {rec['title']} ({rec.get('year')})")
-            print(f"      💡 AI: {rec.get('rag_explanation', 'No reasoning')}") 
+            print(f"      💡 AI: {rec.get('rag_explanation', 'No reasoning')}")
             
     # input("\n(Pressiona Enter para voltar ao menu...)") # Loop handles this
 
@@ -1194,16 +1155,16 @@ def main():
         print("\n" + "="*60)
         print("🛠️  DEBUG SUITE (CinemaWebApp)")
         print("="*60)
-        print("   1. [Validar] Suite Automática (Testes de Qualidade)")
-        print("   2. [Manual]  Busca Interativa & Similaridade")
-        print("   3. [Explain] Explicar Recomendações")
-        print("   5. [Info]    Info do Cache")
-        print("   7. [Direct RAG] Experiência: RAG Direto (Sem Persona)")
-        print("   8. [Manual RAG] Teste Manual Interativo (1 Filme)")
-        print("   9. [Chatbot]    Assistente de Cinema")
-        print("   0. Sair")
+        print("   1. [Validate] Automatic Suite (Quality Tests)")
+        print("   2. [Manual]   Interactive Search & Similarity")
+        print("   3. [Explain]  Explain Recommendations")
+        print("   5. [Info]     Cache Info")
+        print("   7. [Direct RAG] Experience: Direct RAG (No Persona)")
+        print("   8. [Manual RAG] Interactive Manual Test (1 Movie)")
+        print("   9. [Chatbot]    Cinema Assistant")
+        print("   0. Exit")
         
-        choice = input("\nEscolha: ").strip()
+        choice = input("\nChoice: ").strip()
         
         if choice == '0':
             print("👋 Bye!")
@@ -1221,16 +1182,16 @@ def main():
         elif choice == '3':
             run_explain_recs(df, embeddings)
         elif choice == '8':
-             print("\n🕵️ TESTE MANUAL INTERATIVO (DIRECT RAG)")
-             print("   (Digite 'sair' para voltar ao menu)")
+             print("\n🕵️ INTERACTIVE MANUAL TEST (DIRECT RAG)")
+             print("   (Type 'exit' to return to menu)")
              
              while True:
-                 movie_input = input("\n🎬 Filme para buscar similares: ").strip()
-                 if movie_input.lower() == 'sair': break
+                 movie_input = input("\n🎬 Movie to search for improvements: ").strip()
+                 if movie_input.lower() in ['sair', 'exit', 'quit']: break
                  
                  match = find_movie_by_title(df, movie_input)
                  if match is None:
-                     print("❌ Filme não encontrado.")
+                     print("❌ Movie not found.")
                      continue
                      
                  # Setup Single-Movie History
@@ -1245,7 +1206,7 @@ def main():
                  idx = df[df['series_title'] == match['series_title']].index[0]
                  user_vector = embeddings[idx]
                  
-                 print(f"🎯 Buscando similares para: {match['series_title']}...")
+                 print(f"🎯 Searching for similar movies to: {match['series_title']}...")
                  
                  # Get Candidates
                  sims = cosine_similarity([user_vector], embeddings)[0]
@@ -1267,16 +1228,16 @@ def main():
                  print("   🧠 Asking AI to judge connections...")
                  final_recs = rag_service.rerank(ratings, candidates, "")
                  
-                 print("\n✨ RECOMENDAÇÕES (RAG):")
+                 print("\n✨ RECOMMENDATIONS (RAG):")
                  for i, rec in enumerate(final_recs, 1):
                      print(f"   {i}. {rec['title']} ({rec.get('year')})")
                      print(f"      📝 {rec.get('rag_explanation', 'N/A')}")
 
         elif choice == '9':
              # Chatbot Mode
-             print("\n🤖 ASSISTENTE DE CINEMA (CHATBOT)")
+             print("\n🤖 CINEMA ASSISTANT (CHATBOT)")
              
-             raw_input = input("   [S]imulado (Fã do Nolan) ou [U]ser Real (Supabase ID)? (s/u ou cole o ID): ").strip()
+             raw_input = input("   [S]imulated (Nolan Fan) or [U]ser Real (Supabase ID)? (s/u or paste ID): ").strip()
              mode = 's'
              user_id = None
              if raw_input.lower() == 'u':
@@ -1301,37 +1262,37 @@ def main():
                                     'genre': match.get('genre', ''),
                                     'year': match.get('released_year', '')
                                 })
-                        print(f"   ✅ {len(ratings)} filmes carregados.")
+                        print(f"   ✅ {len(ratings)} movies loaded.")
                     else:
-                        print("   ⚠️ Nenhuma data encontrada.")
+                        print("   ⚠️ No data found.")
                  except Exception as e:
-                    print(f"   ❌ Erro: {e}")
+                    print(f"   ❌ Error: {e}")
              else:
-                 print("   🎭 Carregando perfil simulado (Nolan Fan)...")
+                 print("   🎭 Loading simulated profile (Nolan Fan)...")
                  nolan_movies = ['The Dark Knight', 'Inception', 'Interstellar', 'The Prestige', 'Memento']
                  for title in nolan_movies:
                      match = find_movie_by_title(df, title)
                      if match: ratings.append({'title': title, 'rating': 20.0})
             
              if not ratings:
-                 print("   ⚠️ Sem histórico para o chat.")
+                 print("   ⚠️ No history for the chat.")
                  continue
                  
-             print("\n💬 CHAT INICIADO (Digite 'sair' para terminar)")
-             print("   (O AI tem acesso ao teu histórico de filmes)")
+             print("\n💬 CHAT STARTED (Type 'exit' to end)")
+             print("   (AI has access to your movie history)")
              while True:
-                 user_msg = input("\n👤 Tu: ").strip()
+                 user_msg = input("\n👤 You: ").strip()
                  if user_msg.lower() in ['sair', 'exit', 'quit']: break
                  
-                 print("   🤖 AI a pensar...")
+                 print("   🤖 AI thinking...")
                  response = rag_service.chat_with_history(ratings, user_msg)
                  print(f"\n🤖 AI: {response}")
 
         elif choice == '7':
              # Direct RAG Test
-             print("\n🧪 EXPERIÊNCIA: RAG DIRETO (SEM PERSONA)")
+             print("\n🧪 EXPERIENCE: DIRECT RAG (NO PERSONA)")
              
-             raw_input = input("   [S]imulado (Fã do Nolan) ou [U]ser Real (Supabase ID)? (s/u ou cole o ID): ").strip()
+             raw_input = input("   [S]imulated (Nolan Fan) or [U]ser Real (Supabase ID)? (s/u or paste ID): ").strip()
              
              mode = 's'
              user_id = None
@@ -1359,17 +1320,17 @@ def main():
                                     'genre': match.get('genre', ''),
                                     'year': match.get('released_year', '')
                                 })
-                        print(f"   ✅ {len(ratings)} filmes encontrados para este user.")
+                        print(f"   ✅ {len(ratings)} movies found for this user.")
                     else:
-                        print("   ⚠️ Nenhuma rating encontrada.")
+                        print("   ⚠️ No ratings found.")
                         continue
                  except Exception as e:
-                    print(f"   ❌ Erro ao buscar user: {e}")
+                    print(f"   ❌ Error fetching user: {e}")
                     continue
              else:
-                 print("   A enviar histórico bruto para o LLM...")
+                 print("   Sending raw history to LLM...")
                  # Hardcoded Nolan Fan for quick test
-                 print("   Simulando Fã do Nolan...")
+                 print("   Simulating Nolan Fan...")
                  nolan_movies = ['The Dark Knight', 'Inception', 'Interstellar', 'The Prestige', 'Memento', 'The Shawshank Redemption','The Green Mile','Fight Club','The Matrix','The Dark Knight Rises','The Dark Knight Returns','The Dark Knight','Avatar','Life of Pi']
                  for title in nolan_movies:
                      match = find_movie_by_title(df, title)
@@ -1382,7 +1343,7 @@ def main():
                          })
 
              if not ratings:
-                 print("   ⚠️ Sem ratings para processar.")
+                 print("   ⚠️ No ratings to process.")
                  continue
 
              # Generate Candidates
@@ -1433,7 +1394,7 @@ def main():
              print("   🧠 Asking LLM to pick defaults based on history...")
              final_recs = rag_service.rerank(ratings, candidates, query)
              
-             print("\n✨ RECOMENDAÇÕES DIRETAS:")
+             print("\n✨ DIRECT RECOMMENDATIONS:")
              for i, rec in enumerate(final_recs, 1):
                  print(f"   {i}. {rec['title']} ({rec.get('year')})")
                  print(f"      📝 AI Decision: {rec.get('rag_explanation', 'N/A')}")
@@ -1441,22 +1402,22 @@ def main():
         elif choice == '5':
             # Detailed Info (Merged from inspect_cache.py)
             print("\n" + "="*60)
-            print("📋 ESTRUTURA DA CACHE")
+            print("📋 CACHE STRUCTURE")
             print("="*60)
-            print(f"\nTotal de filmes: {len(df)}")
-            print(f"Total de colunas: {len(df.columns)}")
-            print(f"Shape Embeddings: {embeddings.shape}")
+            print(f"\nTotal movies: {len(df)}")
+            print(f"Total columns: {len(df.columns)}")
+            print(f"Embeddings Shape: {embeddings.shape}")
             
-            print("\n📝 Colunas disponíveis:")
+            print("\n📝 Available columns:")
             cols = df.columns.tolist()
             # Print in rows of 3
             for i in range(0, len(cols), 3):
                 print(f"  {', '.join(cols[i:i+3])}")
                 
-            print("\n🎬 Exemplo (Primeiro filme):")
+            print("\n🎬 Example (First movie):")
             m = df.iloc[0]
             print(f"   ID: {m['id']}")
-            print(f"   Título: {m['series_title']}")
+            print(f"   Title: {m['series_title']}")
             if 'embedding_input' in m:
                 print(f"   Input Len: {len(m['embedding_input'])} chars")
                 print(f"   Input Preview: {m['embedding_input'][:100]}...")
@@ -1465,7 +1426,7 @@ def main():
              run_rag_validation_suite(df, embeddings)
 
         else:
-            print("❌ Opção inválida.")
+            print("❌ Invalid option.")
 
 
 if __name__ == "__main__":

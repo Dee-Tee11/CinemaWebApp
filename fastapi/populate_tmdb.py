@@ -8,33 +8,33 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from sentence_transformers import SentenceTransformer
 
-# Carregar variáveis de ambiente
+# Load environment variables
 load_dotenv()
 
-# Configurações
+# Configuration
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
 if not TMDB_API_KEY:
-    raise ValueError("❌ TMDB_API_KEY não encontrada no .env")
+    raise ValueError("❌ TMDB_API_KEY not found in .env")
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("❌ Credenciais do Supabase não encontradas no .env")
+    raise ValueError("❌ Supabase credentials not found in .env")
 
-# Inicializar clientes
+# Initialize clients
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-print("📥 Carregando modelo de embeddings (768 dimensões)...")
-model = SentenceTransformer('all-mpnet-base-v2')  # 768 dimensões (melhor qualidade)
-print("✅ Modelo carregado!")
+print("📥 Loading embeddings model (768 dimensions)...")
+model = SentenceTransformer('all-mpnet-base-v2')  # 768 dimensions (best quality)
+print("✅ Model loaded!")
 
 BASE_URL = "https://api.themoviedb.org/3"
 
 def fetch_movies_from_tmdb(pages: int = 5, start_page: int = 1, sort_by: str = "popularity.desc") -> List[Dict]:
     """
-    Busca filmes do TMDB usando o endpoint discover
+    Fetch movies from TMDB using the discover endpoint
     """
     movies = []
-    print(f"🔄 Buscando {pages} páginas de filmes do TMDB (Sort: {sort_by})...")
+    print(f"🔄 Fetching {pages} pages of movies from TMDB (Sort: {sort_by})...")
     
     for page in range(start_page, start_page + pages):
         try:
@@ -56,17 +56,17 @@ def fetch_movies_from_tmdb(pages: int = 5, start_page: int = 1, sort_by: str = "
             results = data.get("results", [])
             movies.extend(results)
             
-            print(f"   Página {page}/{start_page + pages - 1}: {len(results)} filmes encontrados")
-            time.sleep(0.1)  # Respeitar rate limit (40 req/10s)
+            print(f"   Page {page}/{start_page + pages - 1}: {len(results)} movies found")
+            time.sleep(0.1)  # Respect rate limit (40 req/10s)
             
         except Exception as e:
-            print(f"❌ Erro na página {page}: {e}")
+            print(f"❌ Error on page {page}: {e}")
             continue
             
     return movies
 
 def get_genres_map() -> Dict[int, str]:
-    """Busca mapa de IDs de gêneros para nomes"""
+    """Fetches genre ID to name map"""
     try:
         url = f"{BASE_URL}/genre/movie/list"
         params = {"api_key": TMDB_API_KEY, "language": "en-US"}
@@ -74,11 +74,11 @@ def get_genres_map() -> Dict[int, str]:
         data = response.json()
         return {g["id"]: g["name"] for g in data.get("genres", [])}
     except Exception as e:
-        print(f"⚠️ Erro ao buscar gêneros: {e}")
+        print(f"⚠️ Error fetching genres: {e}")
         return {}
 
 def get_movie_details(movie_id: int) -> Dict[str, Any]:
-    """Busca detalhes completos de um filme (keywords, runtime, director, cast)"""
+    """Fetches full movie details (keywords, runtime, director, cast)"""
     try:
         url = f"{BASE_URL}/movie/{movie_id}"
         params = {
@@ -119,37 +119,37 @@ def get_movie_details(movie_id: int) -> Dict[str, Any]:
         }
 
 def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]):
-    """Processa filmes, gera embeddings com METADADOS RICOS e envia para o Supabase"""
+    """Processes movies, generates embeddings with RICH METADATA and uploads to Supabase"""
     processed_movies = []
     
-    print(f"⚙️  Processando {len(raw_movies)} filmes...")
+    print(f"⚙️  Processing {len(raw_movies)} movies...")
     
-    # Remover duplicatas baseadas no ID
+    # Remove duplicates based on ID
     unique_movies = list({m['id']: m for m in raw_movies}.values())
-    print(f"   Após remover duplicatas: {len(unique_movies)} filmes únicos")
+    print(f"   After removing duplicates: {len(unique_movies)} unique movies")
     
     for idx, movie in enumerate(unique_movies):
         try:
-            # Mostrar progresso a cada 10 filmes (mais frequente pois é mais lento agora)
+            # Show progress every 10 movies
             if idx % 10 == 0:
-                print(f"   Processando filme {idx}/{len(unique_movies)}: {movie.get('title', 'Unknown')}")
+                print(f"   Processing movie {idx}/{len(unique_movies)}: {movie.get('title', 'Unknown')}")
             
-            # Pular se não tiver overview ou título
+            # Skip if no overview or title
             if not movie.get('overview') or not movie.get('title'):
                 continue
                 
-            # Mapear gêneros
+            # Map genres
             genre_names = [genres_map.get(gid, "Unknown") for gid in movie.get('genre_ids', [])]
             genre_str = ", ".join(genre_names)
             
-            # 1. Buscar detalhes completos (keywords, runtime, director, cast)
+            # 1. Fetch full details (keywords, runtime, director, cast)
             details = get_movie_details(movie['id'])
             keywords_str = ", ".join(details['keywords'][:10])  # Top 10 keywords
             
-            # 2. Obter Idioma
+            # 2. Get Language
             lang = movie.get('original_language', 'unknown')
             
-            # 3. Criar texto RICO para embedding (incluindo Director para capturar estilo de realização)
+            # 3. Create RICH text for embedding (including Director to capture filmmaking style)
             director_text = f"Director: {details['director']}" if details['director'] else ""
             text_for_embedding = (
                 f"{movie['title']}. "
@@ -160,11 +160,11 @@ def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]
                 f"{director_text}"
             ).strip()  # Remove trailing space if no director
             
-            # Debug ocasional
+            # Occasional debug
             if idx % 50 == 0:
                 print(f"   📝 Embedding: '{text_for_embedding[:100]}...'")
             
-            # Gerar embedding
+            # Generate embedding
             embedding = model.encode(text_for_embedding).tolist()
             
             movie_data = {
@@ -182,11 +182,11 @@ def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]
             
             processed_movies.append(movie_data)
             
-            # Rate limit manual para não estourar a API com os requests extras de keywords
+            # Manual rate limit to not exceed API with extra keyword requests
             time.sleep(0.05) 
             
         except Exception as e:
-            print(f"⚠️ Erro ao processar filme {movie.get('title', 'Unknown')}: {e}")
+            print(f"⚠️ Error processing movie {movie.get('title', 'Unknown')}: {e}")
             import traceback
             traceback.print_exc()
             continue
@@ -199,7 +199,7 @@ def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]
     batch_size = 100
     total_uploaded = 0
     
-    print(f"🚀 Enviando {len(processed_movies)} filmes para o Supabase...")
+    print(f"🚀 Uploading {len(processed_movies)} movies to Supabase...")
     
     for i in range(0, len(processed_movies), batch_size):
         batch = processed_movies[i:i+batch_size]
@@ -207,44 +207,44 @@ def process_and_upload_movies(raw_movies: List[Dict], genres_map: Dict[int, str]
             # Usar upsert para evitar erros de duplicata
             supabase.table('movies').upsert(batch).execute()
             total_uploaded += len(batch)
-            print(f"   Progresso: {total_uploaded}/{len(processed_movies)} filmes salvos")
+            print(f"   Progress: {total_uploaded}/{len(processed_movies)} movies saved")
         except Exception as e:
-            print(f"❌ Erro ao salvar batch {i}: {e}")
-            # Tentar imprimir o erro detalhado se possível
+            print(f"❌ Error saving batch {i}: {e}")
+            # Try to print detailed error if possible
             if hasattr(e, 'details'):
-                print(f"   Detalhes: {e.details}")
+                print(f"   Details: {e.details}")
 
 def main():
-    print("🎬 Iniciando script de população do TMDB para 100K FILMES...")
-    print("⚠️  ESTE PROCESSO VAI DEMORAR 4-6 HORAS. Deixa a correr!\n")
+    print("🎬 Starting TMDB population script for 100K MOVIES...")
+    print("⚠️  THIS PROCESS WILL TAKE 4-6 HOURS. Leave it running!\n")
     
-    print("\n📥 Buscando dados do TMDB...")
+    print("\n📥 Fetching data from TMDB...")
     genres_map = get_genres_map()
-    print(f"✅ {len(genres_map)} gêneros mapeados")
+    print(f"✅ {len(genres_map)} genres mapped")
     
-    # Estratégia: Buscar filmes populares, top rated e por ano para diversidade
-    # Para teste inicial, vamos buscar menos páginas. Para 100k, aumentar os ranges.
+    # Strategy: Fetch popular, top rated and by year movies for diversity
+    # For initial test, we'll fetch fewer pages. For 100k, increase the ranges.
     
     all_movies = []
     
-    # 🎯 ESTRATÉGIA PARA MÁXIMO DE FILMES
-    # TMDB limita a 500 páginas por query
-    # Total: 500 páginas x 3 categorias x 20 filmes/página = ~30k filmes únicos
+    # 🎯 STRATEGY FOR MAXIMUM MOVIES
+    # TMDB limits to 500 pages per query
+    # Total: 500 pages x 3 categories x 20 movies/page = ~30k unique movies
     
-    print("📦 Fase 1/3: Filmes Populares (500 páginas - máximo TMDB)...")
+    print("📦 Stage 1/3: Popular Movies (500 pages - TMDB max)...")
     all_movies.extend(fetch_movies_from_tmdb(pages=500, sort_by="popularity.desc"))
     
-    print("\n📦 Fase 2/3: Filmes Top Rated (500 páginas)...")
+    print("\n📦 Stage 2/3: Top Rated Movies (500 pages)...")
     all_movies.extend(fetch_movies_from_tmdb(pages=500, start_page=1, sort_by="vote_average.desc"))
     
-    print("\n📦 Fase 3/3: Filmes por Votos (500 páginas)...")
+    print("\n📦 Stage 3/3: Movies by Vote Count (500 pages)...")
     all_movies.extend(fetch_movies_from_tmdb(pages=500, start_page=1, sort_by="vote_count.desc"))
     
-    print(f"📦 Total de filmes brutos coletados: {len(all_movies)}")
+    print(f"📦 Total raw movies collected: {len(all_movies)}")
     
     process_and_upload_movies(all_movies, genres_map)
     
-    print("\n✅ Concluído! Verifique o Supabase.")
+    print("\n✅ Completed! Check Supabase.")
 
 if __name__ == "__main__":
     main()

@@ -14,7 +14,7 @@ class GroqClient:
     def generate(self, prompt: str, max_tokens: int = 2048) -> str:
         # User requested delay to avoid rate limits
         delay = random.randint(3, 8)
-        print(f"   ⏳ Pausa técnica de {delay}s antes de chamar o LLM...")
+        print(f"   ⏳ Technical pause of {delay}s before calling LLM...")
         time.sleep(delay)
 
         payload = {
@@ -40,7 +40,7 @@ class GroqClient:
                 
                 elif response.status_code == 429:
                     wait_time = 10 * (attempt + 1)
-                    print(f"Update: ⚠️ Rate limit atingido. Pausa de {wait_time}s... (Tentativa {attempt+1}/{max_retries})")
+                    print(f"Update: ⚠️ Rate limit reached. Pause for {wait_time}s... (Attempt {attempt+1}/{max_retries})")
                     time.sleep(wait_time)
                     continue
                     
@@ -67,6 +67,10 @@ class RagService:
         """
         Primary RAG Strategy (Direct): Skip Persona, provide Raw History.
         """
+        if not self.llm:
+            print("⚠️ LLM not configured. Returning top candidates without reranking.")
+            return candidates[:10]
+
         # Format History
         history_text = "\n".join([f"- {r['title']} ({r['rating']}⭐)" for r in ratings if r['rating'] >= 15])
         
@@ -138,6 +142,9 @@ Provide a valid JSON list. NO COMMENTS. NO MATH.
         Chatbot mode: LLM has access to full user history + user message.
         Returns a conversational text response.
         """
+        if not self.llm:
+             return "⚠️ Chatbot disabled: GROQ_API_KEY not configured."
+
         # Format history very compactly to save tokens
         history_len = len(ratings)
         # Prioritize top rated movies
