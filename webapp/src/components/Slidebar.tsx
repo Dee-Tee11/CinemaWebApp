@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle } from "lucide-react";
+import { Settings, User, Compass, UserPlus, Menu, X, MessageCircle, Mail } from "lucide-react";
 
 import { Link } from "react-router-dom";
 import AddFriendPopup from "./AddFriend/AddFriend";
 import Chatbot from "./Chatbot/Chatbot";
+import Contact from "./Contact/Contact";
 import { useFriendRequests } from "../hooks/useFriendRequests";
 import "./Slidebar.css";
 
@@ -44,6 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [showAddFriendPopup, setShowAddFriendPopup] = useState(false);
   const [showChatbotPopup, setShowChatbotPopup] = useState(false);
+  const [showContactPopup, setShowContactPopup] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { pendingCount } = useFriendRequests();
 
@@ -98,6 +100,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           <UserPlus size={22} />
           {pendingCount > 0 && <span className="sidebar-notification-badge" />}
+        </button>
+
+        <button
+          onClick={() => setShowContactPopup(true)}
+          className="sidebar-button"
+          aria-label="Contact & Support"
+        >
+          <Mail size={22} />
         </button>
 
         <button
@@ -192,6 +202,19 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
 
           <button
+            onClick={() => {
+              setShowContactPopup(true);
+              setIsMobileMenuOpen(false);
+            }}
+            className="sidebar-mobile-button"
+          >
+            <span className="sidebar-mobile-button-icon">
+              <Mail size={22} />
+            </span>
+            Contact & Support
+          </button>
+
+          <button
             onClick={handleSettingsClick}
             className="sidebar-mobile-button"
           >
@@ -214,6 +237,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       <Chatbot
         isOpen={showChatbotPopup}
         onClose={() => setShowChatbotPopup(false)}
+      />
+
+      <Contact
+        isOpen={showContactPopup}
+        onClose={() => setShowContactPopup(false)}
       />
     </div>
   );
