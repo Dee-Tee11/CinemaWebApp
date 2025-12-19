@@ -5,6 +5,7 @@ import type { User } from "@/types";
 import Auth from "./components/Auth/Auth";
 import Info from "./components/Info/Info";
 import AppRouter from "./router";
+import InitialLoadingScreen from "./components/InitialLoadingScreen/InitialLoadingScreen";
 
 function App() {
   const { user, isLoaded } = useUser();
@@ -52,17 +53,7 @@ function App() {
   }
 
   if (!isLoaded) {
-    return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        background: '#0a0a0a'
-      }}>
-        <p style={{ color: '#fff' }}>Loading...</p>
-      </div>
-    );
+    return <InitialLoadingScreen />;
   }
 
   if (user) {

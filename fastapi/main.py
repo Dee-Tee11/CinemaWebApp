@@ -358,4 +358,4 @@ if __name__ == "__main__":
         else:
             print("❌ User ID cannot be empty.")
     else:
-        print("ℹ️  Para iniciar o servidor, execute: uvicorn main:app --reload")
+        print("ℹ️  To start the server, run: uvicorn main:app --reload")

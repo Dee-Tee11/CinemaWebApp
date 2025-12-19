@@ -9,6 +9,7 @@ import ProfileModal from "./components/ProfileModal/ProfileModal";
 import CategoryFilters from "./components/CategoryFilters/CategoryFilters";
 import StatusFilters from "./components/MyMovies/MyMovies";
 import SettingsPopup from "./components/SettingsPopup";
+import InitialLoadingScreen from "./components/InitialLoadingScreen/InitialLoadingScreen";
 import AddFriendPopup from "./components/AddFriend/AddFriend";
 import { useMovies } from "./hooks/useMovies";
 import { useRecommendedMovies } from "./hooks/useRecommendedMovies";
@@ -154,21 +155,7 @@ export default function Home() {
   };
 
   if (isCheckingOnboarding || !isLoaded) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          background: "#0a0a0a",
-          color: "white",
-          fontSize: "1.2rem",
-        }}
-      >
-        Loading...
-      </div>
-    );
+    return <InitialLoadingScreen />;
   }
 
   const getTotalCount = () =>
