@@ -1,5 +1,6 @@
 import React from "react";
 import { ChevronRight, ChevronLeft, Star, Search, Clock, Film } from "lucide-react";
+import MobileRatingCard from "./MobileRatingCard";
 
 interface Movie {
     id: number;
@@ -70,88 +71,106 @@ const RatingPhase: React.FC<RatingPhaseProps> = ({
                     </p>
                 </div>
 
-                <div className="horizontal-card">
-                    <div
-                        className="horizontal-card-poster"
-                        style={{ backgroundImage: `url(${currentMovie.poster_url})` }}
-                    >
-                        <div className="rating-badge rating-badge-large">
-                            <Star size={14} color="#FFD700" fill="#FFD700" />
-                            <span>{currentMovie.imdb_rating}</span>
-                        </div>
-                    </div>
-
-                    <div className="horizontal-card-content">
-                        {/* Search Bar */}
-                        <div className="card-search-container">
-                            <Search size={16} className="search-icon" />
-                            <input
-                                type="text"
-                                className="card-search-input"
-                                placeholder="Search to replace this movie..."
-                                value={searchQuery}
-                                onChange={(e) => onSearchChange(e.target.value)}
-                            />
-                            {searchResults.length > 0 && (
-                                <div className="search-results-dropdown">
-                                    {searchResults.map((movie) => (
-                                        <div
-                                            key={movie.id}
-                                            className="search-result-item"
-                                            onClick={() => {
-                                                onAddSearchedMovie(movie);
-                                                onClearSearch();
-                                            }}
-                                        >
-                                            <img src={movie.poster_url} alt="" className="search-result-img" />
-                                            <div className="search-result-info">
-                                                <div className="search-result-title">{movie.series_title}</div>
-                                                <div className="search-result-genre">{movie.genre}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Movie Info */}
-                        <div className="movie-meta-info">
-                            <div className="movie-genre-badge">{currentMovie.genre.split(',')[0]}</div>
-                            <h2 className="movie-title-large">{currentMovie.series_title}</h2>
-                            <div className="movie-runtime">
-                                <Clock size={14} /> {currentMovie.runtime || "N/A"}
-                                <span className="runtime-separator">•</span>
-                                <Film size={14} /> {currentMovie.director || "Unknown Director"}
+                <div className="desktop-rating-view">
+                    <div className="horizontal-card">
+                        <div
+                            className="horizontal-card-poster"
+                            style={{ backgroundImage: `url(${currentMovie.poster_url})` }}
+                        >
+                            <div className="rating-badge rating-badge-large">
+                                <Star size={14} color="#FFD700" fill="#FFD700" />
+                                <span>{currentMovie.imdb_rating}</span>
                             </div>
                         </div>
 
-                        {/* Rating Controls */}
-                        <div className="rating-area">
-                            <div className="rating-slider-container">
-                                <div className="rating-value-display">
-                                    <span className="rating-label">Your Rating</span>
-                                    <span className="rating-number">{tempRating}/20</span>
-                                </div>
+                        <div className="horizontal-card-content">
+                            {/* Search Bar */}
+                            <div className="card-search-container">
+                                <Search size={16} className="search-icon" />
                                 <input
-                                    type="range"
-                                    min="0"
-                                    max="20"
-                                    value={tempRating}
-                                    onChange={(e) => onSetTempRating(Number(e.target.value))}
-                                    className="custom-range"
+                                    type="text"
+                                    className="card-search-input"
+                                    placeholder="Search to replace this movie..."
+                                    value={searchQuery}
+                                    onChange={(e) => onSearchChange(e.target.value)}
                                 />
+                                {searchResults.length > 0 && (
+                                    <div className="search-results-dropdown">
+                                        {searchResults.map((movie) => (
+                                            <div
+                                                key={movie.id}
+                                                className="search-result-item"
+                                                onClick={() => {
+                                                    onAddSearchedMovie(movie);
+                                                    onClearSearch();
+                                                }}
+                                            >
+                                                <img src={movie.poster_url} alt="" className="search-result-img" />
+                                                <div className="search-result-info">
+                                                    <div className="search-result-title">{movie.series_title}</div>
+                                                    <div className="search-result-genre">{movie.genre}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="card-actions">
-                                <button className="btn-action btn-rate-confirm" onClick={onConfirmRating}>
-                                    {hasRating ? "Update Rating" : "Confirm Rating"}
-                                </button>
-                                <button className="btn-action btn-skip" onClick={onNext}>
-                                    Skip <ChevronRight size={16} />
-                                </button>
+                            {/* Movie Info */}
+                            <div className="movie-meta-info">
+                                <div className="movie-genre-badge">{currentMovie.genre.split(',')[0]}</div>
+                                <h2 className="movie-title-large">{currentMovie.series_title}</h2>
+                                <div className="movie-runtime">
+                                    <Clock size={14} /> {currentMovie.runtime || "N/A"}
+                                    <span className="runtime-separator">•</span>
+                                    <Film size={14} /> {currentMovie.director || "Unknown Director"}
+                                </div>
+                            </div>
+
+                            {/* Rating Controls */}
+                            <div className="rating-area">
+                                <div className="rating-slider-container">
+                                    <div className="rating-value-display">
+                                        <span className="rating-label">Your Rating</span>
+                                        <span className="rating-number">{tempRating}/20</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="20"
+                                        value={tempRating}
+                                        onChange={(e) => onSetTempRating(Number(e.target.value))}
+                                        className="custom-range"
+                                    />
+                                </div>
+
+                                <div className="card-actions">
+                                    <button className="btn-action btn-rate-confirm" onClick={onConfirmRating}>
+                                        {hasRating ? "Update Rating" : "Confirm Rating"}
+                                    </button>
+                                    <button className="btn-action btn-skip" onClick={onNext}>
+                                        Skip <ChevronRight size={16} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="mobile-rating-view">
+                    <MobileRatingCard
+                        movie={currentMovie}
+                        tempRating={tempRating}
+                        hasRating={hasRating}
+                        searchQuery={searchQuery}
+                        searchResults={searchResults}
+                        onSetTempRating={onSetTempRating}
+                        onConfirmRating={onConfirmRating}
+                        onNext={onNext}
+                        onSearchChange={onSearchChange}
+                        onAddSearchedMovie={onAddSearchedMovie}
+                        onClearSearch={onClearSearch}
+                    />
                 </div>
 
                 {/* Navigation Buttons */}
