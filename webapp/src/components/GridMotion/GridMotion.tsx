@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, FC } from "react";
+import { useEffect, useRef, type FC } from "react";
 import { gsap } from "gsap";
 import "./GridMotion.css";
 import { useGridMovies } from "../../hooks/useGridMovies";
@@ -31,6 +31,12 @@ const GridMotion: FC<GridMotionProps> = ({ gradientColor = "black" }) => {
       mouseXRef.current = e.clientX;
     };
 
+    const handleTouchMove = (e: TouchEvent): void => {
+      if (e.touches.length > 0) {
+        mouseXRef.current = e.touches[0].clientX;
+      }
+    };
+
     const updateMotion = (): void => {
       const maxMoveAmount = 300;
       const baseDuration = 0.8;
@@ -57,9 +63,11 @@ const GridMotion: FC<GridMotionProps> = ({ gradientColor = "black" }) => {
 
     const removeAnimationLoop = gsap.ticker.add(updateMotion);
     window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove);
 
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
       removeAnimationLoop();
     };
   }, []);
@@ -90,8 +98,8 @@ const GridMotion: FC<GridMotionProps> = ({ gradientColor = "black" }) => {
                       style={{ backgroundColor: "#111" }}
                     >
                       {content &&
-                      typeof content.img === "string" &&
-                      /\.(jpg|jpeg|png|gif|webp)/.test(content.img) ? (
+                        typeof content.img === "string" &&
+                        /\.(jpg|jpeg|png|gif|webp)/.test(content.img) ? (
                         <div
                           className="row__item-img"
                           style={{
