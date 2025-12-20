@@ -6,6 +6,7 @@ import Auth from "./components/Auth/Auth";
 import Info from "./components/Info/Info";
 import AppRouter from "./router";
 import InitialLoadingScreen from "./components/InitialLoadingScreen/InitialLoadingScreen";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const { user, isLoaded } = useUser();
@@ -57,23 +58,31 @@ function App() {
   }
 
   if (user) {
-    return <AppRouter />;
+    return (
+      <>
+        <AppRouter />
+        <Analytics />
+      </>
+    );
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        height: "100vh",
-        width: "100vw",
-        margin: 0,
-        padding: 0,
-        overflow: "hidden",
-      }}
-    >
-      <Auth />
-      <Info />
-    </div>
+    <>
+      <div
+        style={{
+          display: "flex",
+          height: "100vh",
+          width: "100vw",
+          margin: 0,
+          padding: 0,
+          overflow: "hidden",
+        }}
+      >
+        <Auth />
+        <Info />
+      </div>
+      <Analytics />
+    </>
   );
 }
 
