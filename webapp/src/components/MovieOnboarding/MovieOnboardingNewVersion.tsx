@@ -3,6 +3,7 @@ import { ChevronRight, Star, Sparkles, ChevronLeft } from "lucide-react";
 import MovieModal from "./MovieOnboardingModal";
 import { useOnboarding } from "../../hooks/useOnboarding";
 import "./MovieOnboardingNewVersion.css";
+import MobileRatingCard from "./phases/MobileRatingCard";
 
 const OnboardingFlow: React.FC = () => {
   const {
@@ -218,121 +219,146 @@ const OnboardingFlow: React.FC = () => {
           <ChevronLeft size={24} />
         </button>
 
-        <div className="rating-card-horizontal">
-          {/* LEFT: MOVIE POSTER */}
-          <div
-            className="horizontal-poster"
-            style={{ backgroundImage: `url(${currentMovie.poster_url})` }}
-          >
-            <div className="poster-rating-badge">
-              <Star size={14} fill="#fbbf24" color="#fbbf24" />
-              <span>{currentMovie.imdb_rating}</span>
-            </div>
-          </div>
-
-          {/* RIGHT: CONTENT */}
-          <div className="horizontal-content">
-            {/* SEARCH TO REPLACE */}
-            <div className="search-replace-container">
-              <div className="search-replace-input-wrapper">
-                <input
-                  type="text"
-                  className="search-replace-input"
-                  placeholder="Search to replace this movie..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    searchMovies(e.target.value);
-                  }}
-                />
-                <div className="search-icon-right">
-                  <span style={{ fontSize: '18px' }}>🔍</span>
-                </div>
+        <div className="desktop-rating-view">
+          <div className="rating-card-horizontal">
+            {/* LEFT: MOVIE POSTER */}
+            <div
+              className="horizontal-poster"
+              style={{ backgroundImage: `url(${currentMovie.poster_url})` }}
+            >
+              <div className="poster-rating-badge">
+                <Star size={14} fill="#fbbf24" color="#fbbf24" />
+                <span>{currentMovie.imdb_rating}</span>
               </div>
+            </div>
 
-              {/* DROPDOWN RESULTS */}
-              {searchResults.length > 0 && searchQuery && (
-                <div className="search-replace-results">
-                  {searchResults.map((movie) => (
-                    <div
-                      key={movie.id}
-                      className="search-result-item"
-                      onClick={() => {
-                        addSearchedMovie(movie);
-                        setSearchQuery(""); // Clear query to close dropdown
-                      }}
-                    >
-                      <img src={movie.poster_url} alt={movie.series_title} />
-                      <div className="result-info">
-                        <div className="result-title">{movie.series_title}</div>
-                        <div className="result-meta">{movie.runtime} • {movie.imdb_rating} ★</div>
+            {/* RIGHT: CONTENT */}
+            <div className="horizontal-content">
+              {/* SEARCH TO REPLACE */}
+              <div className="search-replace-container">
+                <div className="search-replace-input-wrapper">
+                  <input
+                    type="text"
+                    className="search-replace-input"
+                    placeholder="Search to replace this movie..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      searchMovies(e.target.value);
+                    }}
+                  />
+                  <div className="search-icon-right">
+                    <span style={{ fontSize: '18px' }}>🔍</span>
+                  </div>
+                </div>
+
+                {/* DROPDOWN RESULTS */}
+                {searchResults.length > 0 && searchQuery && (
+                  <div className="search-replace-results">
+                    {searchResults.map((movie) => (
+                      <div
+                        key={movie.id}
+                        className="search-result-item"
+                        onClick={() => {
+                          addSearchedMovie(movie);
+                          setSearchQuery(""); // Clear query to close dropdown
+                        }}
+                      >
+                        <img src={movie.poster_url} alt={movie.series_title} />
+                        <div className="result-info">
+                          <div className="result-title">{movie.series_title}</div>
+                          <div className="result-meta">{movie.runtime} • {movie.imdb_rating} ★</div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="movie-details-section" key={currentMovie.id}>
+                <div className="movie-genre-pill">
+                  {currentMovie.genre.split(',')[0]}
                 </div>
-              )}
-            </div>
-
-            <div className="movie-details-section" key={currentMovie.id}>
-              <div className="movie-genre-pill">
-                {currentMovie.genre.split(',')[0]}
+                <h1 className="movie-title-large">{currentMovie.series_title}</h1>
+                <div className="movie-meta-large">
+                  <span className="meta-item">⏱ {currentMovie.runtime || "N/A"}</span>
+                </div>
               </div>
-              <h1 className="movie-title-large">{currentMovie.series_title}</h1>
-              <div className="movie-meta-large">
-                <span className="meta-item">⏱ {currentMovie.runtime || "N/A"}</span>
-              </div>
-            </div>
 
-            <div className="rating-action-section">
-              <div className="rating-slider-wrapper">
-                <div className="slider-labels">
-                  <span className="label-text">Your Rating</span>
-                  <span className="rating-value-large">{hasRating ? currentRatingValue : tempRating}/20</span>
+              <div className="rating-action-section">
+                <div className="rating-slider-wrapper">
+                  <div className="slider-labels">
+                    <span className="label-text">Your Rating</span>
+                    <span className="rating-value-large">{hasRating ? currentRatingValue : tempRating}/20</span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    value={hasRating ? currentRatingValue : tempRating}
+                    onChange={(e) => {
+                      setTempRating(Number(e.target.value));
+                    }}
+                    className="horizontal-rating-slider"
+                  />
                 </div>
 
-                <input
-                  type="range"
-                  min="0"
-                  max="20"
-                  value={hasRating ? currentRatingValue : tempRating}
-                  onChange={(e) => {
-                    setTempRating(Number(e.target.value));
-                  }}
-                  className="horizontal-rating-slider"
-                />
+                <div className="action-buttons-row">
+                  <button
+                    className="btn-update-rating-white"
+                    onClick={() => {
+                      setTempRating(hasRating ? currentRatingValue : tempRating);
+                      handleConfirmRating();
+                      handleNext();
+                    }}
+                  >
+                    {hasRating ? "Update Rating" : "Submit Rating"}
+                  </button>
+
+                  <button
+                    className="btn-skip-transparent"
+                    onClick={handleNext}
+                  >
+                    Skip <ChevronRight size={16} />
+                  </button>
+                </div>
               </div>
 
-              <div className="action-buttons-row">
-                <button
-                  className="btn-update-rating-white"
-                  onClick={() => {
-                    setTempRating(hasRating ? currentRatingValue : tempRating);
-                    handleConfirmRating();
-                    handleNext();
-                  }}
-                >
-                  {hasRating ? "Update Rating" : "Submit Rating"}
-                </button>
-
-                <button
-                  className="btn-skip-transparent"
-                  onClick={handleNext}
-                >
-                  Skip <ChevronRight size={16} />
-                </button>
+              <div className="progress-dots">
+                {relatedMovies.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`progress-dot ${idx === currentIndex ? 'active' : ''} ${idx < currentIndex ? 'completed' : ''}`}
+                  />
+                ))}
               </div>
-            </div>
 
-            <div className="progress-dots">
-              {relatedMovies.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`progress-dot ${idx === currentIndex ? 'active' : ''} ${idx < currentIndex ? 'completed' : ''}`}
-                />
-              ))}
             </div>
-
           </div>
+        </div>
+
+        <div className="mobile-rating-view">
+          <MobileRatingCard
+            movie={currentMovie}
+            tempRating={hasRating ? currentRatingValue : tempRating}
+            hasRating={hasRating}
+            searchQuery={searchQuery}
+            searchResults={searchResults}
+            onSetTempRating={setTempRating}
+            onConfirmRating={() => {
+              setTempRating(hasRating ? currentRatingValue : tempRating);
+              handleConfirmRating();
+              handleNext();
+            }}
+            onNext={handleNext}
+            onSearchChange={(q) => {
+              setSearchQuery(q);
+              searchMovies(q);
+            }}
+            onAddSearchedMovie={addSearchedMovie}
+            onClearSearch={() => setSearchQuery("")}
+          />
         </div>
       </div>
     );
