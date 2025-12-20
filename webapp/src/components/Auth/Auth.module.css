@@ -28,6 +28,55 @@
 }
 
 /**
+ * Auth header with logo and title
+ */
+.authHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  animation: fadeInDown 0.8s ease-out;
+}
+
+.authLogo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dc143c 0%, #8b0000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(220, 20, 60, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.authLogo:hover {
+  transform: scale(1.05) rotate(5deg);
+}
+
+.authTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/**
  * True glassmorphism style - transparent glass effect
  */
 .button {
@@ -81,12 +130,10 @@
   left: 0;
   right: 0;
   height: 60%;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%);
   border-radius: 16px 16px 0 0;
   pointer-events: none;
 }
@@ -101,12 +148,10 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.2) 50%,
-    transparent 70%
-  );
+  background: linear-gradient(45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 70%);
   transform: rotate(-45deg);
   transition: all 0.6s ease;
   opacity: 0;
@@ -185,6 +230,7 @@
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -226,6 +272,8 @@
 
 /* Tablet - 768px and below */
 @media (max-width: 768px) {
+
+  /* Show Auth full width on mobile instead of hiding */
   .authContainer {
     width: 100%;
   }
@@ -242,6 +290,21 @@
 
   .loadingState {
     font-size: 1.1rem;
+  }
+
+  /* Mobile auth header sizing */
+  .authLogo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .authTitle {
+    font-size: 28px;
+  }
+
+  .authHeader {
+    gap: 12px;
+    margin-bottom: 20px;
   }
 }
 

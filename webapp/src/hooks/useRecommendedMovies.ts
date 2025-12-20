@@ -52,14 +52,16 @@ export const useRecommendedMovies = () => {
 
       try {
         const ratedCount = await getUserRatedCount();
+        console.log(`[Recommendations] User has rated ${ratedCount} movies`);
 
         // Se menos de 5 → gera recomendações primeiro
         if (ratedCount < MINIMUM_RATED_MOVIES) {
-
+          console.log(`[Recommendations] Need more ratings (${ratedCount}/${MINIMUM_RATED_MOVIES})`);
 
           // ATIVAR LOADING DO KNN
           setIsGeneratingRecommendations(true);
 
+          console.log(`[Recommendations] Calling generate-recommendations for user ${userId}`);
           const { error: genError } = await supabase.functions.invoke(
             "generate-recommendations",
             {
@@ -71,15 +73,15 @@ export const useRecommendedMovies = () => {
           setIsGeneratingRecommendations(false);
 
           if (genError) {
-
+            console.error(`[Recommendations] Error generating:`, genError);
             return { items: [], hasMore: false, needsMoreRatings: true };
           }
 
-
+          console.log(`[Recommendations] Generation successful`);
         }
 
         // Agora carrega as recomendações (método correto usando body)
-
+        console.log(`[Recommendations] Fetching recommendations page ${page}`);
 
         const { data, error } = await supabase.functions.invoke(
           "get-recommendations",
@@ -92,11 +94,11 @@ export const useRecommendedMovies = () => {
         );
 
         if (error) {
-
+          console.error(`[Recommendations] Error fetching:`, error);
           return { items: [], hasMore: false, needsMoreRatings: false };
         }
 
-
+        console.log(`[Recommendations] Fetched data:`, data);
 
         // Verifica se precisa de mais avaliações
         if (data.needsMoreRatings) {
@@ -151,11 +153,12 @@ export const useRecommendedMovies = () => {
   useEffect(() => {
     if (!isPolling || !userId || !supabase) return;
 
+    console.log(`[Recommendations] Starting polling for user ${userId}`);
     let consecutiveErrors = 0;
     const MAX_ERRORS = 3;
 
     const pollInterval = setInterval(async () => {
-
+      console.log(`[Recommendations] Polling attempt...`);
 
       try {
         const { data, error } = await supabase.functions.invoke(
@@ -169,7 +172,7 @@ export const useRecommendedMovies = () => {
         );
 
         if (!error && data && data.recommendations && data.recommendations.length > 0) {
-
+          console.log(`[Recommendations] Polling found ${data.recommendations.length} recommendations`);
           setItems(data.recommendations);
           setHasMore(data.hasMore ?? false);
           setIsPolling(false);
@@ -177,29 +180,29 @@ export const useRecommendedMovies = () => {
           consecutiveErrors = 0;
         } else if (error) {
           consecutiveErrors++;
-
+          console.error(`[Recommendations] Polling error (${consecutiveErrors}/${MAX_ERRORS}):`, error);
 
           if (consecutiveErrors >= MAX_ERRORS) {
-
+            console.error(`[Recommendations] Max polling errors reached, stopping`);
             setIsPolling(false);
             setIsLoading(false);
           }
         }
       } catch (err) {
         consecutiveErrors++;
-
+        console.error(`[Recommendations] Polling exception (${consecutiveErrors}/${MAX_ERRORS}):`, err);
 
         if (consecutiveErrors >= MAX_ERRORS) {
-
+          console.error(`[Recommendations] Max polling errors reached, stopping`);
           setIsPolling(false);
           setIsLoading(false);
         }
       }
     }, 3000);
 
-
+    console.log(`[Recommendations] Polling will timeout in 45s`);
     const timeoutId = setTimeout(() => {
-
+      console.warn(`[Recommendations] Polling timeout reached`);
       setIsPolling(false);
       setIsLoading(false);
     }, 45000);

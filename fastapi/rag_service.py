@@ -2,8 +2,6 @@ import os
 import json
 import requests
 from typing import List, Dict, Optional
-import time
-import random
 
 class GroqClient:
     def __init__(self, api_key: str):
@@ -12,10 +10,6 @@ class GroqClient:
         self.model = "llama-3.1-8b-instant"  # Updated to faster/higher limit model
         
     def generate(self, prompt: str, max_tokens: int = 2048) -> str:
-        # User requested delay to avoid rate limits
-        delay = random.randint(3, 8)
-        print(f"   ⏳ Technical pause of {delay}s before calling LLM...")
-        time.sleep(delay)
 
         payload = {
             "model": self.model,

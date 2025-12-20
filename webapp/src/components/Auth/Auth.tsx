@@ -8,44 +8,19 @@ import {
 import styles from "./Auth.module.css";
 import GridMotion from "../GridMotion/GridMotion";
 import { useGridMovies } from "../../hooks/useGridMovies";
+import Logo from "../Logo";
 
 const Auth = () => {
   const { items, isLoading } = useGridMovies();
 
   return (
-    <div
-      style={{
-        width: "50%",
-        position: "relative",
-        height: "100vh",
-        overflow: "hidden",
-      }}
-    >
+    <div className={styles.authContainer}>
       {/* GridMotion Background with movie posters */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 0,
-          backgroundColor: "#8b0000",
-        }}
-      >
+      <div className={styles.backgroundWrapper}>
         {!isLoading ? (
           <GridMotion gradientColor="transparent" items={items} />
         ) : (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "100%",
-              color: "white",
-              fontSize: "1.2rem",
-            }}
-          >
+          <div className={styles.loadingState}>
             Loading movies...
           </div>
         )}
@@ -54,6 +29,14 @@ const Auth = () => {
       {/* Authentication Buttons */}
       <div className={styles.uiContainer}>
         <div className={styles.buttonsWrapper}>
+          {/* Logo and Title */}
+          <div className={styles.authHeader}>
+            <div className={styles.authLogo}>
+              <Logo />
+            </div>
+            <h1 className={styles.authTitle}>Movie Night</h1>
+          </div>
+
           <SignedOut>
             <SignUpButton mode="modal">
               <button className={`${styles.button} ${styles.primary}`}>

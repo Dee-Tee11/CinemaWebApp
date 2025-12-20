@@ -44,6 +44,14 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
     try {
       // Use environment variable for backend URL
       const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+      if (!backendUrl) {
+        throw new Error("Backend URL not configured");
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
+
       const response = await fetch(`${backendUrl}/api/chat`, {
         method: "POST",
         headers: {
@@ -53,19 +61,37 @@ export default function Chatbot({ isOpen, onClose }: ChatbotProps) {
           user_id: user.id,
           message: userMessage,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error("Failed to fetch response");
+        const errorText = await response.text();
+        console.error("Backend error:", response.status, errorText);
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const data = await response.json();
       setMessages((prev) => [...prev, { role: "ai", content: data.response }]);
     } catch (error) {
       console.error("Chat error:", error);
+
+      let errorMessage = "Sorry, I had a technical problem. Please try again! 🤖💥";
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = "The request took too long. Please try again with a simpler question. ⏱️";
+        } else if (error.message.includes("Backend URL")) {
+          errorMessage = "Configuration error. Please contact support. ⚙️";
+        } else if (error.message.includes("Server error")) {
+          errorMessage = "Server is having issues. Please try again in a moment. 🔧";
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: "Sorry, I had a technical problem. Please try again! 🤖💥" },
+        { role: "ai", content: errorMessage },
       ]);
     } finally {
       setIsLoading(false);
