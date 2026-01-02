@@ -67,7 +67,7 @@ export default function Contact({ isOpen, onClose }: ContactProps) {
                                 <span>pedronevespnf@gmail.com</span>
                             </a>
                             <a
-                                href="https://www.linkedin.com/in/diogo-teixeira/"
+                                href="https://www.linkedin.com/in/diogo-teixeira-9b108423b/"
                                 className="contact-info-link"
                                 target="_blank"
                                 rel="noopener noreferrer"

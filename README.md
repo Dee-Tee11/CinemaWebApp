@@ -1,75 +1,120 @@
-# React + TypeScript + Vite
+# 🎬 Movie Night AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Intelligent Movie Discovery Powered by RAG & Vector Search**
 
-Currently, two official plugins are available:
+Movie Night AI is a next-generation movie recommendation platform that goes beyond simple filtering. It understands your unique taste profile using **Vector Embeddings** and **Large Language Models (LLMs)** to provide hyper-personalized, explainable movie suggestions.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+![Project Status](https://img.shields.io/badge/Status-Active_Development-brightgreen)
+![Tech Stack](https://img.shields.io/badge/Stack-React_19_|_FastAPI_|_Supabase-blueviolet)
 
-## React Compiler
+## ✨ Key Features
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+- **🧠 RAG-Powered Recommendations**: Uses Retrieval-Augmented Generation to combine your watch history with vast movie knowledge, offering suggestions with "human-like" reasoning.
+- **📐 Vector Similarity Search**: Calculates a unique "Taste Vector" for every user based on their ratings, finding hidden gems semantically related to what they love using **Supabase pgvector**.
+- **💬 AI Movie Assistant**: Chat implementation backed by **Llama 3.1 (via Groq)** that remembers your history and answers specific requests (e.g., "Find me a sci-fi movie like Interstellar but less depressing").
+- **🎨 Premium UX/UI**: A stunning, immersive interface built with **Glassmorphism** principles and smooth **GSAP** animations.
+- **⚡ Modern Stack**: Frontend built with **React 19**, **TypeScript**, and **Vite**; Backend powered by **FastAPI** and **Python**.
 
-Note: This will impact Vite dev & build performances.
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+### Frontend
+- **Framework**: React 19 + Vite
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + Custom Design System
+- **Animations**: GSAP (GreenSock), Framer Motion
+- **Icons**: Lucide React
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Backend & AI
+- **API Framework**: FastAPI (Python)
+- **Database**: Supabase (PostgreSQL)
+- **Vector Search**: pgvector
+- **LLM / Inference**: Llama 3.1-8b-instant (via Groq API)
+- **RAG Logic**: Custom implementation (`rag_service.py`)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 Getting Started
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Prerequisites
+- Node.js (v18+)
+- Python (3.12+)
+- A [Supabase](https://supabase.com/) project
+- A [Groq](https://groq.com/) API Key
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/yourusername/CinemaWebApp.git
+cd CinemaWebApp
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2️⃣ Backend Setup (FastAPI)
+```bash
+cd fastapi
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+# Create virtual environment
+python -m venv venv
+# Activate (Windows)
+venv\Scripts\activate
+# Activate (Mac/Linux)
+source venv/bin/activate
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+uvicorn main:app --reload
 ```
+*The backend will run at `http://localhost:8000`*
+
+### 3️⃣ Frontend Setup (React)
+Open a new terminal:
+```bash
+cd webapp
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+*The frontend will run at `http://localhost:5173`*
+
+## ⚙️ Configuration
+
+Create a `.env` file in the `fastapi` directory:
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+GROQ_API_KEY=your_groq_api_key
+FRONTEND_URL=http://localhost:5173
+```
+
+Create a `.env` file in the `webapp` directory:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=http://localhost:8000
+```
+
+## 🧠 How It Works
+
+1.  **Embeddings**: Every movie in the database has a vector embedding representing its plot, genre, and tone.
+2.  **User Vector**: As you rate movies, the system calculates a weighted average vector of your preferences.
+3.  **Retrieval**: When you ask for recommendations, we query Supabase using semantic similarity (Cosine Distance) to find the closest movie matches to your user vector.
+4.  **Reranking (RAG)**: The top candidates are sent to the LLM along with your detailed history. The AI analyzes *why* those movies match and re-ranks them, filtering out irrelevant results and adding personalized explanations.
+
+## 🧠 How It Works (Simplified)
+
+### 📐 The Recommendation Engine
+The system uses a smart **Multi-Vector "Consensus" Strategy** to find your next favorite movie:
+
+1.  **Step 1: Finding Candidates (Item-Based Voting)**
+    *   Instead of averaging all your tastes into one blurry "profile", the system looks at **each movie you liked individually**.
+    *   If you liked *The Matrix*, it finds similar Sci-Fi movies. If you *also* liked *The Notebook*, it finds similar Romances.
+    *   **The Voting System**: Movies that are similar to *multiple* things you've watched get a higher score. This preserves your diverse tastes (e.g., liking both Horror and Comedy) without mixing them up.
+
+2.  **Step 2: AI Curator (The Expert Review)**
+    *   The top candidates (the ones with the most "votes" from your history) are sent to **Llama 3.1**.
+    *   The AI reviews the list acting as a personalized critic, filtering out generic suggestions and explaining *why* a movie fits your specific taste patterns.
+
+### ⚡ Why It’s Better
+*   **Respects Niche Tastes**: Unlike simple averages that wash out distinct preferences, this approach keeps your Action movies separate from your Dramas, ensuring you get great recommendations for *both* moods.
+*   **Precision**: By boosting movies that appear effectively across multiple of your favorites, we find strong "consensus" matches that strictly semantic search might miss.
