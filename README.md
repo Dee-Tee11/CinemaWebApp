@@ -11,7 +11,7 @@ Movie Night AI is a next-generation movie recommendation platform that goes beyo
 
 - **🧠 RAG-Powered Recommendations**: Uses Retrieval-Augmented Generation to combine your watch history with vast movie knowledge, offering suggestions with "human-like" reasoning.
 - **📐 Vector Similarity Search**: Calculates a unique "Taste Vector" for every user based on their ratings, finding hidden gems semantically related to what they love using **Supabase pgvector**.
-- **💬 AI Movie Assistant**: Chat implementation backed by **Llama 3.1 (via Groq)** that remembers your history and answers specific requests (e.g., "Find me a sci-fi movie like Interstellar but less depressing").
+- **💬 AI Movie Assistant**: Chat implementation backed by **Llama 3.1 (via Groq)** that uses **Smart Context Injection** (your top-rated movies) to answer requests with deep knowledge of your specific taste profile.
 - **🎨 Premium UX/UI**: A stunning, immersive interface built with **Glassmorphism** principles and smooth **GSAP** animations.
 - **⚡ Modern Stack**: Frontend built with **React 19**, **TypeScript**, and **Vite**; Backend powered by **FastAPI** and **Python**.
 
@@ -118,3 +118,15 @@ The system uses a smart **Multi-Vector "Consensus" Strategy** to find your next 
 ### ⚡ Why It’s Better
 *   **Respects Niche Tastes**: Unlike simple averages that wash out distinct preferences, this approach keeps your Action movies separate from your Dramas, ensuring you get great recommendations for *both* moods.
 *   **Precision**: By boosting movies that appear effectively across multiple of your favorites, we find strong "consensus" matches that strictly semantic search might miss.
+    
+### 🧠 AI Architecture: RAG vs. Smart Context
+
+The system employs two distinct AI strategies optimized for different goals:
+
+1.  **For Recommendations (Retrieve & Rerank RAG)**: 
+    *   **Goal**: Discovery.
+    *   **Mechanism**: We first retrieve ~50 semantically similar candidates using Vector Search. Then, the LLM acts as a "Reranker", analyzing your full history to strictly order these candidates, explaining *why* they fit your taste. This is a classic RAG pattern specialized for ranking.
+
+2.  **For Chat (Smart Context Injection)**:
+    *   **Goal**: Identity & Conversation.
+    *   **Mechanism**: Instead of searching for random facts, we inject your **"Cinematic QA Identity"** (your Top 50 highest-rated movies) directly into the LLM's working memory. This ensures the AI understands your *core taste* deeply and ignores noise, allowing for highly personalized conversations like "Based on my love for dark thrillers like Se7en, what should I watch?".
